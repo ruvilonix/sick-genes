@@ -1,8 +1,9 @@
-from django.test import TestCase
+from django.test import TestCase, SimpleTestCase
 from django.core.management import call_command
 from sickgenes.models import Molecule
 from io import StringIO
 from django.utils import timezone
+from django.urls import reverse
 import datetime
 
 class ImportHgncTest(TestCase):
@@ -65,3 +66,14 @@ class ImportHmdbTest(TestCase):
 
         self.assertGreaterEqual(molecule.datetime_updated, timezone.now() - datetime.timedelta(hours=1))
         self.assertLessEqual(molecule.datetime_updated, timezone.now())
+
+class AddMoleculeViewTests(SimpleTestCase):
+    def test_url_exists_at_correct_location(self):
+        response = self.client.get('/manage/add_molecules/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_add_molecules_view_returns_correct_content(self):
+        response = self.client.get(reverse('sickgenes:add_molecules'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'sickgenes/molecule_match.html')
+        self.assertContains(response, "Molecule list:")
