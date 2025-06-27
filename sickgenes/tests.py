@@ -2,6 +2,8 @@ from django.test import TestCase
 from django.core.management import call_command
 from sickgenes.models import Molecule
 from io import StringIO
+from django.utils import timezone
+import datetime
 
 class ImportHgncTest(TestCase):
     @classmethod
@@ -28,6 +30,12 @@ class ImportHgncTest(TestCase):
         self.assertEqual(molecule.hgnc_name, 'alpha-1-B glycoprotein')
         self.assertEqual(molecule.type, Molecule.MoleculeType.GENE)
 
+    def test_datetime_field_within_past_hour(self):
+        molecule = Molecule.objects.get(hgnc_id='HGNC:5')
+
+        self.assertGreaterEqual(molecule.datetime_updated, timezone.now() - datetime.timedelta(hours=1))
+        self.assertLessEqual(molecule.datetime_updated, timezone.now())
+
 class ImportHmdbTest(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -51,3 +59,9 @@ class ImportHmdbTest(TestCase):
 
         self.assertEqual(molecule.hmdb_name, '1,3-Diaminopropane')
         self.assertEqual(molecule.type, Molecule.MoleculeType.METABOLITE)
+
+    def test_datetime_field_within_past_hour(self):
+        molecule = Molecule.objects.get(hmdb_accession='HMDB0000002')
+
+        self.assertGreaterEqual(molecule.datetime_updated, timezone.now() - datetime.timedelta(hours=1))
+        self.assertLessEqual(molecule.datetime_updated, timezone.now())
