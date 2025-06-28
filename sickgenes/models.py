@@ -1,4 +1,5 @@
 from django.db import models
+from sickgenes.managers import MoleculeManager
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 
@@ -37,6 +38,10 @@ class StudyCohort(models.Model):
         return f"[{self.study.title[:20]}]... - [{disease_names}]/[{control_names}]"
     
 class Finding(models.Model):
+    class FindingType(models.TextChoices):
+        VARIATION = "V", _("Genetic variation")
+        ABUNDANCE = "A", _("Molecular abundance")
+
     study_cohort = models.ForeignKey(StudyCohort, on_delete=models.CASCADE)
     molecule = models.ForeignKey('Molecule', on_delete=models.PROTECT)
 
@@ -63,6 +68,8 @@ class Molecule(models.Model):
     type = models.CharField(max_length=1, choices=MoleculeType, default=MoleculeType.GENE)
 
     datetime_updated = models.DateTimeField(null=True)
+
+    objects = MoleculeManager()
 
     def __str__(self):
         if self.type == self.MoleculeType.GENE:
