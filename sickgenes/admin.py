@@ -2,8 +2,13 @@ from django.contrib import admin
 
 from .models import Study, Finding, Molecule, MoleculeAlias, StudyCohort, Disease
 
+class MoleculeAliasInline(admin.TabularInline):
+    model = MoleculeAlias
+    extra = 0
+
 class MoleculeAdmin(admin.ModelAdmin):
     search_fields = ['hgnc_symbol', 'hgnc_id', 'hmdb_accession', 'hmdb_name']
+    inlines = [MoleculeAliasInline]
 
 class MoleculeAliasAdmin(admin.ModelAdmin):
     readonly_fields = ['molecule']
