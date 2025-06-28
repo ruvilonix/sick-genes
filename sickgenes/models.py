@@ -71,6 +71,8 @@ class Molecule(models.Model):
             return self.hmdb_name
         else:
             return '<NO NAME>'
+        
+    # TODO add check constraint where if type is GENE, hgnc_id must be set, and similar for METABOLITE and hmdb_accession
 
 class MoleculeAlias(models.Model):
     molecule = models.ForeignKey(Molecule, on_delete=models.CASCADE)

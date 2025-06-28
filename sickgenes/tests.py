@@ -1,10 +1,11 @@
 from django.test import TestCase, SimpleTestCase
 from django.core.management import call_command
-from sickgenes.models import Molecule
+from sickgenes.models import Molecule, MoleculeAlias
 from io import StringIO
 from django.utils import timezone
 from django.urls import reverse
 import datetime
+from sickgenes.services import find_matching_molecules
 
 class ImportHgncTest(TestCase):
     @classmethod
@@ -77,3 +78,106 @@ class AddMoleculeViewTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'sickgenes/molecule_match.html')
         self.assertContains(response, "Molecule list:")
+
+class FindMatchingMoleculesTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        molecules = [
+            {
+                'hgnc_id': 'HGNC:1',
+                'hgnc_symbol': 'G1',
+                'hgnc_name': 'gene one',
+                'type': Molecule.MoleculeType.GENE,
+                'aliases': ['G1A1', 'G1A2']
+            },
+            {
+                'hgnc_id': 'HGNC:2',
+                'hgnc_symbol': 'G2',
+                'hgnc_name': 'gene two',
+                'type': Molecule.MoleculeType.GENE,
+                'aliases': ['G1A1', 'G1A3']
+            },
+            {
+                'hmdb_accession': 'HMDB1',
+                'hmdb_name': 'metabolite one',
+                'type': Molecule.MoleculeType.METABOLITE,
+                'aliases': ['M1A1', 'M1A2']
+            },
+            {
+                'hmdb_accession': 'HMDB2',
+                'hmdb_name': 'metabolite two',
+                'type': Molecule.MoleculeType.METABOLITE,
+                'aliases': ['M2A3', 'G1A2']
+            },
+        ]
+
+        for molecule in molecules:
+            aliases = molecule.pop('aliases')
+            molecule = Molecule.objects.create(**molecule)
+            molecule_aliases = [MoleculeAlias(molecule=molecule, alias=alias) for alias in aliases]
+            MoleculeAlias.objects.bulk_create(molecule_aliases)
+            
+
+    def test_search_none(self):
+        search_results = find_matching_molecules([])
+        self.assertEqual(len(search_results), 0)
+        
+    def test_search_one_string_with_no_matches(self):
+        search_strings = ['NOTHING']
+        search_results = find_matching_molecules(search_strings)
+        self.assertEqual(len(search_results), 1)
+        self.assertEqual(search_results[0]['search_string'], 'NOTHING')
+        self.assertEqual(len(search_results[0]['molecules']), 0)
+
+    def test_search_one_string_with_one_molecule_match(self):
+        search_strings = ['HGNC:1']
+        search_results = find_matching_molecules(search_strings)
+        self.assertEqual(len(search_results), 1)
+        self.assertEqual(search_results[0]['search_string'], 'HGNC:1')
+        self.assertEqual(len(search_results[0]['molecules']), 1)
+
+    def test_search_one_string_with_one_alias_match(self):
+        search_strings = ['M2A3']
+        molecules = Molecule.objects.filter(moleculealias__alias='M2A3')
+        molecule = Molecule.objects.get(hmdb_accession='HMDB2')
+        search_results = find_matching_molecules(search_strings)
+        self.assertEqual(len(search_results), 1)
+        self.assertEqual(search_results[0]['search_string'], 'M2A3')
+        self.assertQuerySetEqual(search_results[0]['molecules'], molecules)
+        self.assertEqual(search_results[0]['molecules'][0], molecule)
+    
+    def test_search_one_string_with_alias_match_to_two_molecules(self):
+        search_strings = ['G1A1']
+        molecules = Molecule.objects.filter(moleculealias__alias='G1A1')
+        search_results = find_matching_molecules(search_strings)
+        expected_accessions = {'HGNC:1', 'HGNC:2'}
+        returned_accessions = {mol.hgnc_id for mol in search_results[0]['molecules']}
+
+        self.assertEqual(len(search_results), 1)
+        self.assertEqual(len(search_results[0]['molecules']), 2)
+        self.assertQuerySetEqual(search_results[0]['molecules'], molecules, ordered=False)
+        self.assertEqual(expected_accessions, returned_accessions)
+
+    def test_search_two_strings_with_same_match(self):
+        pass
+
+    def search_based_on_hgnc_id(self):
+        pass
+
+    def search_based_on_hgnc_symbol(self):
+        pass
+
+    def search_based_on_hgnc_name(self):
+        pass
+
+    def search_based_on_hmdb_accession(self):
+        pass
+
+    def search_based_on_hmdb_name(self):
+        pass
+
+    def search_hgnc_id_with_lowercase_letters(self):
+        pass
+
+class MoleculeModelTests(TestCase):
+    pass
