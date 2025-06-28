@@ -116,13 +116,14 @@ class FindMatchingMoleculesTests(TestCase):
             molecule_aliases = [MoleculeAlias(molecule=molecule, alias=alias) for alias in aliases]
             MoleculeAlias.objects.bulk_create(molecule_aliases)
 
-    def search_all_molecule_types(self, search_strings):
-        return Molecule.objects.find_matching_molecules(
-            search_strings, 
+    def search_all_molecule_types(self, search_strings, 
             molecule_types=[
                 Molecule.MoleculeType.GENE, 
                 Molecule.MoleculeType.METABOLITE,
-            ]
+            ]):
+        return Molecule.objects.find_matching_molecules(
+            search_strings, 
+            molecule_types=molecule_types,
         )
             
 
@@ -211,6 +212,10 @@ class FindMatchingMoleculesTests(TestCase):
         num_results_per_search_term = [len(result['molecules']) for result in search_results]
         
         self.assertCountEqual(num_results_per_search_term, [1, 1, 1, 1, 1, 2])
+
+    def test_search_with_wrong_type(self):
+        search_results = self.search_all_molecule_types(['G1'], molecule_types=[Molecule.MoleculeType.METABOLITE])
+        self.assertEqual(len(search_results[0]['molecules']), 0)
 
 class MoleculeModelTests(TestCase):
     pass
