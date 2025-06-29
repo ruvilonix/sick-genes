@@ -18,34 +18,23 @@ class MoleculeManager(models.Manager):
 
         return query & Q(type__in=molecule_types)
     
-    def _categorize_search_results(self, search_results):
-        categorized_results = {
+    def find_matching_molecules(self, search_strings, molecule_types):
+        """Takes list of strings to search on and list of molecule types (e.g. Molecule.MoleculeType.GENE) to search"""
+        search_results = {
             'no_matches': [],
             'one_match': [],
             'multiple_matches': [],
         }
 
-        for result in search_results:
-            n_results = len(result['molecules'])
-            if n_results == 0:
-                categorized_results['no_matches'].append(result)
-            elif n_results == 1:
-                categorized_results['one_match'].append(result)
-            elif n_results > 1:
-                categorized_results['multiple_matches'].append(result)
-
-        return categorized_results
-    
-    def find_matching_molecules(self, search_strings, molecule_types):
-        """Takes list of strings to search on and list of molecule types (e.g. Molecule.MoleculeType.GENE) to search"""
-        search_results = []
-
         for search_string in search_strings:
             query = self._build_search_query(search_string, molecule_types)
-
             molecules = self.filter(query).distinct()
-            search_results.append({'search_string': search_string, 'molecules': molecules})
+            
+            if (len(molecules) == 0):
+                search_results['no_matches'].append(search_string)
+            elif (len(molecules) == 1):
+                search_results['one_match'].append({'search_string': search_string, 'molecule': molecules[0]})
+            elif (len(molecules) > 1):
+                search_results['multiple_matches'].append({'search_string': search_string, 'molecules': molecules})
 
-        categorized_results = self._categorize_search_results(search_results)
-
-        return categorized_results
+        return search_results

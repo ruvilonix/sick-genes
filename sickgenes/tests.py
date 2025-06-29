@@ -126,11 +126,13 @@ class FindMatchingMoleculesTests(TestCase):
             search_strings, 
             molecule_types=molecule_types,
         )  
+    
+    def test_search_results_structure(self):
+        pass
 
     def test_search_none(self):
         search_results = self.search_all_molecule_types([])
         self.assertEqual(len(search_results['no_matches']), 0)
-    
     
     def test_search_one_string_with_no_matches(self):
         search_strings = ['NOTHING']
@@ -138,8 +140,7 @@ class FindMatchingMoleculesTests(TestCase):
         search_results = self.search_all_molecule_types(search_strings)
 
         self.assertEqual(len(search_results['no_matches']), 1)
-        self.assertEqual(search_results['no_matches'][0]['search_string'], 'NOTHING')
-        self.assertEqual(len(search_results['no_matches'][0]['molecules']), 0)
+        self.assertEqual(search_results['no_matches'][0], 'NOTHING')
 
     def test_search_one_string_with_one_molecule_match(self):
         search_strings = ['HGNC:1']
@@ -150,7 +151,7 @@ class FindMatchingMoleculesTests(TestCase):
         self.assertEqual(len(search_results['no_matches']), 0)
         self.assertEqual(len(search_results['multiple_matches']), 0)
         self.assertEqual(search_results['one_match'][0]['search_string'], 'HGNC:1')
-        self.assertEqual(search_results['one_match'][0]['molecules'][0], self.molecules[0])
+        self.assertEqual(search_results['one_match'][0]['molecule'], self.molecules[0])
 
     
     def test_search_one_string_with_one_alias_match(self):
@@ -158,7 +159,7 @@ class FindMatchingMoleculesTests(TestCase):
 
         search_results = self.search_all_molecule_types(search_strings)
 
-        self.assertEqual(search_results['one_match'][0]['molecules'][0], self.molecules[3])
+        self.assertEqual(search_results['one_match'][0]['molecule'], self.molecules[3])
     
     def test_search_one_string_with_alias_match_to_two_molecules(self):
         search_strings = ['G1A1']
@@ -174,26 +175,26 @@ class FindMatchingMoleculesTests(TestCase):
         expected_accessions = ['HMDB1', 'HMDB1']
 
         search_results = self.search_all_molecule_types(search_strings)
-        returned_accessions = [result['molecules'][0].hmdb_accession for result in search_results['one_match']]
+        returned_accessions = [result['molecule'].hmdb_accession for result in search_results['one_match']]
 
         self.assertEqual(expected_accessions, returned_accessions)
 
     def test_search_based_on_hgnc_symbol(self):
         search_results = self.search_all_molecule_types(['G1'])
-        self.assertEqual(search_results['one_match'][0]['molecules'][0].hgnc_name, 'gene one')
+        self.assertEqual(search_results['one_match'][0]['molecule'].hgnc_name, 'gene one')
 
     
     def test_search_based_on_hgnc_name(self):
         search_results = self.search_all_molecule_types(['gene one'])
-        self.assertEqual(search_results['one_match'][0]['molecules'][0].hgnc_symbol, 'G1')
+        self.assertEqual(search_results['one_match'][0]['molecule'].hgnc_symbol, 'G1')
 
     def test_search_based_on_hmdb_accession(self):
         search_results = self.search_all_molecule_types(['HMDB1'])
-        self.assertEqual(search_results['one_match'][0]['molecules'][0].hmdb_name, 'metabolite one')
+        self.assertEqual(search_results['one_match'][0]['molecule'].hmdb_name, 'metabolite one')
 
     def test_search_based_on_hmdb_name(self):
         search_results = self.search_all_molecule_types(['metabolite one'])
-        self.assertEqual(search_results['one_match'][0]['molecules'][0].hmdb_accession, 'HMDB1')
+        self.assertEqual(search_results['one_match'][0]['molecule'].hmdb_accession, 'HMDB1')
 
     def test_search_various_fields_with_inconsistent_capitalization(self):
         search_results = self.search_all_molecule_types(['Hgnc:1', 'g1', 'GENE one', 'hmdb1', 'metabolite ONE', 'g1a2'])
@@ -205,11 +206,11 @@ class FindMatchingMoleculesTests(TestCase):
 
     def test_search_with_wrong_type(self):
         search_results = self.search_all_molecule_types(['G1'], molecule_types=[Molecule.MoleculeType.METABOLITE])
-        self.assertEqual(len(search_results['no_matches'][0]['molecules']), 0)
+        self.assertEqual(search_results['no_matches'][0], 'G1')
 
     def test_search_with_correct_type(self):
         search_results = self.search_all_molecule_types(['G1'], molecule_types=[Molecule.MoleculeType.GENE])
-        self.assertEqual(len(search_results['one_match'][0]['molecules']), 1)
+        self.assertEqual(search_results['one_match'][0]['molecule'].hgnc_symbol, 'G1')
     
 
 class MoleculeModelTests(TestCase):
