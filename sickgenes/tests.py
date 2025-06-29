@@ -76,7 +76,7 @@ class AddMoleculeViewTests(SimpleTestCase):
         response = self.client.get(reverse('sickgenes:add_molecules'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'sickgenes/molecule_match.html')
-        self.assertContains(response, "Molecule list:")
+        self.assertContains(response, "Search terms")
 
 class FindMatchingMoleculesTests(TestCase):
     @classmethod
@@ -128,7 +128,7 @@ class FindMatchingMoleculesTests(TestCase):
         )  
     
     def test_search_results_structure(self):
-        pass
+        self.fail()
 
     def test_search_none(self):
         search_results = self.search_all_molecule_types([])
@@ -211,6 +211,9 @@ class FindMatchingMoleculesTests(TestCase):
     def test_search_with_correct_type(self):
         search_results = self.search_all_molecule_types(['G1'], molecule_types=[Molecule.MoleculeType.GENE])
         self.assertEqual(search_results['one_match'][0]['molecule'].hgnc_symbol, 'G1')
+
+    def test_search_with_no_types(self):
+        self.fail()
     
 
 class MoleculeModelTests(TestCase):
