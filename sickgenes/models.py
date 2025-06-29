@@ -75,8 +75,10 @@ class Molecule(models.Model):
         verbose_name = 'molecule'
         verbose_name_plural = 'molecules'
 
+        ordering = ['hgnc_symbol', 'hmdb_name']
+
         indexes = [
-            models.Index(fields=['type'], name='molecule_type')
+            models.Index(fields=['type'], name='molecule_type'),
         ]
 
 
@@ -98,9 +100,11 @@ class MoleculeAlias(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['molecule', 'alias'],
-                name='unique_molecule_alias'
+                name='unique_molecule_alias',
             )
         ]
+
+        ordering = ['alias']
 
         verbose_name = 'molecule alias'
         verbose_name_plural = 'molecule aliases'
