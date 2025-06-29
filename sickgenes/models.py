@@ -65,7 +65,7 @@ class Molecule(models.Model):
     hmdb_accession = models.CharField(max_length=100, default=None, unique=True, null=True)
     hmdb_name = models.CharField(max_length=400, default=None, unique=True, null=True)
 
-    type = models.CharField(max_length=1, choices=MoleculeType, default=MoleculeType.GENE)
+    type = models.CharField(max_length=1, choices=MoleculeType)
 
     datetime_updated = models.DateTimeField(null=True)
 
