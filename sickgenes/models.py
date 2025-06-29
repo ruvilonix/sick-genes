@@ -71,6 +71,15 @@ class Molecule(models.Model):
 
     objects = MoleculeManager()
 
+    class Meta:
+        verbose_name = 'molecule'
+        verbose_name_plural = 'molecules'
+
+        indexes = [
+            models.Index(fields=['type'], name='molecule_type')
+        ]
+
+
     def __str__(self):
         if self.type == self.MoleculeType.GENE:
             return self.hgnc_symbol
@@ -86,10 +95,14 @@ class MoleculeAlias(models.Model):
     alias = models.CharField(max_length=50)
 
     class Meta:
-        indexes = [
-            models.Index(fields=['alias'], name='molecule_alias_symbol_idx'),
+        constraints = [
+            models.UniqueConstraint(
+                fields=['molecule', 'alias'],
+                name='unique_molecule_alias'
+            )
         ]
 
+        verbose_name = 'molecule alias'
         verbose_name_plural = 'molecule aliases'
 
     def __str__(self):
