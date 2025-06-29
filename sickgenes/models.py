@@ -79,6 +79,7 @@ class Molecule(models.Model):
 
         indexes = [
             models.Index(fields=['type'], name='molecule_type'),
+            models.Index(fields=['hgnc_name'], name='hgnc_name_index')
         ]
 
 
@@ -102,6 +103,10 @@ class MoleculeAlias(models.Model):
                 fields=['molecule', 'alias'],
                 name='unique_molecule_alias',
             )
+        ]
+
+        indexes = [
+            models.Index(fields=['alias'], name='moleculealias_alias_idx')
         ]
 
         ordering = ['alias']
