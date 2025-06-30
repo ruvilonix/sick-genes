@@ -12,6 +12,31 @@ class ReadOnlyAdminMixin:
     def has_delete_permission(self, request, obj=None):
         return False
 
+@admin.register(Finding)
+class FindingAdmin(admin.ModelAdmin):
+    readonly_fields = ['study_cohort', 'molecule']
+
+admin.site.register(Study)
+admin.site.register(StudyCohort)
+admin.site.register(Disease)
+
+class HgncGeneExtraInline(admin.TabularInline):
+    model = HgncGeneExtra
+    extra = 0
+    show_change_link = True
+
+@admin.register(HgncGene)
+class HgncGeneAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+    search_fields = ['hgnc_id', 'symbol', 'name']
+    inlines = [HgncGeneExtraInline]
+
+@admin.register(HgncGeneExtra)
+class HgncGeneExtraAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+    search_fields = ['value']
+    list_filter = ['field_name']
+
+
+# TODO delete after removing models:
 class MoleculeAliasInline(admin.TabularInline):
     model = MoleculeAlias
     extra = 0
@@ -26,20 +51,3 @@ class MoleculeAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
 @admin.register(MoleculeAlias)
 class MoleculeAliasAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
     search_fields = ['alias']
-
-@admin.register(Finding)
-class FindingAdmin(admin.ModelAdmin):
-    readonly_fields = ['study_cohort', 'molecule']
-
-admin.site.register(Study)
-admin.site.register(StudyCohort)
-admin.site.register(Disease)
-
-@admin.register(HgncGene)
-class HgncGeneAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
-    search_fields = ['hgnc_id', 'symbol', 'name']
-
-@admin.register(HgncGeneExtra)
-class HgncGeneExtraAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
-    search_fields = ['value']
-    list_filter = ['field_name']
