@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from sickgenes.models import Molecule, MoleculeAlias
+from sickgenes.models import Molecule, MoleculeAlias, HgncGene, HgncGeneExtra
 import pandas as pd
 from django.utils import timezone
 from django.db import transaction
@@ -8,20 +8,83 @@ import xml.etree.ElementTree as ET
 from django.conf import settings
 import pandas as pd
 import zipfile
+import requests
+import json
+from sickgenes.choices import HgncGeneExtraFieldType
 
 
 BASE_DIR = settings.BASE_DIR
 
 HGNC_DATA_PATH = 'https://storage.googleapis.com/public-download-files/hgnc/tsv/tsv/non_alt_loci_set.txt'
+HGNC_JSON_PATH = 'https://storage.googleapis.com/public-download-files/hgnc/json/json/non_alt_loci_set.json'
+
 HMDB_DATA_PATH = os.path.join(BASE_DIR, 'sickgenes/approved_data/hmdb_metabolites.zip')
 HMDB_XML_NAME = 'hmdb_metabolites.xml'
 
 # Small file for testing:
 #HGNC_DATA_URL = 'https://storage.googleapis.com/public-download-files/hgnc/tsv/tsv/locus_types/T_cell_receptor_pseudogene.txt'
+#HGNC_JSON_PATH = 'https://storage.googleapis.com/public-download-files/hgnc/json/json/locus_types/T_cell_receptor_gene.json'
 
 # Small file for testing:
 #HMDB_DATA_PATH = os.path.join(BASE_DIR, 'sickgenes/approved_data/urine_metabolites.zip')
 #HMDB_XML_NAME = 'urine_metabolites.xml'
+
+@transaction.atomic
+def update_hgnc_data_from_json(hgnc_json_path):
+    fields = [
+        ('entrez_id', HgncGeneExtraFieldType.ENTREZ_ID),
+        ('ensembl_gene_id', HgncGeneExtraFieldType.ENSEMBLE_GENE_ID),
+        ('vega_id', HgncGeneExtraFieldType.VEGA_ID),
+        ('ucsc_id', HgncGeneExtraFieldType.UCSC_ID),
+        ('ena', HgncGeneExtraFieldType.ENA),
+        ('uniprot_ids', HgncGeneExtraFieldType.UNIPROT_ID),
+        ('pubmed_id', HgncGeneExtraFieldType.PUBMED_ID),
+        ('omim_id', HgncGeneExtraFieldType.OMIM_ID),
+        ('alias_symbol', HgncGeneExtraFieldType.ALIAS_SYMBOL),
+        ('alias_name', HgncGeneExtraFieldType.ALIAS_NAME),
+        ('prev_symbol', HgncGeneExtraFieldType.PREV_SYMBOL),
+        ('prev_name', HgncGeneExtraFieldType.PREV_NAME),
+    ]
+
+    update_datetime = timezone.now()
+
+    response = requests.get(HGNC_JSON_PATH)
+    hgnc_json_genes = json.loads(response.text)['response']['docs']
+
+    hgnc_genes_to_insert = []
+
+    HgncGeneExtra.objects.all().delete()
+    hgnc_gene_extras_to_create = []
+    
+    for item in hgnc_json_genes:
+        updated_values = {
+            'symbol': item['symbol'],
+            'name': item['name'],
+            'datetime_updated': update_datetime,
+        }
+
+        obj, _ = HgncGene.objects.update_or_create(
+            hgnc_id=item['hgnc_id'],
+            defaults=updated_values,    
+        )
+
+        for field in fields:
+            if(field[0] in item):
+                if ((type(item[field[0]]) == str) and (item[field[0]] != '')):
+                    hgnc_gene_extras_to_create.append(HgncGeneExtra(
+                        hgnc_gene=obj,
+                        value=item[field[0]],
+                        field_name=field[1],
+                    ))
+                elif(type(item[field[0]]) == list):
+                    for value in item[field[0]]:
+                        hgnc_gene_extras_to_create.append(HgncGeneExtra(
+                            hgnc_gene=obj,
+                            value=value,
+                            field_name=field[1],
+                        ))
+
+    HgncGeneExtra.objects.bulk_create(hgnc_gene_extras_to_create)
 
 @transaction.atomic
 def update_hgnc_data(hgnc_data_path):
@@ -134,6 +197,7 @@ class Command(BaseCommand):
             hmdb_data_path = os.path.join(BASE_DIR, 'sickgenes/approved_data/sample_data/sample_hmdb.zip')
         else:
             hgnc_data_path = HGNC_DATA_PATH
+            hgnc_json_data_path = HGNC_JSON_PATH
             hmdb_data_path = HMDB_DATA_PATH
         
         if kwargs['database'] == 'hgnc':
@@ -143,3 +207,7 @@ class Command(BaseCommand):
         elif kwargs['database'] == 'hmdb':
             update_hmdb_data(hmdb_data_path)
             self.stdout.write(self.style.SUCCESS('HMDB data successfully imported'))
+
+        elif kwargs['database'] == 'hgnc_json':
+            update_hgnc_data_from_json(hgnc_json_data_path)
+            self.stdout.write(self.style.SUCCESS('HGNC data successfully imported from JSON'))
