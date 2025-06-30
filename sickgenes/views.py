@@ -11,4 +11,6 @@ def add_molecules(request):
             search_terms = search_results = form.cleaned_data['search_terms']
             search_results = Molecule.objects.find_matching_molecules(search_terms, [Molecule.MoleculeType.GENE, Molecule.MoleculeType.METABOLITE])
 
+            form = MoleculeMatchForm(initial={'matching_data': search_results})
+
     return render(request, 'sickgenes/molecule_match.html', {'form': form})

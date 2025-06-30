@@ -7,7 +7,7 @@ class MoleculeMatchForm(forms.Form):
     )
 
     matching_data = forms.CharField(
-        widget=forms.HiddenInput(),
+        widget=forms.Textarea(),
         required=False,
     )
 
