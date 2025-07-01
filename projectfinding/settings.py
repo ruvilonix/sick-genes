@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-0!2t&lf$dhbpkfkoej)ffk0ndbyl#g%@$tt#4vl=)&5rp3ve7&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost']
 
 
 # Application definition
@@ -75,8 +75,12 @@ WSGI_APPLICATION = 'projectfinding.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'sickgenes',
+        'USER': 'sickgenes_django',
+        'PASSWORD': 'HASNwM4ZzvvaZH1nOza0cnmksv9sV',
+        'HOST': 'localhost',
+        'PORT': '',
     }
 }
 
