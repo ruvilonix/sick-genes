@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from sickgenes.models import Molecule, MoleculeAlias, HgncGene
+from sickgenes.models import HgncGene
 import pandas as pd
 from django.utils import timezone
 from django.db import transaction
