@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Study, Finding, Molecule, MoleculeAlias, StudyCohort, Disease, HgncGene
+from .models import Study, Finding, StudyCohort, Disease, HgncGene
 
 class ReadOnlyAdminMixin:
     def has_add_permission(self, request, obj=None):
@@ -14,7 +14,7 @@ class ReadOnlyAdminMixin:
 
 @admin.register(Finding)
 class FindingAdmin(admin.ModelAdmin):
-    readonly_fields = ['study_cohort', 'molecule']
+    readonly_fields = ['study_cohort', 'hgnc_gene']
 
 admin.site.register(Study)
 admin.site.register(StudyCohort)
@@ -24,18 +24,3 @@ admin.site.register(Disease)
 class HgncGeneAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
     search_fields = ['hgnc_id', 'symbol', 'name']
 
-# TODO delete after removing models:
-class MoleculeAliasInline(admin.TabularInline):
-    model = MoleculeAlias
-    extra = 0
-    show_change_link = True
-
-@admin.register(Molecule)
-class MoleculeAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
-    search_fields = ['hgnc_symbol', 'hgnc_id', 'hmdb_accession', 'hmdb_name']
-    inlines = [MoleculeAliasInline]
-    list_filter = ['type']
-
-@admin.register(MoleculeAlias)
-class MoleculeAliasAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
-    search_fields = ['alias']
