@@ -114,3 +114,15 @@ class FindMatchingHgncGenesTests(TestCase):
 
         self.assertEqual(expected_ids, returned_ids)
 
+class AddGenesView(SimpleTestCase):
+    def test_url_valid_response(self):
+        response = self.client.get('/manage/add_genes/')
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_returns_correct_data(self):
+        response = self.client.get(reverse('sickgenes:add_genes'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'sickgenes/molecule_match.html')
+        self.assertContains(response, "Search terms:")
