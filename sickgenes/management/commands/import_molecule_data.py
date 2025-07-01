@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from sickgenes.models import Molecule, MoleculeAlias, HgncGene, HgncGeneExtra
+from sickgenes.models import Molecule, MoleculeAlias, HgncGene
 import pandas as pd
 from django.utils import timezone
 from django.db import transaction
@@ -10,177 +10,53 @@ import pandas as pd
 import zipfile
 import requests
 import json
-from sickgenes.choices import HgncGeneExtraFieldType
-
+from .helper_functions import get_json_from_source
 
 BASE_DIR = settings.BASE_DIR
 
-HGNC_DATA_PATH = 'https://storage.googleapis.com/public-download-files/hgnc/tsv/tsv/non_alt_loci_set.txt'
-HGNC_JSON_PATH = 'https://storage.googleapis.com/public-download-files/hgnc/json/json/non_alt_loci_set.json'
+HGNC_DATA_PATH = 'https://storage.googleapis.com/public-download-files/hgnc/json/json/non_alt_loci_set.json'
 
 HMDB_DATA_PATH = os.path.join(BASE_DIR, 'sickgenes/approved_data/hmdb_metabolites.zip')
 HMDB_XML_NAME = 'hmdb_metabolites.xml'
 
 # Small file for testing:
-#HGNC_DATA_URL = 'https://storage.googleapis.com/public-download-files/hgnc/tsv/tsv/locus_types/T_cell_receptor_pseudogene.txt'
-#HGNC_JSON_PATH = 'https://storage.googleapis.com/public-download-files/hgnc/json/json/locus_types/T_cell_receptor_gene.json'
+#HGNC_DATA_PATH = 'https://storage.googleapis.com/public-download-files/hgnc/json/json/locus_types/T_cell_receptor_gene.json'
 
 # Small file for testing:
 #HMDB_DATA_PATH = os.path.join(BASE_DIR, 'sickgenes/approved_data/urine_metabolites.zip')
 #HMDB_XML_NAME = 'urine_metabolites.xml'
 
 @transaction.atomic
-def update_hgnc_data_from_json(hgnc_json_path):
+def update_hgnc_data(hgnc_data_path):
     fields = [
-        ('entrez_id', HgncGeneExtraFieldType.ENTREZ_ID),
-        ('ensembl_gene_id', HgncGeneExtraFieldType.ENSEMBLE_GENE_ID),
-        ('vega_id', HgncGeneExtraFieldType.VEGA_ID),
-        ('ucsc_id', HgncGeneExtraFieldType.UCSC_ID),
-        ('ena', HgncGeneExtraFieldType.ENA),
-        ('uniprot_ids', HgncGeneExtraFieldType.UNIPROT_ID),
-        ('pubmed_id', HgncGeneExtraFieldType.PUBMED_ID),
-        ('omim_id', HgncGeneExtraFieldType.OMIM_ID),
-        ('alias_symbol', HgncGeneExtraFieldType.ALIAS_SYMBOL),
-        ('alias_name', HgncGeneExtraFieldType.ALIAS_NAME),
-        ('prev_symbol', HgncGeneExtraFieldType.PREV_SYMBOL),
-        ('prev_name', HgncGeneExtraFieldType.PREV_NAME),
+        'symbol',
+        'name'
+        'entrez_id',
+        'ensembl_gene_id',
+        'vega_id',
+        'ucsc_id',
+        'ena',
+        'uniprot_ids',
+        'pubmed_id',
+        'omim_id',
+        'alias_symbol',
+        'alias_name',
+        'prev_symbol',
+        'prev_name',
     ]
 
-    update_datetime = timezone.now()
+    datetime_updated = timezone.now()
 
-    response = requests.get(HGNC_JSON_PATH)
-    hgnc_json_genes = json.loads(response.text)['response']['docs']
-
-    hgnc_genes_to_insert = []
-
-    HgncGeneExtra.objects.all().delete()
-    hgnc_gene_extras_to_create = []
+    hgnc_json_genes = get_json_from_source(hgnc_data_path)['response']['docs']
     
     for item in hgnc_json_genes:
-        updated_values = {
-            'symbol': item['symbol'],
-            'name': item['name'],
-            'datetime_updated': update_datetime,
-        }
+        field_values = {field: item[field] for field in fields if field in item}
+        updated_values = field_values | {'datetime_updated': datetime_updated}
 
         obj, _ = HgncGene.objects.update_or_create(
             hgnc_id=item['hgnc_id'],
             defaults=updated_values,    
         )
-
-        for field in fields:
-            if(field[0] in item):
-                if ((type(item[field[0]]) == str) and (item[field[0]] != '')):
-                    hgnc_gene_extras_to_create.append(HgncGeneExtra(
-                        hgnc_gene=obj,
-                        value=item[field[0]],
-                        field_name=field[1],
-                    ))
-                elif(type(item[field[0]]) == list):
-                    for value in item[field[0]]:
-                        hgnc_gene_extras_to_create.append(HgncGeneExtra(
-                            hgnc_gene=obj,
-                            value=value,
-                            field_name=field[1],
-                        ))
-
-    HgncGeneExtra.objects.bulk_create(hgnc_gene_extras_to_create)
-
-@transaction.atomic
-def update_hgnc_data(hgnc_data_path):
-    update_datetime = timezone.now()
-
-    hgnc_df = pd.read_csv(
-        hgnc_data_path, 
-        usecols=['hgnc_id', 'symbol', 'name', 'alias_symbol', 'prev_symbol'], 
-        dtype={'hgnc_id': str, 'symbol': str, 'name': str, 'alias_symbol': str, 'prev_symbol': str},
-        sep='\t',
-    )    
-    hgnc_df = hgnc_df[['hgnc_id', 'symbol', 'name', 'alias_symbol', 'prev_symbol']].fillna(value='')
-
-    genes_to_insert = []
-
-    MoleculeAlias.objects.filter(molecule__type=Molecule.MoleculeType.GENE).delete()
-    gene_aliases_to_create = []
-    
-    for i, row in hgnc_df.iterrows():
-        updated_values = {
-            'hgnc_symbol': row['symbol'],
-            'hgnc_name': row['name'],
-            'type': Molecule.MoleculeType.GENE,
-            'datetime_updated': update_datetime,
-        }
-
-        obj, _ = Molecule.objects.update_or_create(
-            hgnc_id=row['hgnc_id'],
-            defaults=updated_values,    
-        )
-
-        alias_symbols = row['alias_symbol'].split('|') if row['alias_symbol'] != '' else []
-        alias_symbols += row['prev_symbol'].split('|') if row['prev_symbol'] != '' else []
-        alias_symbols = set(alias_symbols)
-        
-        for alias_symbol in alias_symbols:
-            gene_aliases_to_create.append(MoleculeAlias(
-                molecule=obj,
-                alias=alias_symbol,
-            ))
-
-    MoleculeAlias.objects.bulk_create(gene_aliases_to_create)
-
-        
-
-@transaction.atomic
-def update_hmdb_data(hmdb_data_path):
-    update_datetime = timezone.now()
-
-    genes_to_insert = []
-
-    MoleculeAlias.objects.filter(molecule__type=Molecule.MoleculeType.METABOLITE).delete()
-
-    x = 0
-    namespace = {'ns0': 'http://www.hmdb.ca'}
-
-    def create_list_from_xml_element(element, child_name, namespace):
-        child = element.find(f'ns0:{child_name}', namespace)
-
-        children = []
-        for inner_child in child:
-            children.append(inner_child.text)
-
-        return children
-
-    # Open the zip file and get the XML file from inside it
-    with zipfile.ZipFile(hmdb_data_path, 'r') as zip_file:
-        with zip_file.open(HMDB_XML_NAME) as xml_file:
-            for event, elem in ET.iterparse(xml_file, events=("start", "end")):
-                if event == 'end' and elem.tag.endswith('metabolite'):
-                    updated_values = {
-                        'hmdb_name': elem.find('ns0:name', namespace).text,
-                        'type': Molecule.MoleculeType.METABOLITE,
-                        'datetime_updated': update_datetime,
-                    }
-
-                    obj, _ = Molecule.objects.update_or_create(
-                        hmdb_accession=elem.find('ns0:accession', namespace).text,
-                        defaults=updated_values,   
-                    )
-
-                    alias_symbols = create_list_from_xml_element(elem, 'secondary_accessions', namespace)
-                    alias_symbols += create_list_from_xml_element(elem, 'synonyms', namespace)
-                    alias_symbols = set(alias_symbols)
-                    
-                    metabolite_aliases_to_create = []
-                    for alias_symbol in alias_symbols:
-                        metabolite_aliases_to_create.append(MoleculeAlias(
-                            molecule=obj,
-                            alias=alias_symbol,
-                        ))
-
-                    MoleculeAlias.objects.bulk_create(metabolite_aliases_to_create)
-
-                    # Clear the processed element and its children
-                    elem.clear()
     
 
 class Command(BaseCommand):
@@ -193,21 +69,10 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
 
         if kwargs['test']:
-            hgnc_data_path = os.path.join(BASE_DIR, 'sickgenes/approved_data/sample_data/sample_hgnc.txt')
-            hmdb_data_path = os.path.join(BASE_DIR, 'sickgenes/approved_data/sample_data/sample_hmdb.zip')
+            hgnc_data_path = os.path.join(BASE_DIR, 'sickgenes/approved_data/sample_data/sample_hgnc.json')
         else:
             hgnc_data_path = HGNC_DATA_PATH
-            hgnc_json_data_path = HGNC_JSON_PATH
-            hmdb_data_path = HMDB_DATA_PATH
         
         if kwargs['database'] == 'hgnc':
             update_hgnc_data(hgnc_data_path)
-            self.stdout.write(self.style.SUCCESS('HGNC data successfully imported'))
-
-        elif kwargs['database'] == 'hmdb':
-            update_hmdb_data(hmdb_data_path)
-            self.stdout.write(self.style.SUCCESS('HMDB data successfully imported'))
-
-        elif kwargs['database'] == 'hgnc_json':
-            update_hgnc_data_from_json(hgnc_json_data_path)
             self.stdout.write(self.style.SUCCESS('HGNC data successfully imported from JSON'))
