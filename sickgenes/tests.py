@@ -51,3 +51,66 @@ class ImportHgncTest(TestCase):
         call_command('import_molecule_data', 'hgnc', test=True, stdout=out)
 
         self.assertEqual(HgncGene.objects.count(), initial_count)
+
+
+class FindMatchingHgncGenesTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.genes = [
+            HgncGene.objects.create(
+                hgnc_id='HGNC:1',
+                symbol="G1",
+                name="gene one",
+                pubmed_id=[123, 456],
+            ),
+            HgncGene.objects.create(
+                hgnc_id='HGNC:2',
+                symbol="G2",
+                name="gene two",
+                pubmed_id=[123, 789],
+            )
+        ]
+
+    def search_genes(self, search_strings):
+        return HgncGene.objects.find_matching_items(search_strings)  
+
+    def test_search_none(self):
+        search_results = self.search_genes([])
+        self.assertEqual(len(search_results['no_matches']), 0)
+    
+    def test_search_one_string_with_no_matches(self):
+        search_strings = ['NOTHING']
+        
+        search_results = self.search_genes(search_strings)
+
+        self.assertEqual(len(search_results['no_matches']), 1)
+        self.assertEqual(search_results['no_matches'][0], 'NOTHING')
+
+    def test_search_one_string_with_one_gene_match(self):
+        search_strings = ['HGNC:1']
+
+        search_results = self.search_genes(search_strings)
+
+        self.assertEqual(len(search_results['one_match']), 1)
+        self.assertEqual(len(search_results['no_matches']), 0)
+        self.assertEqual(len(search_results['multiple_matches']), 0)
+        self.assertEqual(search_results['one_match'][0]['search_string'], 'HGNC:1')
+        self.assertEqual(search_results['one_match'][0]['item'], self.genes[0])
+
+    
+    def test_search_one_string_with_one_alias_match(self):
+        search_strings = ['G2']
+
+        search_results = self.search_genes(search_strings)
+
+        self.assertEqual(search_results['one_match'][0]['item'], self.genes[1])
+    
+    def test_search_one_string_with_alias_match_to_two_genes(self):
+        search_strings = ['123']
+        expected_ids = {'HGNC:1', 'HGNC:2'}
+
+        search_results = self.search_genes(search_strings)
+        returned_ids = {gene.hgnc_id for gene in search_results['multiple_matches'][0]['items']}
+
+        self.assertEqual(expected_ids, returned_ids)
+

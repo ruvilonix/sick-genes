@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from sickgenes.managers import HgncGeneManager
 
 class HgncGene(models.Model):
     hgnc_id = models.CharField(max_length=15, default=None, unique=True)
@@ -22,6 +23,8 @@ class HgncGene(models.Model):
     prev_name = ArrayField(models.CharField(max_length=200, default=None, null=True), default=list)
 
     datetime_updated = models.DateTimeField(null=True)
+
+    objects = HgncGeneManager()
 
     class Meta:
         ordering = ['symbol']
