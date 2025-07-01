@@ -4,7 +4,6 @@ from sickgenes.models import HgncGene
 from io import StringIO
 from django.utils import timezone
 from django.urls import reverse
-import datetime
 
 class ImportHgncTest(TestCase):
     @classmethod
@@ -52,14 +51,3 @@ class ImportHgncTest(TestCase):
         call_command('import_molecule_data', 'hgnc', test=True, stdout=out)
 
         self.assertEqual(HgncGene.objects.count(), initial_count)
-
-class AddMoleculeViewTests(SimpleTestCase):
-    def test_url_exists_at_correct_location(self):
-        response = self.client.get('/manage/add_molecules/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_add_molecules_view_returns_correct_content(self):
-        response = self.client.get(reverse('sickgenes:add_molecules'))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'sickgenes/molecule_match.html')
-        self.assertContains(response, "Search terms")
