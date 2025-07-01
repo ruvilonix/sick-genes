@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from sickgenes.forms import MoleculeMatchForm
-from sickgenes.models import Molecule
 
+'''
 def add_molecules(request):
     if request.method == 'GET':
         form = MoleculeMatchForm()
@@ -14,3 +14,4 @@ def add_molecules(request):
             form = MoleculeMatchForm(initial={'matching_data': search_results})
 
     return render(request, 'sickgenes/molecule_match.html', {'form': form})
+'''
