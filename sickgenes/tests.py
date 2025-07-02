@@ -36,7 +36,7 @@ class ImportHgncTest(TestCase):
         self.assertEqual(gene.alias_symbol, ['fake_alias_symbol'])
         self.assertEqual(gene.alias_name, ['fake1', 'fake2'])
         self.assertEqual(gene.prev_name, ['fake_prev_name'])
-        self.assertEqual(gene.prev_symbol, ['fake_prev_symbol'])
+        self.assertEqual(gene.prev_symbol, ['fake_prev_symbol', 'string, including comma'])
 
     def test_datetime_field_is_recent(self):
         gene = HgncGene.objects.get(hgnc_id='HGNC:5')
@@ -69,6 +69,7 @@ class FindMatchingHgncGenesTests(TestCase):
                 symbol="G2",
                 name="gene two",
                 pubmed_id=[123, 789],
+                uniprot_ids=['item, comma'],
             )
         ]
 
@@ -93,7 +94,6 @@ class FindMatchingHgncGenesTests(TestCase):
         self.assertEqual(len(search_results['multiple_matches']), 0)
         self.assertEqual(search_results['one_match'][0]['search_string'], 'HGNC:1')
         self.assertEqual(search_results['one_match'][0]['item'], self.genes[0])
-
     
     def test_search_one_string_with_one_alias_match(self):
         search_results = self.search_genes(['G2'])
@@ -114,6 +114,10 @@ class FindMatchingHgncGenesTests(TestCase):
     def test_search_case_insensitive_in_string_array_field(self):
         search_results = self.search_genes(["p123"])
         self.assertEqual(search_results['one_match'][0]['item'], self.genes[0])
+
+    def test_search_item_with_comma(self):
+        search_results = self.search_genes(['item, comma'])
+        self.assertEqual(search_results['one_match'][0]['item'], self.genes[1])
 
 class AddGenesView(SimpleTestCase):
     def test_url_valid_response(self):
