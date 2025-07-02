@@ -12,15 +12,15 @@ class HgncGene(models.Model):
     vega_id = models.CharField(max_length=25, default=None, null=True)
     ucsc_id = models.CharField(max_length=15, default=None, null=True)
 
-    ena = ArrayField(models.CharField(max_length=15, default=None, null=True), default=list)
-    uniprot_ids = ArrayField(models.CharField(max_length=15, default=None, null=True), default=list)
-    pubmed_id = ArrayField(models.BigIntegerField(default=None, null=True), default=list)
-    omim_id = ArrayField(models.IntegerField(default=None, null=True), default=list)
+    ena = ArrayField(models.CharField(max_length=15), default=list)
+    uniprot_ids = ArrayField(models.CharField(max_length=15), default=list)
+    pubmed_id = ArrayField(models.BigIntegerField(), default=list)
+    omim_id = ArrayField(models.IntegerField(), default=list)
 
-    alias_symbol = ArrayField(models.CharField(max_length=40, default=None, null=True), default=list)
-    alias_name = ArrayField(models.CharField(max_length=200, default=None, null=True), default=list)
-    prev_symbol = ArrayField(models.CharField(max_length=25, default=None, null=True), default=list)
-    prev_name = ArrayField(models.CharField(max_length=200, default=None, null=True), default=list)
+    alias_symbol = ArrayField(models.CharField(max_length=40), default=list)
+    alias_name = ArrayField(models.CharField(max_length=200), default=list)
+    prev_symbol = ArrayField(models.CharField(max_length=25), default=list)
+    prev_name = ArrayField(models.CharField(max_length=200), default=list)
 
     datetime_updated = models.DateTimeField(null=True)
 
