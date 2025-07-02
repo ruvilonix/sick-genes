@@ -24,7 +24,7 @@ class HgncGeneManager(models.Manager):
             query |= Q(**{f"{plain_field}__iexact": search_string})
 
         for array_field in array_str_fields:
-            query |= Q(**{f"{array_field}__contains": [search_string]})
+            query |= Q(**{f"{array_field}__icontains": search_string})
 
         try:
             search_string = int(search_string)
@@ -32,7 +32,7 @@ class HgncGeneManager(models.Manager):
                 query |= Q(**{f"{array_field}__contains": [int(search_string)]})
         except ValueError:
             pass
-
+        
         return query
     
     def find_matching_items(self, search_strings):

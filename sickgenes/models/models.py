@@ -1,6 +1,18 @@
 from django.db import models
+from django.db.models import Lookup
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
+from django.contrib.postgres.fields import ArrayField
+
+@ArrayField.register_lookup
+class ArrayIContains(Lookup):
+    lookup_name = "icontains"
+
+    def as_sql(self, compiler, connection):
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        params = rhs_params + lhs_params
+        return "%s ILIKE ANY(%s)" % (rhs, lhs), params
 
 class Study(models.Model):
     title = models.CharField(max_length=300, verbose_name="Title")

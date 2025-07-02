@@ -62,6 +62,7 @@ class FindMatchingHgncGenesTests(TestCase):
                 symbol="G1",
                 name="gene one",
                 pubmed_id=[123, 456],
+                uniprot_ids=['P123', 'P456'],
             ),
             HgncGene.objects.create(
                 hgnc_id='HGNC:2',
@@ -79,17 +80,13 @@ class FindMatchingHgncGenesTests(TestCase):
         self.assertEqual(len(search_results['no_matches']), 0)
     
     def test_search_one_string_with_no_matches(self):
-        search_strings = ['NOTHING']
-        
-        search_results = self.search_genes(search_strings)
+        search_results = self.search_genes(['NOTHING'])
 
         self.assertEqual(len(search_results['no_matches']), 1)
         self.assertEqual(search_results['no_matches'][0], 'NOTHING')
 
     def test_search_one_string_with_one_gene_match(self):
-        search_strings = ['HGNC:1']
-
-        search_results = self.search_genes(search_strings)
+        search_results = self.search_genes(['HGNC:1'])
 
         self.assertEqual(len(search_results['one_match']), 1)
         self.assertEqual(len(search_results['no_matches']), 0)
@@ -99,20 +96,24 @@ class FindMatchingHgncGenesTests(TestCase):
 
     
     def test_search_one_string_with_one_alias_match(self):
-        search_strings = ['G2']
-
-        search_results = self.search_genes(search_strings)
+        search_results = self.search_genes(['G2'])
 
         self.assertEqual(search_results['one_match'][0]['item'], self.genes[1])
     
     def test_search_one_string_with_alias_match_to_two_genes(self):
-        search_strings = ['123']
         expected_ids = {'HGNC:1', 'HGNC:2'}
-
-        search_results = self.search_genes(search_strings)
+        search_results = self.search_genes(['123'])
         returned_ids = {gene.hgnc_id for gene in search_results['multiple_matches'][0]['items']}
 
         self.assertEqual(expected_ids, returned_ids)
+
+    def test_search_exact_in_string_array_field(self):
+        search_results = self.search_genes(["P123"])
+        self.assertEqual(search_results['one_match'][0]['item'], self.genes[0])
+
+    def test_search_case_insensitive_in_string_array_field(self):
+        search_results = self.search_genes(["p123"])
+        self.assertEqual(search_results['one_match'][0]['item'], self.genes[0])
 
 class AddGenesView(SimpleTestCase):
     def test_url_valid_response(self):
