@@ -1,20 +1,49 @@
 <form action="" method="POST">
     {% csrf_token %}
     {{ form }}
+
+    <table>
+        {% for result in search_results.no_matches %}
+        <tr>
+            <td>
+                <input type="hidden" name="search_string{{ forloop.counter0 }}" data-category="nomatches" value="{{ result }}">
+                {{ result }}
+            </td>
+            <td><input type="input" name="item{{ forloop.counter0 }}" data-category="one_match" placeholder="Enter a different term"> </td>
+            <td><input type="checkbox"> Delete</td>
+        </tr>
+        {% endfor %}
+        {% for result in search_results.multiple_matches %}
+        <tr>
+            <td>
+                <input type="hidden" name="search_string{{ forloop.counter0 }}" data-category="multiple_matches" value="{{ result.search_string }}">
+                {{ result.search_string }}
+            </td>
+            <td>
+                <select name="item{{ forloop.counter0 }}" data-category="multiple_matches">
+                    <option value="">Select a matching item...</option>
+                    {% for item in result.items %}
+                    <option value="{{ item.id }}">{{ item.symbol }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td><input type="checkbox"> Delete</td>
+        </tr>
+        {% endfor %}
+        {% for result in search_results.one_match %}
+        <tr>
+            <td>
+                <input type="hidden" name="search_string{{ forloop.counter0 }}" data-category="one_match" value="{{ result.search_string }}">
+                {{ result.search_string }}
+            </td>
+            <td>
+                <input type="hidden" name="item{{ forloop.counter0 }}" data-category="one_match" value="{{ result.item.id }}"> 
+                {{ result.item.symbol }} 
+            </td>
+            <td><input type="checkbox"> Delete</td>
+        </tr>
+        {% endfor %}
+    </table>
+
     <input type="submit" value="Submit">
 </form>
-
-<table>
-    <tr>
-        <td><input type="input" name="search_string{{ forloop.counter0 }}" data-category="no_matches" value="{{ result.search_string }}"></td>
-        <td><input type="input" name="item{{ forloop.counter0 }}" data-category="one_match" value="{{ result.item.symbol }}"> </td>
-        <td><input type="checkbox"> Delete</td>
-    </tr>
-    {% for result in search_results.one_match %}
-    <tr>
-        <td><input type="input" name="search_string{{ forloop.counter0 }}" data-category="one_match" value="{{ result.search_string }}"></td>
-        <td><input type="input" name="item{{ forloop.counter0 }}" data-category="one_match" value="{{ result.item.symbol }}"> </td>
-        <td><input type="checkbox"> Delete</td>
-    </tr>
-    {% endfor %}
-</table>
