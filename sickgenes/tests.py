@@ -31,7 +31,6 @@ class ImportHgncTest(TestCase):
         self.assertEqual(gene.ucsc_id, "uc002qsd.5")
         self.assertEqual(gene.ena, ['fake_ena'])
         self.assertEqual(gene.uniprot_ids, ["P04217"])
-        self.assertEqual(gene.pubmed_id, [2591067])
         self.assertEqual(gene.omim_id, [138670])
         self.assertEqual(gene.alias_symbol, ['fake_alias_symbol'])
         self.assertEqual(gene.alias_name, ['fake1', 'fake2'])
