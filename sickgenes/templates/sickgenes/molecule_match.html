@@ -1,15 +1,14 @@
 <form action="" method="POST">
     {% csrf_token %}
     {{ form }}
-
+    <input type="hidden" name="no_matches_count" value="{{ search_results.no_matches|length }}">
+    <input type="hidden" name="multiple_matches_count" value="{{ search_results.multiple_matches|length }}">
+    <input type="hidden" name="one_match_count" value="{{ search_results.one_match|length }}">
     <table>
         {% for result in search_results.no_matches %}
         <tr>
-            <td>
-                <input type="hidden" name="search_string{{ forloop.counter0 }}" data-category="nomatches" value="{{ result }}">
-                {{ result }}
-            </td>
-            <td><input type="input" name="item{{ forloop.counter0 }}" data-category="one_match" placeholder="Enter a different term"> </td>
+            <td>{{ result }}</td>
+            <td><input type="input" name="search_string{{ forloop.counter0 }}" data-category="one_match" placeholder="Enter a different term"> </td>
             <td><input type="checkbox"> Delete</td>
         </tr>
         {% endfor %}
