@@ -61,14 +61,14 @@ class FindMatchingHgncGenesTests(TestCase):
                 hgnc_id='HGNC:1',
                 symbol="G1",
                 name="gene one",
-                pubmed_id=[123, 456],
+                omim_id=[123, 456],
                 uniprot_ids=['P123', 'P456'],
             ),
             HgncGene.objects.create(
                 hgnc_id='HGNC:2',
                 symbol="G2",
                 name="gene two",
-                pubmed_id=[123, 789],
+                omim_id=[123, 789],
                 uniprot_ids=['item, comma'],
             )
         ]

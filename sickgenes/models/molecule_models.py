@@ -14,7 +14,6 @@ class HgncGene(models.Model):
 
     ena = ArrayField(models.CharField(max_length=15), default=list)
     uniprot_ids = ArrayField(models.CharField(max_length=15), default=list)
-    pubmed_id = ArrayField(models.BigIntegerField(), default=list)
     omim_id = ArrayField(models.IntegerField(), default=list)
 
     alias_symbol = ArrayField(models.CharField(max_length=40), default=list)

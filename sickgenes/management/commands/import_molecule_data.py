@@ -40,7 +40,7 @@ def update_hgnc_data(hgnc_data_path):
 
     expected_fields = ['symbol',
         'name', 'entrez_id', 'ensembl_gene_id', 'vega_id', 'ucsc_id',
-        'ena', 'uniprot_ids', 'pubmed_id', 'omim_id', 'alias_symbol',
+        'ena', 'uniprot_ids', 'omim_id', 'alias_symbol',
         'alias_name', 'prev_symbol', 'prev_name']
 
     try:

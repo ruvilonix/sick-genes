@@ -17,7 +17,7 @@ class HgncGeneManager(models.Manager):
                          'ensembl_gene_id', 'vega_id', 'ucsc_id']
         array_str_fields = ['ena', 'uniprot_ids', 'alias_symbol', 
                             'alias_name', 'prev_symbol', 'prev_name']
-        array_int_fields = ['pubmed_id', 'omim_id']
+        array_int_fields = ['omim_id']
 
         query = Q()
         for plain_field in plain_str_fields:
