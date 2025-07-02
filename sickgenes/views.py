@@ -3,6 +3,8 @@ from sickgenes.forms import MoleculeMatchForm
 from sickgenes.models import HgncGene
 
 def add_genes(request):
+    context = {}
+
     if request.method == 'GET':
         form = MoleculeMatchForm()
     else:
@@ -13,4 +15,8 @@ def add_genes(request):
 
             form = MoleculeMatchForm(initial={'matching_data': search_results})
 
-    return render(request, 'sickgenes/molecule_match.html', {'form': form})
+            context['search_results'] = search_results
+
+    context['form'] = form
+
+    return render(request, 'sickgenes/molecule_match.html', context)

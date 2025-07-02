@@ -3,3 +3,18 @@
     {{ form }}
     <input type="submit" value="Submit">
 </form>
+
+<table>
+    <tr>
+        <td><input type="input" name="search_string{{ forloop.counter0 }}" data-category="no_matches" value="{{ result.search_string }}"></td>
+        <td><input type="input" name="item{{ forloop.counter0 }}" data-category="one_match" value="{{ result.item.symbol }}"> </td>
+        <td><input type="checkbox"> Delete</td>
+    </tr>
+    {% for result in search_results.one_match %}
+    <tr>
+        <td><input type="input" name="search_string{{ forloop.counter0 }}" data-category="one_match" value="{{ result.search_string }}"></td>
+        <td><input type="input" name="item{{ forloop.counter0 }}" data-category="one_match" value="{{ result.item.symbol }}"> </td>
+        <td><input type="checkbox"> Delete</td>
+    </tr>
+    {% endfor %}
+</table>
