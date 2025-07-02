@@ -6,11 +6,6 @@ class MoleculeMatchForm(forms.Form):
         required=False,
     )
 
-    matching_data = forms.CharField(
-        widget=forms.Textarea(),
-        required=False,
-    )
-
     def clean_search_terms(self):
         search_terms_string = self.cleaned_data['search_terms']
 
