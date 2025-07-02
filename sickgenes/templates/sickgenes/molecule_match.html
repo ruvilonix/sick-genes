@@ -1,45 +1,19 @@
 <form action="" method="POST">
     {% csrf_token %}
-    {{ form }}
-    <input type="hidden" name="no_matches_count" value="{{ search_results.no_matches|length }}">
-    <input type="hidden" name="multiple_matches_count" value="{{ search_results.multiple_matches|length }}">
-    <input type="hidden" name="one_match_count" value="{{ search_results.one_match|length }}">
+    {{ search_initial_form }}
+    {{ search_no_matches_formset.management_form }}
+    {{ search_multiple_matches_formset.management_form }}
+
     <table>
-        {% for result in search_results.no_matches %}
+        {% for form in search_no_matches_formset %}
         <tr>
-            <td>{{ result }}</td>
-            <td><input type="input" name="search_string{{ forloop.counter0 }}" data-category="one_match" placeholder="Enter a different term"> </td>
-            <td><input type="checkbox"> Delete</td>
+            <td>{{ form }}</td>
         </tr>
         {% endfor %}
-        {% for result in search_results.multiple_matches %}
+
+        {% for form in search_multiple_matches_formset %}
         <tr>
-            <td>
-                <input type="hidden" name="search_string{{ forloop.counter0 }}" data-category="multiple_matches" value="{{ result.search_string }}">
-                {{ result.search_string }}
-            </td>
-            <td>
-                <select name="item{{ forloop.counter0 }}" data-category="multiple_matches">
-                    <option value="">Select a matching item...</option>
-                    {% for item in result.items %}
-                    <option value="{{ item.id }}">{{ item.symbol }}</option>
-                    {% endfor %}
-                </select>
-            </td>
-            <td><input type="checkbox"> Delete</td>
-        </tr>
-        {% endfor %}
-        {% for result in search_results.one_match %}
-        <tr>
-            <td>
-                <input type="hidden" name="search_string{{ forloop.counter0 }}" data-category="one_match" value="{{ result.search_string }}">
-                {{ result.search_string }}
-            </td>
-            <td>
-                <input type="hidden" name="item{{ forloop.counter0 }}" data-category="one_match" value="{{ result.item.id }}"> 
-                {{ result.item.symbol }} 
-            </td>
-            <td><input type="checkbox"> Delete</td>
+            <td>{{ form }}</td>
         </tr>
         {% endfor %}
     </table>
