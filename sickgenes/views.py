@@ -11,6 +11,9 @@ def add_genes(request):
     return render(request, 'sickgenes/molecule_match.html', context)
 
 def search_genes(request):
+    pass
+
+def prepare_gene_identifiers(request):
     def create_form(form_class, prefix=None):
         args = [request.POST] if request.method == 'POST' else []
         kwargs = {'prefix': prefix} if prefix else {}
