@@ -41,7 +41,6 @@ def add_genes(request):
             for search_term_with_multiple_matches in search_results['multiple_matches']:
                 multiple_matches_formset_initial_data.append({"search_term": search_term_with_multiple_matches['search_string']})
             search_multiple_matches_formset = SearchNoMatchesFormSet(initial=multiple_matches_formset_initial_data, prefix="multiple_matches")
-            context['search_multiple_matches_formset'] = search_multiple_matches_formset
     
     context['search_initial_form'] = search_initial_form
     context['search_no_matches_formset'] = search_no_matches_formset
