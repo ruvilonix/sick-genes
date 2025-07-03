@@ -32,3 +32,9 @@ class SearchMultipleMatchesForm(forms.Form):
 SearchMultipleMatchesFormSet = formset_factory(SearchMultipleMatchesForm, extra=0)
 
 
+class SearchOneMatchForm(forms.Form):
+    search_term = forms.CharField(max_length=300, required=False)
+    item_id = forms.IntegerField()
+    item_string = forms.CharField(max_length=300, required=False)
+
+SearchOneMatchFormSet = formset_factory(SearchOneMatchForm, extra=0)

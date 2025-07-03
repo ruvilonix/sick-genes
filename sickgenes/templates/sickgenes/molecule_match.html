@@ -3,6 +3,7 @@
     {{ search_initial_form }}
     {{ search_no_matches_formset.management_form }}
     {{ search_multiple_matches_formset.management_form }}
+    {{ search_one_match_formset.management_form }}
 
     <table>
         {% for form in search_no_matches_formset %}
@@ -12,6 +13,12 @@
         {% endfor %}
 
         {% for form in search_multiple_matches_formset %}
+        <tr>
+            <td>{{ form }}</td>
+        </tr>
+        {% endfor %}
+
+        {% for form in search_one_match_formset %}
         <tr>
             <td>{{ form }}</td>
         </tr>
