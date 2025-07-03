@@ -16,6 +16,7 @@ def add_genes(request):
         search_multiple_matches_formset = SearchMultipleMatchesFormSet(request.POST, prefix="multiple_matches")
         search_one_match_formset = SearchOneMatchFormSet(request.POST, prefix="one_match")
 
+        # Retrieve matches for search term in each form to generate choices
         for form in search_multiple_matches_formset.forms:
             search_term_key = f"{form.prefix}-search_term"
             search_term = request.POST.get(search_term_key)
@@ -39,7 +40,7 @@ def add_genes(request):
                 if form.cleaned_data.get('search_term'):
                     search_terms.add(form.cleaned_data['search_term'])
 
-            # Process selections and find unresolved multiple-match terms
+            # Process selections from multiple_matches forms
             selections_from_multiple_matches_formset = []
             for form in search_multiple_matches_formset:
                 search_term = form.cleaned_data.get('search_term')
@@ -62,12 +63,14 @@ def add_genes(request):
             search_results = HgncGene.objects.find_matching_items(search_terms)
 
             # Regenerate forms for the next page view
+            # Blank initial form
             search_initial_form = SearchInitialForm() # Clear the initial form
 
+            # No matches formset from no_matches in search_results
             no_matches_initial = [{"search_term": term} for term in search_results['no_matches']]
             search_no_matches_formset = SearchNoMatchesFormSet(initial=no_matches_initial, prefix="no_matches")
 
-            # Multiple matches formset (from combined and de-duplicated data)
+            # Multiple matches formset from multiple_matches in search_results
             multiple_matches_data = search_results['multiple_matches'] 
             multiple_matches_initial = [{"search_term": result['search_string']} for result in multiple_matches_data]
             search_multiple_matches_formset = SearchMultipleMatchesFormSet(initial=multiple_matches_initial, prefix="multiple_matches")
