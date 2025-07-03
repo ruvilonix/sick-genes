@@ -26,6 +26,9 @@ SearchNoMatchesFormSet = formset_factory(SearchNoMatchesForm, extra=0)
 
 class SearchMultipleMatchesForm(forms.Form):
     search_term = forms.CharField(max_length=300, required=False)
-    item_id = forms.ChoiceField(required=False)
+    item_id = forms.ChoiceField(choices=[('', 'Please select one')], required=False)
+
 
 SearchMultipleMatchesFormSet = formset_factory(SearchMultipleMatchesForm, extra=0)
+
+
