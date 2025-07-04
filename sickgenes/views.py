@@ -1,8 +1,13 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from sickgenes.forms import SearchInitialForm, SearchNoMatchesFormSet, SearchMultipleMatchesFormSet, SearchOneMatchFormSet, prepare_gene_identifiers
-from sickgenes.models import HgncGene, Finding
+from sickgenes.models import HgncGene, Finding, Study
 from sickgenes.forms import StudyForm
+
+def study(request, pk):
+    study = get_object_or_404(Study, pk=pk)
+
+    return render(request, 'sickgenes/study.html', context={'study': study})
 
 def add_study(request):
     if request.method == 'POST':

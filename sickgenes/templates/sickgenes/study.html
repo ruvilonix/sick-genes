@@ -1,0 +1,13 @@
+{% extends 'sickgenes/base.html' %}
+
+{% block content %}
+
+<p>Title: {{ study.title }}</p>
+<p>DOI: {{ study.doi }}</p>
+
+{% if study.publisher_url %}<p>Publisher URL: {{ study.publisher_url }}</p>{% endif %}
+{% if study.s4me_url %}<p>S4ME URL: {{ study.s4me_url }}</p>{% endif %}
+{% if study.preprint %}<p>Preprint</p>{% endif %}
+
+
+{% endblock %}
