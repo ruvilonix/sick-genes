@@ -2,10 +2,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from sickgenes.forms import SearchInitialForm, SearchNoMatchesFormSet, SearchMultipleMatchesFormSet, SearchOneMatchFormSet, prepare_gene_identifiers
 from sickgenes.models import HgncGene, Finding, Study
-from sickgenes.forms import StudyForm
+from sickgenes.forms import StudyForm, StudyCohortForm
 
-def study(request, pk):
-    study = get_object_or_404(Study, pk=pk)
+def study(request, study_id):
+    study = get_object_or_404(Study, pk=study_id)
 
     return render(request, 'sickgenes/study.html', context={'study': study})
 
@@ -20,6 +20,22 @@ def add_study(request):
 
     return render(request, 'sickgenes/add_study.html', context={'form': form})
 
+def add_study_cohort(request, study_id):
+    study = get_object_or_404(Study, pk=study_id)
+
+    if request.method == 'POST':
+        form = StudyCohortForm(request.POST)
+        if form.is_valid():
+            study_cohort = form.save(commit=False)
+            study_cohort.study = study
+            study_cohort.save()
+            form.save_m2m
+
+            return redirect(study)
+    else:
+        form = StudyCohortForm()
+
+    return render(request, 'sickgenes/add_study_cohort.html', context={'form': form})
 
 
 def add_genes(request):

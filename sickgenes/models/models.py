@@ -27,7 +27,7 @@ class Study(models.Model):
         verbose_name_plural = 'studies'
 
     def get_absolute_url(self):
-        return reverse('sickgenes:study', kwargs={'pk': self.pk})
+        return reverse('sickgenes:study', kwargs={'study_id': self.pk})
     
     def __str__(self):
         return self.title
