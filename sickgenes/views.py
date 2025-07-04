@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from sickgenes.forms import SearchInitialForm, SearchNoMatchesFormSet, SearchMultipleMatchesFormSet, SearchOneMatchFormSet, prepare_gene_identifiers
 from sickgenes.models import HgncGene, Finding, Study
@@ -14,7 +14,7 @@ def add_study(request):
         form = StudyForm(request.POST)
         if form.is_valid():
             study = form.save()
-            return HttpResponse(f'You created {study}')
+            return redirect(study)
     else:
         form = StudyForm()
 
