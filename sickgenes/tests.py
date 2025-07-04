@@ -1,6 +1,6 @@
 from django.test import TestCase, SimpleTestCase
 from django.core.management import call_command
-from sickgenes.models import HgncGene
+from sickgenes.models import HgncGene, Study
 from io import StringIO
 from django.utils import timezone
 from django.urls import reverse
@@ -130,3 +130,24 @@ class AddGenesView(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'sickgenes/molecule_match.html')
         self.assertContains(response, "Search terms:")
+
+class AddStudyView(TestCase):
+    def test_url_valid_response(self):
+        response = self.client.get('/manage/add_study/')
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_returns_correct_data(self):
+        response = self.client.get(reverse('sickgenes:add_study'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'sickgenes/add_study.html')
+        self.assertContains(response, "Title:")
+
+    def test_post_data_to_add_study(self):
+        response = self.client.post(reverse('sickgenes:add_study'), data={'title': "Study one", 'doi': 'https://doi.org/234243'})
+        studies = Study.objects.filter(title='Study one')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "You created")
+        self.assertEqual(len(studies), 1)
