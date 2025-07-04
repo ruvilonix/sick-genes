@@ -49,7 +49,7 @@ def prepare_gene_identifiers(request, model):
         
     Returns:
         form_data = {
-            'search_initial_form': <),
+            'search_initial_form': <>,
             'search_no_matches_formset': <>,
             'search_multiple_matches_formset': <>,
             'search_one_match_formset': <>,
@@ -105,14 +105,14 @@ def process_search_forms(
         # Get newly submitted search terms
         search_terms = search_initial_form.cleaned_data['search_terms']
         for form in search_no_matches_formset:
-            if form.cleaned_data.get('search_term'):
+            if form.cleaned_data.get('search_term') and not form.cleaned_data.get('delete'):
                 search_terms.add(form.cleaned_data['search_term'])
 
         # Process selections from multiple_matches forms
         selections_from_multiple_matches_formset = []
         for form in search_multiple_matches_formset:
             search_term = form.cleaned_data.get('search_term')
-            if not search_term:
+            if not search_term or form.cleaned_data.get('delete'):
                 continue
 
             if form.cleaned_data.get('item_id'):
@@ -155,7 +155,7 @@ def process_search_forms(
         final_one_match_data = {}
         # 1. Add items from the already submitted one_match_formset
         for form in search_one_match_formset:
-            if form.cleaned_data.get('search_term'):
+            if form.cleaned_data.get('search_term') and not form.cleaned_data.get('delete'):
                 # We use the cleaned_data directly as it's already a dictionary
                 # in the correct format.
                 item_id = form.cleaned_data['item_id']
