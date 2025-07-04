@@ -9,5 +9,24 @@
 {% if study.s4me_url %}<p>S4ME URL: {{ study.s4me_url }}</p>{% endif %}
 {% if study.preprint %}<p>Preprint</p>{% endif %}
 
+<hr>
+<h2>Cohorts in this study</h2>
+{% for study_cohort in study.study_cohorts.all %}
+<div><b>Disease: </b>
+    {% for disease_tag in study_cohort.disease_tags.all %}
+    {{ disease_tag }}
+    {% if not forloop.last %}, {% endif %}
+    {% endfor %}
+</div>
+<div><b>Control: </b>
+    {% for control_tag in study_cohort.control_tags.all %}
+    {{ control_tag }}
+    {% if not forloop.last %}, {% endif %}
+    {% endfor %}
+</div>
+{% endfor %}
+
+
+
 
 {% endblock %}

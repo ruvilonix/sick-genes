@@ -39,13 +39,13 @@ class Disease(models.Model):
         return self.name
     
 class StudyCohort(models.Model):
-    study = models.ForeignKey(Study, on_delete=models.CASCADE)
-    disease = models.ManyToManyField(Disease, related_name="disease_study_cohorts")
-    control = models.ManyToManyField(Disease, related_name="control_study_cohorts")
+    study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='study_cohorts')
+    disease_tags = models.ManyToManyField(Disease, related_name="disease_study_cohorts")
+    control_tags = models.ManyToManyField(Disease, related_name="control_study_cohorts")
 
     def __str__(self):
-        disease_names = ", ".join([d.name for d in self.disease.all()])
-        control_names = ", ".join([c.name for c in self.control.all()])
+        disease_names = ", ".join([d.name for d in self.disease_tags.all()])
+        control_names = ", ".join([c.name for c in self.control_tags.all()])
         return f"[{self.study.title[:20]}]... - [{disease_names}]/[{control_names}]"
     
 class Finding(models.Model):

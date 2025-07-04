@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from sickgenes.forms import SearchInitialForm, SearchNoMatchesFormSet, SearchMultipleMatchesFormSet, SearchOneMatchFormSet, prepare_gene_identifiers
-from sickgenes.models import HgncGene, Finding, Study
+from sickgenes.models import HgncGene, Finding, Study, StudyCohort
 from sickgenes.forms import StudyForm, StudyCohortForm
 
 def study(request, study_id):

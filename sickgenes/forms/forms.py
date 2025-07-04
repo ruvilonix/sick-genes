@@ -9,4 +9,4 @@ class StudyForm(forms.ModelForm):
 class StudyCohortForm(forms.ModelForm):
     class Meta:
         model = StudyCohort
-        fields = ['disease', 'control']
+        fields = ['disease_tags', 'control_tags']
