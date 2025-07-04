@@ -175,3 +175,34 @@ class StudyView(TestCase):
         self.assertContains(response, "Example study")
         self.assertContains(response, "ME/CFS")
         self.assertContains(response, "Healthy")
+
+class AddStudyCohortView(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.study = Study.objects.create(title="Example study", doi="https://doi.org/fdfdsa")
+        cls.disease_mecfs = Disease.objects.create(name="ME/CFS")
+        cls.disease_healthy = Disease.objects.create(name="Healthy")
+        cls.disease_diabetes = Disease.objects.create(name="Diabetes")
+
+    def test_url_valid_response(self):
+        response = self.client.get(f'/manage/add_study_cohort/{self.study.id}/')
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_returns_correct_data(self):
+        response = self.client.get(reverse('sickgenes:add_study_cohort', args=(self.study.id,)))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'sickgenes/add_study_cohort.html')
+        self.assertContains(response, "Disease tags:")
+
+    def test_post_data_to_add_study_cohort(self):
+        post_data = {
+            'disease_tags': [self.disease_mecfs.id, self.disease_diabetes.id],
+            'control_tags': [self.disease_healthy.id],
+        }
+        response = self.client.post(reverse('sickgenes:add_study_cohort', args=(self.study.id,)), data=post_data)
+        study_cohorts_for_study = StudyCohort.objects.filter(study=self.study)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(study_cohorts_for_study.count(), 1)
