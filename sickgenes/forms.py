@@ -41,6 +41,40 @@ class SearchOneMatchForm(forms.Form):
 
 SearchOneMatchFormSet = formset_factory(SearchOneMatchForm, extra=0)
 
+def prepare_gene_identifiers(request, model):
+    """Prepare forms/formsets for retrieving IDs for items (genes) from a list of search terms
+    
+    Args: 
+        request, model
+        
+    Returns:
+        form_data = {
+            'search_initial_form': <),
+            'search_no_matches_formset': <>,
+            'search_multiple_matches_formset': <>,
+            'search_one_match_formset': <>,
+            'items_only_exist_in_one_match': <>,
+        }
+    """
+
+    def create_form(form_class, prefix=None):
+        args = [request.POST] if request.method == 'POST' else []
+        kwargs = {'prefix': prefix} if prefix else {}
+        return form_class(*args, **kwargs)
+    
+    form_data = {
+        'search_initial_form': create_form(SearchInitialForm),
+        'search_no_matches_formset': create_form(SearchNoMatchesFormSet, 'no_matches'),
+        'search_multiple_matches_formset': create_form(SearchMultipleMatchesFormSet, 'multiple_matches'),
+        'search_one_match_formset': create_form(SearchOneMatchFormSet, 'one_match'),
+        'items_only_exist_in_one_match': False,
+    }
+    
+    if request.method == 'POST':
+        form_data = process_search_forms(form_data, model)
+
+    return form_data
+
 def process_search_forms(
             form_data,
             model,
