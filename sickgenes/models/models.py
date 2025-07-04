@@ -62,4 +62,4 @@ class Finding(models.Model):
         ]
 
     def __str__(self):
-        return f"[{self.study_cohort.study.title[:20]}]... - {self.molecule}"
+        return f"[{self.study_cohort.study.title[:20]}]... - {self.hgnc_gene}"

@@ -5,6 +5,10 @@
     {{ search_multiple_matches_formset.management_form }}
     {{ search_one_match_formset.management_form }}
 
+    {% if items_only_exist_in_one_match and view_type == 'insert' %}
+    Matches found for all search terms! <input type="submit" name="confirm_insert" value="Insert genes into database">
+    {% endif %}
+    
     <table>
         {% for form in search_no_matches_formset %}
         <tr>
@@ -25,5 +29,5 @@
         {% endfor %}
     </table>
 
-    <input type="submit" value="Submit">
+    <input type="submit" name="find_matches" value="Submit">
 </form>
