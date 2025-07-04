@@ -148,6 +148,5 @@ class AddStudyView(TestCase):
         response = self.client.post(reverse('sickgenes:add_study'), data={'title': "Study one", 'doi': 'https://doi.org/234243'})
         studies = Study.objects.filter(title='Study one')
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "You created")
+        self.assertEqual(response.status_code, 302)
         self.assertEqual(len(studies), 1)
