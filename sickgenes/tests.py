@@ -1,6 +1,6 @@
 from django.test import TestCase, SimpleTestCase
 from django.core.management import call_command
-from sickgenes.models import HgncGene, Study
+from sickgenes.models import HgncGene, Study, Disease, StudyCohort
 from io import StringIO
 from django.utils import timezone
 from django.urls import reverse
@@ -150,3 +150,28 @@ class AddStudyView(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(len(studies), 1)
+
+class StudyView(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        study = Study.objects.create(title="Example study", doi="https://doi.org/fdfdsa")
+        disease = Disease.objects.create(name="ME/CFS")
+        control = Disease.objects.create(name="Healthy")
+        study_cohort = StudyCohort.objects.create(study=study)
+        study_cohort.disease_tags.add(disease)
+        study_cohort.control_tags.add(control)
+        cls.study_id = study.id
+
+    def test_url_valid_response(self):
+        response = self.client.get(f'/study/{self.study_id}/')
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_returns_correct_data(self):
+        response = self.client.get(reverse('sickgenes:study', args=(self.study_id,)))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'sickgenes/study.html')
+        self.assertContains(response, "Example study")
+        self.assertContains(response, "ME/CFS")
+        self.assertContains(response, "Healthy")
