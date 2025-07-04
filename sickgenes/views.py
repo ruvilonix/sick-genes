@@ -7,7 +7,6 @@ def add_genes(request):
     context = prepare_gene_identifiers(request, HgncGene)
     context |= {'view_type': 'insert'}
 
-    # TODO If "insert" button is pressed and context['items_only_exist_in_one_match'] is True, insert into database 
     if ('confirm_insert' in request.POST and context['items_only_exist_in_one_match']):
         search_one_match_formset = context['search_one_match_formset']
         findings_to_insert = []
