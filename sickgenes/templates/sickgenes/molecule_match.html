@@ -1,3 +1,7 @@
+{% extends 'sickgenes/base.html' %}
+
+{% block content %}
+
 <form action="" method="POST">
     {% csrf_token %}
     {{ search_initial_form }}
@@ -31,3 +35,5 @@
 
     <input type="submit" name="find_matches" value="Submit">
 </form>
+
+{% endblock %}
