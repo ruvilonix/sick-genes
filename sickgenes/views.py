@@ -1,6 +1,21 @@
 from django.shortcuts import render
+from django.http import HttpResponse
 from sickgenes.forms import SearchInitialForm, SearchNoMatchesFormSet, SearchMultipleMatchesFormSet, SearchOneMatchFormSet, prepare_gene_identifiers
 from sickgenes.models import HgncGene, Finding
+from sickgenes.forms import StudyForm
+
+def add_study(request):
+    if request.method == 'POST':
+        form = StudyForm(request.POST)
+        if form.is_valid():
+            study = form.save()
+            return HttpResponse(f'You created {study}')
+    else:
+        form = StudyForm()
+
+    return render(request, 'sickgenes/add_study.html', context={'form': form})
+
+
 
 def add_genes(request):
     

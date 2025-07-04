@@ -1,7 +1,8 @@
 from django.urls import path
-from sickgenes.views import add_genes
+from . import views
 
 app_name = 'sickgenes'
 urlpatterns = [
-    path('manage/add_genes/', add_genes, name="add_genes"),
+    path('manage/add_genes/', views.add_genes, name="add_genes"),
+    path('manage/add_study/', views.add_study, name="add_study"),
 ]
