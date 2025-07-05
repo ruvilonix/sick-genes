@@ -12,21 +12,31 @@
 <hr>
 <h2>Cohorts in this study</h2>
 {% for study_cohort in study.study_cohorts.all %}
-<div><b>Disease: </b>
-    {% for disease_tag in study_cohort.disease_tags.all %}
-    {{ disease_tag }}
-    {% if not forloop.last %}, {% endif %}
+    <div><b>Disease: </b>
+        {% for disease_tag in study_cohort.disease_tags.all %}
+        {{ disease_tag }}
+        {% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </div>
+    <div><b>Control: </b>
+        {% for control_tag in study_cohort.control_tags.all %}
+        {{ control_tag }}
+        {% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </div>
+
+    <h3>Gene Variation Findings</h3>
+    {% for finding in study_cohort.variation_gene_findings %}
+    {{ finding.hgnc_gene }}
     {% endfor %}
-</div>
-<div><b>Control: </b>
-    {% for control_tag in study_cohort.control_tags.all %}
-    {{ control_tag }}
-    {% if not forloop.last %}, {% endif %}
+
+    <h3>Gene Abundance Findings</h3>
+    {% for finding in study_cohort.abundance_gene_findings %}
+    {{ finding.hgnc_gene }}
     {% endfor %}
-</div>
+
+
 {% endfor %}
-
-
 
 
 {% endblock %}

@@ -49,8 +49,8 @@ class StudyCohort(models.Model):
         return f"[{self.study.title[:20]}]... - [{disease_names}]/[{control_names}]"
     
 class GeneFindingType(models.TextChoices):
-    VARIATION = "V", _("Genetic variation")
-    ABUNDANCE = "A", _("Molecular abundance")
+    VARIATION = "V", "Genetic variation"
+    ABUNDANCE = "A", "Molecular abundance"
     
 class GeneFinding(models.Model):
     study_cohort = models.ForeignKey(StudyCohort, on_delete=models.CASCADE, related_name="gene_findings")

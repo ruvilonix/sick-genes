@@ -1,12 +1,30 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from sickgenes.forms import prepare_gene_identifiers
-from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort
+from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, GeneFindingType
 from sickgenes.forms import StudyForm, StudyCohortForm
 from django.db import transaction
+from django.db.models import Prefetch
 
 def study(request, study_id):
-    study = get_object_or_404(Study, pk=study_id)
+    study = get_object_or_404(
+        Study.objects.prefetch_related(
+            'study_cohorts',
+            'study_cohorts__disease_tags',
+            'study_cohorts__control_tags',
+            Prefetch(
+                'study_cohorts__gene_findings',
+                queryset=GeneFinding.objects.filter(type=GeneFindingType.ABUNDANCE),
+                to_attr='abundance_gene_findings'
+            ),
+            Prefetch(
+                'study_cohorts__gene_findings',
+                queryset=GeneFinding.objects.filter(type=GeneFindingType.VARIATION),
+                to_attr='variation_gene_findings'
+            ),
+        ),
+        pk=study_id
+    )
 
     return render(request, 'sickgenes/study.html', context={'study': study})
 
@@ -55,8 +73,6 @@ def add_genes(request, study_cohort_id, gene_finding_type):
                     type=gene_finding_type,
                 )
             )
-
-        print(findings_to_insert[0].type)
 
 
         GeneFinding.objects.bulk_create(findings_to_insert, ignore_conflicts=True)
