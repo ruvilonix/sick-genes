@@ -129,12 +129,12 @@ class AddGenesView(TestCase):
         cls.study_cohort.control_tags.add(control)
 
     def test_url_valid_response(self):
-        response = self.client.get(f'/manage/add_genes/{self.study.id}/GA/')
+        response = self.client.get(f'/manage/add_gene_findings/{self.study.id}/GA/')
 
         self.assertEqual(response.status_code, 200)
 
     def test_view_returns_correct_data(self):
-        response = self.client.get(reverse('sickgenes:add_genes', args=(self.study.id,"GA")))
+        response = self.client.get(reverse('sickgenes:add_gene_findings', args=(self.study.id,"GA")))
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'sickgenes/molecule_match.html')

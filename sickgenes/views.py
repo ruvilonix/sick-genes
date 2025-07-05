@@ -26,7 +26,7 @@ def study(request, study_id):
         pk=study_id
     )
 
-    return render(request, 'sickgenes/study.html', context={'study': study})
+    return render(request, 'sickgenes/study.html', context={'study': study, 'gene_finding_type': GeneFindingType})
 
 def add_study(request):
     if request.method == 'POST':
@@ -57,7 +57,7 @@ def add_study_cohort(request, study_id):
     return render(request, 'sickgenes/add_study_cohort.html', context={'form': form})
 
 
-def add_genes(request, study_cohort_id, gene_finding_type):
+def add_gene_findings(request, study_cohort_id, gene_finding_type):
     
     context = prepare_gene_identifiers(request, HgncGene)
     context |= {'view_type': 'insert'}
@@ -76,6 +76,9 @@ def add_genes(request, study_cohort_id, gene_finding_type):
 
 
         GeneFinding.objects.bulk_create(findings_to_insert, ignore_conflicts=True)
+
+        study = Study.objects.get(study_cohorts__id=study_cohort_id)
+        return redirect(study)
 
     return render(request, 'sickgenes/molecule_match.html', context)
 
