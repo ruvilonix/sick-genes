@@ -53,7 +53,7 @@ class GeneFindingType(models.TextChoices):
     ABUNDANCE = "A", _("Molecular abundance")
     
 class GeneFinding(models.Model):
-    study_cohort = models.ForeignKey(StudyCohort, on_delete=models.CASCADE)
+    study_cohort = models.ForeignKey(StudyCohort, on_delete=models.CASCADE, related_name="gene_findings")
     hgnc_gene = models.ForeignKey('HgncGene', on_delete=models.PROTECT, null=True, default=None)
     type = models.CharField(max_length=1, choices=GeneFindingType.choices, default=None, null=True)
 
