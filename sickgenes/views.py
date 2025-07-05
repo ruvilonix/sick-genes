@@ -1,8 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
-from sickgenes.forms import SearchInitialForm, SearchNoMatchesFormSet, SearchMultipleMatchesFormSet, SearchOneMatchFormSet, prepare_gene_identifiers
-from sickgenes.models import HgncGene, Finding, Study, StudyCohort
+from sickgenes.forms import prepare_gene_identifiers
+from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort
 from sickgenes.forms import StudyForm, StudyCohortForm
+from django.db import transaction
 
 def study(request, study_id):
     study = get_object_or_404(Study, pk=study_id)
@@ -38,7 +39,7 @@ def add_study_cohort(request, study_id):
     return render(request, 'sickgenes/add_study_cohort.html', context={'form': form})
 
 
-def add_genes(request):
+def add_genes(request, study_cohort_id, gene_finding_type):
     
     context = prepare_gene_identifiers(request, HgncGene)
     context |= {'view_type': 'insert'}
@@ -47,9 +48,18 @@ def add_genes(request):
         search_one_match_formset = context['search_one_match_formset']
         findings_to_insert = []
         for form in search_one_match_formset:
-            findings_to_insert.append(Finding(study_cohort_id=1, hgnc_gene_id=form['item_id'].value()))
+            findings_to_insert.append(
+                GeneFinding(
+                    study_cohort_id=study_cohort_id,
+                    hgnc_gene_id=form['item_id'].value(),
+                    type=gene_finding_type,
+                )
+            )
 
-        Finding.objects.bulk_create(findings_to_insert)
+        print(findings_to_insert[0].type)
+
+
+        GeneFinding.objects.bulk_create(findings_to_insert, ignore_conflicts=True)
 
     return render(request, 'sickgenes/molecule_match.html', context)
 

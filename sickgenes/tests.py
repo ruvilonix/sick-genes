@@ -118,14 +118,23 @@ class FindMatchingHgncGenesTests(TestCase):
         search_results = self.search_genes(['item, comma'])
         self.assertEqual(search_results['one_match'][0]['item'], self.genes[1])
 
-class AddGenesView(SimpleTestCase):
+class AddGenesView(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.study = Study.objects.create(title="Example study", doi="https://doi.org/fdfdsa")
+        disease = Disease.objects.create(name="ME/CFS")
+        control = Disease.objects.create(name="Healthy")
+        cls.study_cohort = StudyCohort.objects.create(study=cls.study)
+        cls.study_cohort.disease_tags.add(disease)
+        cls.study_cohort.control_tags.add(control)
+
     def test_url_valid_response(self):
-        response = self.client.get('/manage/add_genes/')
+        response = self.client.get(f'/manage/add_genes/{self.study.id}/GA/')
 
         self.assertEqual(response.status_code, 200)
 
     def test_view_returns_correct_data(self):
-        response = self.client.get(reverse('sickgenes:add_genes'))
+        response = self.client.get(reverse('sickgenes:add_genes', args=(self.study.id,"GA")))
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'sickgenes/molecule_match.html')
