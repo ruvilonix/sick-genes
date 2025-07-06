@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Study, GeneFinding, StudyCohort, Disease, HgncGene
+from .models import Study, GeneFinding, StudyCohort, Disease, HgncGene, HmdbMetabolite
 
 class ReadOnlyAdminMixin:
     def has_add_permission(self, request, obj=None):
@@ -24,3 +24,6 @@ admin.site.register(Disease)
 class HgncGeneAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
     search_fields = ['hgnc_id', 'symbol', 'name']
 
+@admin.register(HmdbMetabolite)
+class HgncGeneAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+    search_fields = ['accession', 'name']
