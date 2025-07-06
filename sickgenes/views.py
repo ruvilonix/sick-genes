@@ -48,7 +48,7 @@ def add_study_cohort(request, study_id):
             study_cohort = form.save(commit=False)
             study_cohort.study = study
             study_cohort.save()
-            form.save_m2m
+            form.save_m2m()
 
             return redirect(study)
     else:
