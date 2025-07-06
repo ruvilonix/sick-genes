@@ -215,3 +215,10 @@ class AddStudyCohortView(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(study_cohorts_for_study.count(), 1)
+
+        new_study_cohort = study_cohorts_for_study.first()
+        saved_disease_tag_ids = [tag.id for tag in new_study_cohort.disease_tags.all()]
+        saved_control_tag_ids = [tag.id for tag in new_study_cohort.control_tags.all()]
+
+        self.assertSetEqual(set(saved_disease_tag_ids), set(post_data['disease_tags']))
+        self.assertSetEqual(set(saved_control_tag_ids), set(post_data['control_tags']))
