@@ -24,6 +24,9 @@ class HgncGene(models.Model):
 
     datetime_updated = models.DateTimeField(null=True)
 
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
     objects = HgncGeneManager()
 
     class Meta:
