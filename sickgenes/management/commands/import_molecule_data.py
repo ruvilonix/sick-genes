@@ -16,14 +16,14 @@ BASE_DIR = settings.BASE_DIR
 
 HGNC_DATA_PATH = 'https://storage.googleapis.com/public-download-files/hgnc/json/json/non_alt_loci_set.json'
 
-HMDB_DATA_PATH = os.path.join(BASE_DIR, 'sickgenes/approved_data/hmdb_metabolites.zip')
+HMDB_DATA_PATH = os.path.join(BASE_DIR, 'approved_data/hmdb_metabolites.zip')
 HMDB_XML_NAME = 'hmdb_metabolites.xml'
 
 # Small file for testing:
 #HGNC_DATA_PATH = 'https://storage.googleapis.com/public-download-files/hgnc/json/json/locus_types/T_cell_receptor_gene.json'
 
 # Small file for testing:
-#HMDB_DATA_PATH = os.path.join(BASE_DIR, 'sickgenes/approved_data/urine_metabolites.zip')
+#HMDB_DATA_PATH = os.path.join(BASE_DIR, 'approved_data/urine_metabolites.zip')
 #HMDB_XML_NAME = 'urine_metabolites.xml'
 
 @transaction.atomic
@@ -105,7 +105,7 @@ class Command(BaseCommand):
                 if use_test_data:
                     data_path = os.path.join(
                         BASE_DIR,
-                        'sickgenes/approved_data/sample_data/sample_hgnc.json',
+                        'approved_data/sample_data/sample_hgnc.json',
                     )
                     if not os.path.exists(data_path):
                         raise CommandError(f"Test data file not found: {data_path}")
