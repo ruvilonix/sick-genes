@@ -1,6 +1,6 @@
 from django.test import TestCase, SimpleTestCase
 from django.core.management import call_command
-from sickgenes.models import HgncGene, Study, Disease, StudyCohort
+from sickgenes.models import HgncGene, Study, Disease, StudyCohort, HmdbMetabolite
 from io import StringIO
 from django.utils import timezone
 from django.urls import reverse
@@ -40,8 +40,8 @@ class ImportHgncTest(TestCase):
     def test_datetime_field_is_recent(self):
         gene = HgncGene.objects.get(hgnc_id='HGNC:5')
 
-        self.assertGreaterEqual(gene.datetime_updated, self.start_time)
-        self.assertLessEqual(gene.datetime_updated, self.end_time)
+        self.assertGreaterEqual(gene.created_at, self.start_time)
+        self.assertLessEqual(gene.created_at, self.end_time)
 
     def test_update_or_create_behavior(self):
         initial_count = HgncGene.objects.count()
@@ -50,6 +50,75 @@ class ImportHgncTest(TestCase):
         call_command('import_molecule_data', 'hgnc', test=True, stdout=out)
 
         self.assertEqual(HgncGene.objects.count(), initial_count)
+
+class ImportHmdbTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.out = StringIO()
+        cls.start_time = timezone.now()
+        call_command('import_molecule_data', 'hmdb', test=True, stdout=cls.out)
+        cls.end_time = timezone.now()
+
+    def test_import_hmdb_success_message(self):
+        self.assertIn('HMDB data successfully imported', self.out.getvalue())
+
+    def test_hmdb_importer_imports_all_items_from_sample_data(self):
+        molecules = HmdbMetabolite.objects.all()
+        # You'll need to adjust this count based on your actual sample HMDB test data
+        self.assertEqual(molecules.count(), 3) 
+
+    def test_long_iupac_name_does_not_save(self):
+        molecule = HmdbMetabolite.objects.get(accession='HMDB0000002')
+        self.assertEqual(molecule.iupac_name, None)
+
+    def test_all_hmdb_fields_are_saved(self):
+        molecule = HmdbMetabolite.objects.get(accession='HMDB0000005')
+
+        self.assertEqual(molecule.name, '2-Ketobutyric acid')
+        self.assertEqual(molecule.cas_registry_number, '600-18-0')
+        self.assertEqual(molecule.drugbank_id, 'DB04553')
+        self.assertEqual(molecule.foodb_id, 'FDB030356')
+        self.assertEqual(molecule.knapsack_id, 'C00019675')
+        self.assertEqual(molecule.biocyc_id, '2-OXOBUTANOATE')
+        self.assertEqual(molecule.wikipedia_id, 'Alpha-Ketobutyric_acid')
+        self.assertEqual(molecule.bigg_id, 33889)
+        self.assertEqual(molecule.pubchem_compound_id, 58)
+        self.assertEqual(molecule.chemspider_id, 57)
+        self.assertEqual(molecule.chebi_id, 30831)
+        self.assertEqual(molecule.secondary_accessions, ['HMDB00005', 'HMDB0006544', 'HMDB06544'])
+        self.assertEqual(molecule.synonyms, [
+            '2-Ketobutanoic acid', '2-Oxobutyric acid', '3-Methyl pyruvic acid',
+            'alpha-Ketobutyrate', 'alpha-Ketobutyric acid', 'alpha-oxo-N-Butyric acid',
+            '2-Oxobutyrate', '2-Oxobutanoic acid', '2-Ketobutanoate', '3-Methyl pyruvate',
+            'a-Ketobutyrate', 'a-Ketobutyric acid', 'Α-ketobutyrate', 'Α-ketobutyric acid',
+            'a-oxo-N-Butyrate', 'a-oxo-N-Butyric acid', 'alpha-oxo-N-Butyrate',
+            'Α-oxo-N-butyrate', 'Α-oxo-N-butyric acid', '2-Oxobutanoate',
+            '2-Ketobutyrate', '2-oxo-Butanoate', '2-oxo-Butanoic acid',
+            '2-oxo-Butyrate', '2-oxo-Butyric acid', '2-oxo-N-Butyrate',
+            '2-oxo-N-Butyric acid', '3-Methylpyruvate', '3-Methylpyruvic acid',
+            'a-Keto-N-butyrate', 'a-Keto-N-butyric acid', 'a-Oxobutyrate',
+            'a-Oxobutyric acid', 'alpha-Keto-N-butyrate', 'alpha-Keto-N-butyric acid',
+            'alpha-Ketobutric acid', 'alpha-Oxobutyrate', 'alpha-Oxobutyric acid',
+            'Methyl-pyruvate', 'Methyl-pyruvic acid', 'Propionyl-formate',
+            'Propionyl-formic acid', 'alpha-Ketobutyric acid, sodium salt',
+            '2-Ketobutyric acid'
+        ])
+        self.assertEqual(molecule.iupac_name, '2-oxobutanoic acid')
+        self.assertEqual(molecule.traditional_iupac, '2-oxobutanoic acid')
+
+    def test_datetime_field_is_recent(self):
+        molecule = HmdbMetabolite.objects.get(accession='HMDB0000005')
+
+        self.assertGreaterEqual(molecule.created_at, self.start_time)
+        self.assertLessEqual(molecule.created_at, self.end_time)
+
+    def test_update_or_create_behavior(self):
+        initial_count = HmdbMetabolite.objects.count()
+
+        out = StringIO()
+        call_command('import_molecule_data', 'hmdb', test=True, stdout=out)
+
+        self.assertEqual(HmdbMetabolite.objects.count(), initial_count)
 
 
 class FindMatchingHgncGenesTests(TestCase):

@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from sickgenes.models import HgncGene
+from sickgenes.models import HgncGene, HmdbMetabolite
 import pandas as pd
 from django.utils import timezone
 from django.db import transaction
@@ -51,7 +51,6 @@ def update_hgnc_data(hgnc_data_path):
     except Exception as e:
         raise CommandError(f'Failed to retrieve HGNC data: {e}')
     
-    datetime_updated = timezone.now()
     processed_count = 0
     
     for gene_data in hgnc_genes:
@@ -61,8 +60,6 @@ def update_hgnc_data(hgnc_data_path):
                 for field in expected_fields 
                 if field in gene_data
             }
-
-            field_values['datetime_updated'] = datetime_updated
 
             obj, _ = HgncGene.objects.update_or_create(
                 hgnc_id=gene_data['hgnc_id'],
@@ -78,6 +75,98 @@ def update_hgnc_data(hgnc_data_path):
     
     return processed_count
 
+@transaction.atomic
+def update_hmdb_data(hmdb_data_path, hmdb_xml_name):
+    """
+    Updates HmdbMetabolite records from a zipped XML source.
+
+    This function is memory-efficient, using iterparse to process the
+    XML one element at a time.
+
+    Args:
+        hmdb_data_path: Path to the zipped HMDB XML data.
+        hmdb_xml_name: Filename of the XML file within the zip archive.
+
+    Returns:
+        int: The number of metabolite records processed.
+    
+    Raises:
+        CommandError: If the file cannot be read, parsed, or if the
+                      data structure is invalid.
+    """
+    expected_fields = [
+        'accession', 'name', 'cas_registry_number', 'drugbank_id', 'foodb_id', 
+        'knapsack_id', 'biocyc_id', 'wikipedia_id', 'bigg_id', 
+        'pubchem_compound_id', 'chemspider_id', 'chebi_id', 
+        'secondary_accessions', 'synonyms', 'iupac_name', 'traditional_iupac'
+    ]
+    
+    # Maps array fields to the name of their child elements in the XML
+    child_names_for_arrays = {
+        'secondary_accessions': 'accession', 
+        'synonyms': 'synonym'
+    }
+
+    processed_count = 0
+    namespace = {'hmdb': 'http://www.hmdb.ca'}
+    metabolite_tag = f"{{{namespace['hmdb']}}}metabolite"
+
+    try:
+        with zipfile.ZipFile(hmdb_data_path, 'r') as zip_file:
+            with zip_file.open(hmdb_xml_name) as xml_file:
+                # Use iterparse for memory-efficient parsing. We only care about the
+                # 'end' event for each 'metabolite' element.
+                for event, elem in ET.iterparse(xml_file, events=("end",)):
+                    if elem.tag == metabolite_tag:
+                        field_values = {}
+
+                        # Extract data for all expected fields from the XML element
+                        for field in expected_fields:
+                            # Handle array fields (e.g., synonyms)
+                            if field in child_names_for_arrays:
+                                values = []
+                                parent_element = elem.find(f"hmdb:{field}", namespace)
+                                if parent_element is not None:
+                                    child_tag = child_names_for_arrays[field]
+                                    for child in parent_element.findall(f"hmdb:{child_tag}", namespace):
+                                        if child.text:
+                                            values.append(child.text) if len(child.text) <= 255 else None
+                                field_values[field] = values
+                            # Handle simple text fields
+                            else:
+                                child = elem.find(f"hmdb:{field}", namespace)
+                                if child is not None and child.text:
+                                    field_values[field] = child.text if len(child.text) <= 255 else None
+
+                        # The primary accession number is required to create a record
+                        primary_accession = field_values.get('accession')
+                        if not primary_accession:
+                            continue
+                        
+                        # Use the extracted accession as the primary key for lookup
+                        # and update the record with all other extracted values.
+                        obj, _ = HmdbMetabolite.objects.update_or_create(
+                            accession=primary_accession,
+                            defaults=field_values
+                        )
+                        processed_count += 1
+                        
+                        # Clear the processed element from memory to keep usage low
+                        elem.clear()
+
+    except FileNotFoundError:
+        raise CommandError(f'HMDB data file not found at: {hmdb_data_path}')
+    except (zipfile.BadZipFile, KeyError) as e:
+        raise CommandError(f"Error reading zip or XML file '{hmdb_xml_name}': {e}")
+    except ET.ParseError as e:
+        raise CommandError(f'Failed to parse XML file: {e}')
+    except Exception as e:
+        # Catch any other unexpected errors during processing
+        raise CommandError(f'An error occurred while processing HMDB data: {e}')
+
+    return processed_count
+    
+
 class Command(BaseCommand):
     help = 'Imports molecular data from specified database'
 
@@ -85,7 +174,7 @@ class Command(BaseCommand):
         parser.add_argument(
             'database', 
             type=str, 
-            choices=['hgnc'],
+            choices=['hgnc', 'hmdb'],
             help="Which database to import from"
         )
         
@@ -99,29 +188,53 @@ class Command(BaseCommand):
         database_type = kwargs['database']
         use_test_data = kwargs['test']
         
-        if kwargs['database'] == 'hgnc':
 
-            if database_type == 'hgnc':
-                if use_test_data:
-                    data_path = os.path.join(
-                        BASE_DIR,
-                        'approved_data/sample_data/sample_hgnc.json',
+        if database_type == 'hgnc':
+            if use_test_data:
+                data_path = os.path.join(
+                    BASE_DIR,
+                    'approved_data/sample_data/sample_hgnc.json',
+                )
+                if not os.path.exists(data_path):
+                    raise CommandError(f"Test data file not found: {data_path}")
+            else:
+                data_path = HGNC_DATA_PATH
+
+            try:
+                processed_count = update_hgnc_data(data_path)
+
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f'HGNC data successfully imported. '
+                        f'Processed {processed_count} records.'
                     )
-                    if not os.path.exists(data_path):
-                        raise CommandError(f"Test data file not found: {data_path}")
-                else:
-                    data_path = HGNC_DATA_PATH
+                )
+            except CommandError:
+                raise
+            except Exception as e:
+                raise CommandError(f'Unexpected error during HGNC import: {e}')
+            
+        elif database_type == 'hmdb':
+            if use_test_data:
+                data_path = os.path.join(
+                    BASE_DIR,
+                    'approved_data/sample_data/sample_hmdb.zip',
+                )
+                if not os.path.exists(data_path):
+                    raise CommandError(f"Test data file not found: {data_path}")
+            else:
+                data_path = HMDB_DATA_PATH
 
-                try:
-                    processed_count = update_hgnc_data(data_path)
+            try:
+                processed_count = update_hmdb_data(data_path, HMDB_XML_NAME)
 
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            f'HGNC data successfully imported. '
-                            f'Processed {processed_count} records.'
-                        )
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f'HMDB data successfully imported. '
+                        f'Processed {processed_count} records.'
                     )
-                except CommandError:
-                    raise
-                except Exception as e:
-                    raise CommandError(f'Unexpected error during HGNC import: {e}')
+                )
+            except CommandError:
+                raise
+            except Exception as e:
+                raise CommandError(f'Unexpected error during HMDB import: {e}')
