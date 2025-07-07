@@ -21,7 +21,8 @@ class Study(models.Model):
     s4me_url = models.CharField(max_length=300, verbose_name="S4ME URL", null=True, blank=True)
     preprint = models.BooleanField(default=False, verbose_name="Preprint")
 
-    date_added = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         verbose_name_plural = 'studies'
@@ -35,6 +36,9 @@ class Study(models.Model):
 class Disease(models.Model):
     name = models.CharField(max_length=100)
 
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
     def __str__(self):
         return self.name
     
@@ -42,6 +46,9 @@ class StudyCohort(models.Model):
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='study_cohorts')
     disease_tags = models.ManyToManyField(Disease, related_name="disease_study_cohorts")
     control_tags = models.ManyToManyField(Disease, related_name="control_study_cohorts")
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
         disease_names = ", ".join([d.name for d in self.disease_tags.all()])
@@ -56,6 +63,9 @@ class GeneFinding(models.Model):
     study_cohort = models.ForeignKey(StudyCohort, on_delete=models.CASCADE, related_name="gene_findings")
     hgnc_gene = models.ForeignKey('HgncGene', on_delete=models.PROTECT, null=True, default=None)
     type = models.CharField(max_length=1, choices=GeneFindingType.choices, default=None, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         constraints = [
