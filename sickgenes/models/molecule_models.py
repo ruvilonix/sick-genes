@@ -57,8 +57,8 @@ class HmdbMetabolite(models.Model):
     biocyc_id = models.CharField(max_length=55, default=None, null=True)
     wikipedia_id = models.CharField(max_length=100, default=None, null=True)
 
-    iupac_name = models.TextField(default=None, null=True)
-    traditional_iupac = models.TextField(default=None, null=True)
+    iupac_name = models.CharField(default=None, null=True)
+    traditional_iupac = models.CharField(default=None, null=True)
 
     bigg_id = models.IntegerField(default=None, null=True)
     pubchem_compound_id = models.IntegerField(default=None, null=True)
@@ -66,7 +66,7 @@ class HmdbMetabolite(models.Model):
     chebi_id = models.IntegerField(default=None, null=True)
 
     secondary_accessions = ArrayField(models.CharField(max_length=15), default=list)
-    synonyms = ArrayField(models.TextField(), default=list)
+    synonyms = ArrayField(models.CharField(), default=list)
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
