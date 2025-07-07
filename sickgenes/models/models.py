@@ -79,3 +79,18 @@ class GeneFinding(models.Model):
 
     def __str__(self):
         return f"[{self.study_cohort.study.title[:20]}]... - {self.hgnc_gene}"
+    
+class MetaboliteFinding(models.Model):
+    study_cohort = models.ForeignKey(StudyCohort, on_delete=models.CASCADE, related_name="metabolite_findings")
+    hmdb_metabolite = models.ForeignKey('HmdbMetabolite', on_delete=models.PROTECT, null=True, default=None)
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['study_cohort', 'hmdb_metabolite'], name='unique_study_cohort_metabolite_'),
+        ]
+
+    def __str__(self):
+        return f"[{self.study_cohort.study.title[:20]}]... - {self.hmdb_metabolite}"
