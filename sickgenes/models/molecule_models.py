@@ -22,8 +22,6 @@ class HgncGene(models.Model):
     prev_symbol = ArrayField(models.CharField(max_length=25), default=list)
     prev_name = ArrayField(models.CharField(max_length=200), default=list)
 
-    datetime_updated = models.DateTimeField(null=True)
-
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
