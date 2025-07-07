@@ -23,7 +23,9 @@ admin.site.register(Disease)
 @admin.register(HgncGene)
 class HgncGeneAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
     search_fields = ['hgnc_id', 'symbol', 'name']
+    readonly_fields = ['created_at', 'updated_at']
 
 @admin.register(HmdbMetabolite)
-class HgncGeneAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+class HmdbMetaboliteAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
     search_fields = ['accession', 'name']
+    readonly_fields = ['created_at', 'updated_at']
