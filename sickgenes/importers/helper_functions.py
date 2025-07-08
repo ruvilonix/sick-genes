@@ -36,5 +36,4 @@ def get_json_from_source(source_path):
         
 def output_progress(processed_count, stdout):
     if stdout:
-        if processed_count % 100 == 0:
-            stdout.write(f"\rProcessed {processed_count} items", ending='')
+        stdout.write(f"\rProcessed {processed_count} items", ending='')
