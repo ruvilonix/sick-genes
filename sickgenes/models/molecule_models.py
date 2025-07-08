@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex
-from sickgenes.managers import HgncGeneManager
+from sickgenes.managers import HgncGeneManager, HmdbMetaboliteManager
 
 class HgncGene(models.Model):
     hgnc_id = models.CharField(max_length=15, default=None, unique=True)
@@ -68,6 +68,8 @@ class HmdbMetabolite(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    objects = HmdbMetaboliteManager()
 
     class Meta:
         ordering = ['name']

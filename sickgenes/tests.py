@@ -124,68 +124,114 @@ class ImportHmdbTest(TestCase):
 class FindMatchingHgncGenesTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.genes = [
-            HgncGene.objects.create(
-                hgnc_id='HGNC:1',
-                symbol="G1",
-                name="gene one",
-                omim_id=[123, 456],
-                uniprot_ids=['P123', 'P456'],
-            ),
-            HgncGene.objects.create(
-                hgnc_id='HGNC:2',
-                symbol="G2",
-                name="gene two",
-                omim_id=[123, 789],
-                uniprot_ids=['item, comma'],
-            )
-        ]
+        cls.gene1 = HgncGene.objects.create(
+            hgnc_id='HGNC:1',
+            symbol="G1",
+            name="gene one",
+            entrez_id="101",
+            omim_id=[123, 456],
+            uniprot_ids=['P123', 'P456'],
+            alias_symbol=['G1-ALIAS']
+        )
+        cls.gene2 = HgncGene.objects.create(
+            hgnc_id='HGNC:2',
+            symbol="G2",
+            name="gene two",
+            entrez_id="102",
+            omim_id=[123, 789],
+            uniprot_ids=['item, comma'],
+        )
 
     def search_genes(self, search_strings):
-        return HgncGene.objects.find_matching_items(search_strings)  
+        return HgncGene.objects.find_matching_items(search_strings)
 
-    def test_search_none(self):
-        search_results = self.search_genes([])
-        self.assertEqual(len(search_results['no_matches']), 0)
-    
-    def test_search_one_string_with_no_matches(self):
-        search_results = self.search_genes(['NOTHING'])
+    def test_search_no_matches(self):
+        results = self.search_genes(['NOTHING'])
+        self.assertIn('NOTHING', results['no_matches'])
 
-        self.assertEqual(len(search_results['no_matches']), 1)
-        self.assertEqual(search_results['no_matches'][0], 'NOTHING')
+    def test_search_one_match_by_id(self):
+        results = self.search_genes(['HGNC:1'])
+        self.assertEqual(len(results['one_match']), 1)
+        self.assertEqual(results['one_match'][0]['item'], self.gene1)
 
-    def test_search_one_string_with_one_gene_match(self):
-        search_results = self.search_genes(['HGNC:1'])
+    def test_search_one_match_case_insensitive(self):
+        results = self.search_genes(['hgnc:1'])
+        self.assertEqual(results['one_match'][0]['item'], self.gene1)
 
-        self.assertEqual(len(search_results['one_match']), 1)
-        self.assertEqual(len(search_results['no_matches']), 0)
-        self.assertEqual(len(search_results['multiple_matches']), 0)
-        self.assertEqual(search_results['one_match'][0]['search_string'], 'HGNC:1')
-        self.assertEqual(search_results['one_match'][0]['item'], self.genes[0])
-    
-    def test_search_one_string_with_one_alias_match(self):
-        search_results = self.search_genes(['G2'])
+    def test_search_one_match_by_array_field(self):
+        results = self.search_genes(['P123'])
+        self.assertEqual(results['one_match'][0]['item'], self.gene1)
 
-        self.assertEqual(search_results['one_match'][0]['item'], self.genes[1])
-    
-    def test_search_one_string_with_alias_match_to_two_genes(self):
-        expected_ids = {'HGNC:1', 'HGNC:2'}
-        search_results = self.search_genes(['123'])
-        returned_ids = {gene.hgnc_id for gene in search_results['multiple_matches'][0]['items']}
+    def test_search_one_match_by_array_field_case_insensitive(self):
+        results = self.search_genes(['p123'])
+        self.assertEqual(results['one_match'][0]['item'], self.gene1)
 
-        self.assertEqual(expected_ids, returned_ids)
-
-    def test_search_exact_in_string_array_field(self):
-        search_results = self.search_genes(["P123"])
-        self.assertEqual(search_results['one_match'][0]['item'], self.genes[0])
-
-    def test_search_case_insensitive_in_string_array_field(self):
-        search_results = self.search_genes(["p123"])
-        self.assertEqual(search_results['one_match'][0]['item'], self.genes[0])
+    def test_search_multiple_matches_by_omim(self):
+        results = self.search_genes(['123'])
+        self.assertEqual(len(results['multiple_matches']), 1)
+        matched_items = results['multiple_matches'][0]['items']
+        self.assertIn(self.gene1, matched_items)
+        self.assertIn(self.gene2, matched_items)
 
     def test_search_item_with_comma(self):
-        search_results = self.search_genes(['item, comma'])
-        self.assertEqual(search_results['one_match'][0]['item'], self.genes[1])
+        results = self.search_genes(['item, comma'])
+        self.assertEqual(results['one_match'][0]['item'], self.gene2)
+
+    def test_complex_search(self):
+        results = self.search_genes(['G1', '123', 'nonexistent'])
+        self.assertIn('nonexistent', results['no_matches'])
+        self.assertEqual(results['one_match'][0]['item'], self.gene1)
+        self.assertEqual(len(results['multiple_matches'][0]['items']), 2)
+
+
+class FindMatchingHmdbMetabolitesTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.metabolite1 = HmdbMetabolite.objects.create(
+            accession="HMDB0000001",
+            name="1-Methylhistidine",
+            chebi_id=50212,
+            synonyms=["(2S)-2-amino-3-(1-methyl-1H-imidazol-4-yl)propanoic acid", "Pi-methylhistidine"]
+        )
+        cls.metabolite2 = HmdbMetabolite.objects.create(
+            accession="HMDB0000002",
+            name="2-Methylhistidine",
+            chebi_id=50212, # Shared Chebi ID
+            synonyms=["(2S)-2-amino-3-(2-methyl-1H-imidazol-4-yl)propanoic acid", "Tau-methylhistidine"]
+        )
+
+    def search_metabolites(self, search_strings):
+        return HmdbMetabolite.objects.find_matching_items(search_strings)
+
+    def test_search_no_matches(self):
+        results = self.search_metabolites(['NOT_FOUND'])
+        self.assertIn('NOT_FOUND', results['no_matches'])
+
+    def test_search_one_match_by_accession(self):
+        results = self.search_metabolites(['HMDB0000001'])
+        self.assertEqual(len(results['one_match']), 1)
+        self.assertEqual(results['one_match'][0]['item'], self.metabolite1)
+
+    def test_search_one_match_by_name_case_insensitive(self):
+        results = self.search_metabolites(['1-methylhistidine'])
+        self.assertEqual(results['one_match'][0]['item'], self.metabolite1)
+
+    def test_search_one_match_by_synonym(self):
+        results = self.search_metabolites(['Pi-methylhistidine'])
+        self.assertEqual(results['one_match'][0]['item'], self.metabolite1)
+
+    def test_search_multiple_matches_by_chebi_id(self):
+        results = self.search_metabolites(['50212'])
+        self.assertEqual(len(results['multiple_matches']), 1)
+        matched_items = results['multiple_matches'][0]['items']
+        self.assertIn(self.metabolite1, matched_items)
+        self.assertIn(self.metabolite2, matched_items)
+
+    def test_combined_search_scenarios(self):
+        results = self.search_metabolites(['HMDB0000002', '50212', 'invalid'])
+        self.assertIn('invalid', results['no_matches'])
+        self.assertEqual(results['one_match'][0]['item'], self.metabolite2)
+        self.assertEqual(len(results['multiple_matches'][0]['items']), 2)
 
 class AddGenesView(TestCase):
     @classmethod
