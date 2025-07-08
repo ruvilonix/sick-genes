@@ -9,15 +9,11 @@ class BaseMoleculeManager(models.Manager):
     Generic manager to find items by searching across a variety of fields.
     
     Subclasses must define lists of field names to be searched, e.g.:
-    - plain_str_fields
-    - array_str_fields
-    - plain_int_fields
-    - array_int_fields
+    - str_fields
+    - int_fields
     """
-    plain_str_fields = []
-    array_str_fields = []
-    plain_int_fields = []
-    array_int_fields = []
+    str_fields = []
+    int_fields = []
 
     def _build_search_query(self, search_string):
         """
@@ -26,23 +22,14 @@ class BaseMoleculeManager(models.Manager):
         """
         query = Q()
 
-        # Plain string fields use case-insensitive exact match
-        for field in self.plain_str_fields:
+        for field in self.str_fields:
             query |= Q(**{f"{field}__iexact": search_string})
 
-        # Array of string fields use case-insensitive contains match
-        for field in self.array_str_fields:
-            query |= Q(**{f"{field}__icontains": search_string})
-
-        # For integer fields, we first try to convert the search string
         try:
             search_int = int(search_string)
-            for field in self.plain_int_fields:
+            for field in self.int_fields:
                 query |= Q(**{f"{field}": search_int})
-            for field in self.array_int_fields:
-                query |= Q(**{f"{field}__contains": [search_int]})
         except ValueError:
-            # If search_string is not a valid integer, just skip the integer fields
             pass
 
         return query
@@ -50,7 +37,6 @@ class BaseMoleculeManager(models.Manager):
     def find_matching_items(self, search_strings):
         """
         Takes a list of strings and returns a dictionary with search results.
-        (This method remains unchanged)
         """
         search_results = {
             'no_matches': [],
@@ -74,22 +60,21 @@ class BaseMoleculeManager(models.Manager):
 
 class HgncGeneManager(BaseMoleculeManager):
     """ Manager for HgncGene, defines searchable fields. """
-    plain_str_fields = [
-        'hgnc_id', 'symbol', 'name', 'entrez_id', 'ensembl_gene_id', 'vega_id', 'ucsc_id'
+    str_fields = [
+        'hgnc_id', 'symbol', 'name', 'entrez_id', 'ensembl_gene_id', 'vega_id', 'ucsc_id',
+        'ena__value', 'uniprotid__value', 'aliassymbol__value', 'aliasname__value',
+        'prevsymbol__value', 'prevname__value'
     ]
-    array_str_fields = [
-        'ena', 'uniprot_ids', 'alias_symbol', 'alias_name', 'prev_symbol', 'prev_name'
-    ]
-    array_int_fields = ['omim_id']
+    int_fields = ['omimid__value']
 
 
 class HmdbMetaboliteManager(BaseMoleculeManager):
     """ Manager for HmdbMetabolite, defines searchable fields. """
-    plain_str_fields = [
+    str_fields = [
         'accession', 'name', 'cas_registry_number', 'drugbank_id', 'foodb_id',
-        'knapsack_id', 'biocyc_id', 'wikipedia_id', 'iupac_name', 'traditional_iupac'
+        'knapsack_id', 'biocyc_id', 'wikipedia_id', 'iupac_name', 'traditional_iupac',
+        'secondary_accessions__value', 'synonyms__value'
     ]
-    array_str_fields = ['secondary_accessions', 'synonyms']
-    plain_int_fields = [
+    int_fields = [
         'bigg_id', 'pubchem_compound_id', 'chemspider_id', 'chebi_id'
     ]

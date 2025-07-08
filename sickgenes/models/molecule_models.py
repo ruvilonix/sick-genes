@@ -15,7 +15,7 @@ class HgncGene(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
-    objects = HgncGeneManager
+    objects = HgncGeneManager()
 
     class Meta:
         ordering = ['symbol']
@@ -67,7 +67,7 @@ class HmdbMetabolite(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
-    objects = HmdbMetaboliteManager
+    objects = HmdbMetaboliteManager()
 
     class Meta:
         ordering = ['name']
