@@ -29,13 +29,13 @@ class ImportHgncTest(TestCase):
         self.assertEqual(gene.ensembl_gene_id, "ENSG00000121410")
         self.assertEqual(gene.vega_id, "OTTHUMG00000183507")
         self.assertEqual(gene.ucsc_id, "uc002qsd.5")
-        self.assertEqual(gene.ena, ['fake_ena'])
-        self.assertEqual(gene.uniprot_ids, ["P04217"])
-        self.assertEqual(gene.omim_id, [138670])
-        self.assertEqual(gene.alias_symbol, ['fake_alias_symbol'])
-        self.assertEqual(gene.alias_name, ['fake1', 'fake2'])
-        self.assertEqual(gene.prev_name, ['fake_prev_name'])
-        self.assertEqual(gene.prev_symbol, ['fake_prev_symbol', 'string, including comma'])
+        self.assertCountEqual([ena.value for ena in gene.ena_set.all()], ['fake_ena'])
+        self.assertCountEqual([uniprot_id.value for uniprot_id in gene.uniprotid_set.all()], ["P04217"])
+        self.assertCountEqual([omim_id.value for omim_id in gene.omimid_set.all()], [138670])
+        self.assertCountEqual([alias_symbol.value for alias_symbol in gene.aliassymbol_set.all()], ['fake_alias_symbol'])
+        self.assertCountEqual([alias_name.value for alias_name in gene.aliasname_set.all()], ['fake1', 'fake2'])
+        self.assertCountEqual([prev_name.value for prev_name in gene.prevname_set.all()], ['fake_prev_name'])
+        self.assertCountEqual([prev_symbol.value for prev_symbol in gene.prevsymbol_set.all()], ['fake_prev_symbol', 'string, including comma'])
 
     def test_datetime_field_is_recent(self):
         gene = HgncGene.objects.get(hgnc_id='HGNC:5')
@@ -85,8 +85,8 @@ class ImportHmdbTest(TestCase):
         self.assertEqual(molecule.pubchem_compound_id, 58)
         self.assertEqual(molecule.chemspider_id, 57)
         self.assertEqual(molecule.chebi_id, 30831)
-        self.assertEqual(molecule.secondary_accessions, ['HMDB00005', 'HMDB0006544', 'HMDB06544'])
-        self.assertEqual(molecule.synonyms, [
+        self.assertCountEqual([secondary_accession.value for secondary_accession in molecule.secondary_accessions.all()], ['HMDB00005', 'HMDB0006544', 'HMDB06544'])
+        self.assertCountEqual([synonym.value for synonym in molecule.synonyms.all()], [
             '2-Ketobutanoic acid', '2-Oxobutyric acid', '3-Methyl pyruvic acid',
             'alpha-Ketobutyrate', 'alpha-Ketobutyric acid', 'alpha-oxo-N-Butyric acid',
             '2-Oxobutyrate', '2-Oxobutanoic acid', '2-Ketobutanoate', '3-Methyl pyruvate',
