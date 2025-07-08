@@ -33,3 +33,8 @@ def get_json_from_source(source_path):
         
         with open(file_path, 'r', encoding='utf-8') as file:
             return json.load(file)
+        
+def output_progress(processed_count, stdout):
+    if stdout:
+        if processed_count % 100 == 0:
+            stdout.write(f"\rProcessed {processed_count} items", ending='')

@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 from django.db import transaction
 from django.core.management.base import CommandError
 from sickgenes.models import HmdbMetabolite, MetaboliteSynonym, SecondaryAccession
+from .helper_functions import output_progress
 
 RELATED_MODELS = {
     'synonyms': {
@@ -33,7 +34,7 @@ def _get_field_value(element, tag, namespace, cast_type=str, max_len=None):
     return None
 
 @transaction.atomic
-def update_hmdb_data(hmdb_data_path, hmdb_xml_name):
+def update_hmdb_data(hmdb_data_path, hmdb_xml_name, stdout=None):
     """
     Updates HmdbMetabolite records and their related tables from a zipped XML source.
     """
@@ -99,9 +100,13 @@ def update_hmdb_data(hmdb_data_path, hmdb_xml_name):
                         processed_count += 1
                         elem.clear()
 
+                        output_progress(processed_count, stdout)
+
     except (zipfile.BadZipFile, KeyError, ET.ParseError) as e:
         raise CommandError(f'Failed to read or parse HMDB data: {e}')
     except Exception as e:
         raise CommandError(f'An unexpected error occurred while processing HMDB data: {e}')
     
+    stdout.write() if stdout else None
+
     return processed_count

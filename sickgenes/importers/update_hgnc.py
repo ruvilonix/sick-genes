@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.core.management.base import CommandError
 from sickgenes.models import HgncGene, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName
-from .helper_functions import get_json_from_source
+from .helper_functions import get_json_from_source, output_progress
 
 RELATED_MODELS = {
     'ena': Ena,
@@ -14,7 +14,7 @@ RELATED_MODELS = {
 }
 
 @transaction.atomic
-def update_hgnc_data(hgnc_data_path):
+def update_hgnc_data(hgnc_data_path, stdout=None):
     """
     Updates HgncGene records and their related tables from a JSON data source.
     """
@@ -57,5 +57,9 @@ def update_hgnc_data(hgnc_data_path):
                     model_class.objects.bulk_create(items_to_create, ignore_conflicts=True)
         
         processed_count += 1
+
+        output_progress(processed_count, stdout)
+
+    stdout.write() if stdout else None
 
     return processed_count

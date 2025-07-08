@@ -45,7 +45,7 @@ class Command(BaseCommand):
                 data_path = HGNC_DATA_PATH
 
             try:
-                processed_count = update_hgnc_data(data_path)
+                processed_count = update_hgnc_data(data_path, self.stdout)
 
                 self.stdout.write(
                     self.style.SUCCESS(
@@ -70,7 +70,7 @@ class Command(BaseCommand):
                 data_path = HMDB_DATA_PATH
 
             try:
-                processed_count = update_hmdb_data(data_path, HMDB_XML_NAME)
+                processed_count = update_hmdb_data(data_path, HMDB_XML_NAME, self.stdout)
 
                 self.stdout.write(
                     self.style.SUCCESS(
