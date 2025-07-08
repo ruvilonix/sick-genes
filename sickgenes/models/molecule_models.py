@@ -5,7 +5,7 @@ from sickgenes.managers import HgncGeneManager, HmdbMetaboliteManager
 
 
 class HgncGene(models.Model):
-    hgnc_id = models.CharField(max_length=15, unique=True, primary_key=True)
+    hgnc_id = models.CharField(max_length=15, unique=True, null=True, default=None)
     symbol = models.CharField(max_length=30, null=True)
     name = models.CharField(max_length=255, default=None, null=True)
     entrez_id = models.CharField(max_length=15, null=True)
@@ -32,7 +32,7 @@ class BaseGeneAssociation(models.Model):
         unique_together = ('gene', 'value')
 
     def __str__(self):
-        return self.value
+        return str(self.value)
 
 class Ena(BaseGeneAssociation):
     value = models.CharField(max_length=15)
