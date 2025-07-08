@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Study, GeneFinding, StudyCohort, Disease, HgncGene, HmdbMetabolite
+from .models import Study, GeneFinding, StudyCohort, Disease, HgncGene, HmdbMetabolite, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName
 
 class ReadOnlyAdminMixin:
     def has_add_permission(self, request, obj=None):
@@ -20,10 +20,35 @@ admin.site.register(Study)
 admin.site.register(StudyCohort)
 admin.site.register(Disease)
 
+class EnaInline(admin.TabularInline):
+    model = Ena
+class UniprotIdInline(admin.TabularInline):
+    model = UniprotId
+class OmimIdInline(admin.TabularInline):
+    model = OmimId
+class AliasSymbolInline(admin.TabularInline):
+    model = AliasSymbol
+class AliasNameInline(admin.TabularInline):
+    model = AliasName
+class PrevSymbolInline(admin.TabularInline):
+    model = PrevSymbol
+class PrevNameInline(admin.TabularInline):
+    model = PrevName
+
 @admin.register(HgncGene)
 class HgncGeneAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
     search_fields = ['hgnc_id', 'symbol', 'name']
     readonly_fields = ['created_at', 'updated_at']
+
+    inlines = [
+        EnaInline,
+        UniprotIdInline,
+        OmimIdInline,
+        AliasSymbolInline,
+        AliasNameInline,
+        PrevSymbolInline,
+        PrevNameInline,
+    ]
 
 @admin.register(HmdbMetabolite)
 class HmdbMetaboliteAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
