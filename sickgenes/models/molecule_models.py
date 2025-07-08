@@ -25,7 +25,6 @@ class HgncGene(models.Model):
 
 class BaseGeneAssociation(models.Model):
     gene = models.ForeignKey(HgncGene, on_delete=models.CASCADE)
-    value = models.CharField(max_length=255)
 
     class Meta:
         abstract = True
