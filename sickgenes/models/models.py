@@ -3,6 +3,8 @@ from django.db.models import Lookup
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
+import re
 
 @ArrayField.register_lookup
 class ArrayIContains(Lookup):
@@ -15,14 +17,33 @@ class ArrayIContains(Lookup):
         return "%s ILIKE ANY(%s)" % (rhs, lhs), params
 
 class Study(models.Model):
-    title = models.CharField(max_length=300, verbose_name="Title")
-    doi = models.CharField(max_length=100, verbose_name="DOI URL", unique=True)
+    title = models.CharField(max_length=500, verbose_name="Title")
+    doi = models.CharField(max_length=255, verbose_name="DOI URL", unique=True)
     publisher_url = models.CharField(max_length=300, verbose_name="Publisher's URL", null=True, blank=True)
+    authors = models.TextField(blank=True, null=True)
+    publication_date = models.DateField(blank=True, null=True)
+
     s4me_url = models.CharField(max_length=300, verbose_name="S4ME URL", null=True, blank=True)
     preprint = models.BooleanField(default=False, verbose_name="Preprint")
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    def clean(self):
+        super().clean()
+        if self.doi:
+            normalized_doi = self.normalize_doi(self.doi)
+            if not normalized_doi:
+                raise ValidationError({'doi': 'Invalid DOI format.'})
+            self.doi = normalized_doi
+
+    def normalize_doi(self, doi_string):
+        if not doi_string:
+            return ""
+        normalized_doi = re.sub(r'^((?:https?:\/\/)?(?:dx\.)?doi\.org\/)?', '', doi_string.strip(), flags=re.IGNORECASE)
+        if not normalized_doi.startswith('10.'):
+            return None
+        return normalized_doi
 
     class Meta:
         verbose_name_plural = 'studies'
@@ -31,7 +52,7 @@ class Study(models.Model):
         return reverse('sickgenes:study', kwargs={'study_id': self.pk})
     
     def __str__(self):
-        return self.title
+        return self.title if self.title else self.doi
     
 class Disease(models.Model):
     name = models.CharField(max_length=100)
