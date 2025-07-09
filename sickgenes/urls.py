@@ -7,4 +7,5 @@ urlpatterns = [
     path('manage/add_study/', views.add_study, name="add_study"),
     path('study/<int:study_id>/', views.study, name="study"),
     path('manage/add_study_cohort/<int:study_id>/', views.add_study_cohort, name="add_study_cohort"),
+    path('fetch_paper_info/', views.fetch_paper_info, name='fetch_paper_info'),
 ]

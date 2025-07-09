@@ -1,6 +1,44 @@
 <form action="" method="POST">
     {% csrf_token %}
-    {{ form }}
+    
+    {{ form.as_p }}
 
     <input type="submit" value="Add study">
 </form>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        const doiInput = $('#id_doi');
+        const fetchButton = $('<button type="button" id="fetch-doi-btn" style="margin-left: 5px;">Fetch Metadata</button>');
+        doiInput.after(fetchButton);
+
+        fetchButton.on('click', function() {
+            var doi = doiInput.val();
+            if (doi) {
+                $.ajax({
+                    url: "{% url 'sickgenes:fetch_paper_info' %}",
+                    type: "GET",
+                    data: { 'doi': doi },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            $('#id_title').val(response.title || '');
+                            $('#id_authors').val(response.authors || '');
+                            $('#id_publication_date').val(response.publication_date || '');
+                            $('#id_publisher_url').val(response.publisher_url || '');
+                        } else {
+                            alert(response.error); 
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("AJAX error:", status, error);
+                        alert("An error occurred while fetching paper information. Please check the console for details.");
+                    }
+                });
+            } else {
+                alert("Please enter a DOI first.");
+            }
+        });
+    });
+</script>

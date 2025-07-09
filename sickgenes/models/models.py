@@ -32,17 +32,23 @@ class Study(models.Model):
     def clean(self):
         super().clean()
         if self.doi:
-            normalized_doi = self.normalize_doi(self.doi)
+            normalized_doi = self.normalize_doi(self.doi) 
             if not normalized_doi:
                 raise ValidationError({'doi': 'Invalid DOI format.'})
             self.doi = normalized_doi
 
-    def normalize_doi(self, doi_string):
+    @staticmethod
+    def normalize_doi(doi_string):
+        """
+        Cleans a DOI string
+        """
         if not doi_string:
-            return ""
-        normalized_doi = re.sub(r'^((?:https?:\/\/)?(?:dx\.)?doi\.org\/)?', '', doi_string.strip(), flags=re.IGNORECASE)
+            return None
+        normalized_doi = re.sub(r'^(https?:\/\/)?(dx\.)?doi\.org\/', '', doi_string.strip(), flags=re.IGNORECASE)
+        
         if not normalized_doi.startswith('10.'):
             return None
+            
         return normalized_doi
 
     class Meta:
