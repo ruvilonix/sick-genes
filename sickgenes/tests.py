@@ -1,9 +1,16 @@
-from django.test import TestCase, SimpleTestCase
+from django.test import TestCase
 from django.core.management import call_command
 from sickgenes.models import HgncGene, Study, Disease, StudyCohort, HmdbMetabolite
 from io import StringIO
 from django.utils import timezone
 from django.urls import reverse
+from sickgenes.forms import StudyForm
+from .models import (
+    HgncGene, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName,
+    HmdbMetabolite, MetaboliteSynonym, SecondaryAccession
+)
+from unittest.mock import patch, Mock
+import requests
 
 class ImportHgncTest(TestCase):
     @classmethod
@@ -121,11 +128,7 @@ class ImportHmdbTest(TestCase):
         self.assertEqual(HmdbMetabolite.objects.count(), initial_count)
 
 
-from django.test import TestCase
-from .models import (
-    HgncGene, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName,
-    HmdbMetabolite, MetaboliteSynonym, SecondaryAccession
-)
+
 
 class FindMatchingHgncGenesTests(TestCase):
     @classmethod
@@ -468,19 +471,152 @@ class AddStudyView(TestCase):
 
         self.assertEqual(response.status_code, 200)
 
-    def test_view_returns_correct_data(self):
+    def test_add_study_view_get(self):
         response = self.client.get(reverse('sickgenes:add_study'))
-
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'sickgenes/add_study.html')
-        self.assertContains(response, "Title:")
+        self.assertIn('form', response.context)
 
-    def test_post_data_to_add_study(self):
-        response = self.client.post(reverse('sickgenes:add_study'), data={'title': "Study one", 'doi': 'https://doi.org/10.234243'})
-        studies = Study.objects.filter(title='Study one')
-
+    def test_add_study_view_post_success(self):
+        form_data = {
+            'doi': '10.1000/xyz123',
+            'title': 'A Valid Study',
+            'authors': 'Test, Author',
+            'publication_year': 2023,
+        }
+        response = self.client.post(reverse('sickgenes:add_study'), data=form_data)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(len(studies), 1)
+        
+        self.assertTrue(Study.objects.filter(title='A Valid Study').exists())
+        study = Study.objects.get(title='A Valid Study')
+        self.assertRedirects(response, study.get_absolute_url())
+
+    def test_add_study_view_post_invalid(self):
+        form_data = {'title': ''}
+        response = self.client.post(reverse('sickgenes:add_study'), data=form_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'sickgenes/add_study.html')
+        self.assertTrue(response.context['form'].errors)
+
+class StudyFormTest(TestCase):
+
+    def test_form_is_valid_with_all_data(self):
+        form_data = {
+            'doi': '10.1000/xyz123',
+            'title': 'Test Title',
+            'authors': 'Doe, John',
+            'publication_year': 2023,
+            'publication_month': 10,
+            'publication_day': 26,
+            'publisher_url': 'https://example.com',
+            's4me_url': 'https://example.com/s4me',
+            'preprint': False,
+        }
+        form = StudyForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_year_is_required_for_month(self):
+        form_data = {'publication_month': 10}
+        form = StudyForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('publication_month', form.errors)
+
+    def test_month_is_required_for_day(self):
+        form_data = {'publication_day': 26}
+        form = StudyForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('publication_day', form.errors)
+
+    def test_invalid_date_combination(self):
+        form_data = {
+            'publication_year': 2023,
+            'publication_month': 2,
+            'publication_day': 30,
+        }
+        form = StudyForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('publication_day', form.errors)
+
+    def test_clean_publication_fields(self):
+        form_data = {
+            'title': 'Test Title',
+            'authors': 'Doe, John',
+            'publication_year': 0,
+            'publication_month': 0,
+            'publication_day': 0,
+        }
+        form = StudyForm(data=form_data)
+        self.assertTrue(form.is_valid())
+        self.assertIsNone(form.cleaned_data['publication_year'])
+        self.assertIsNone(form.cleaned_data['publication_month'])
+        self.assertIsNone(form.cleaned_data['publication_day'])
+
+class FetchPaperInfoViewTest(TestCase):
+
+    @patch('sickgenes.views.doi_lookup.requests.get')
+    def test_fetch_paper_info_success(self, mock_requests_get):
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'status': 'ok',
+            'message': {
+                'title': ['Test Title from API'],
+                'author': [{'given': 'John', 'family': 'Doe'}],
+                'issued': {'date-parts': [[2023, 10, 26]]},
+                'resource': {'primary': {'URL': 'https://api.example.com'}}
+            }
+        }
+        mock_requests_get.return_value = mock_response
+
+        url = reverse('sickgenes:fetch_paper_info')
+        response = self.client.get(url, {'doi': '10.1000/xyz123'})
+
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertTrue(json_response['success'])
+        self.assertEqual(json_response['title'], 'Test Title from API')
+        self.assertEqual(json_response['authors'], 'Doe, John')
+        self.assertEqual(json_response['publication_year'], 2023)
+        self.assertEqual(json_response['publication_month'], 10)
+        self.assertEqual(json_response['publication_day'], 26)
+        self.assertEqual(json_response['publisher_url'], 'https://api.example.com')
+
+    @patch('sickgenes.views.doi_lookup.requests.get')
+    def test_fetch_paper_info_doi_not_found(self, mock_requests_get):
+        mock_response = Mock()
+        mock_response.status_code = 404
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError
+        mock_requests_get.return_value = mock_response
+
+        url = reverse('sickgenes:fetch_paper_info')
+        response = self.client.get(url, {'doi': '10.1000/notfound'})
+        
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertFalse(json_response['success'])
+        self.assertIn('Failed to connect to API', json_response['error'])
+
+    @patch('sickgenes.views.doi_lookup.requests.get')
+    def test_fetch_paper_info_api_timeout(self, mock_requests_get):
+        # Simulate a timeout
+        mock_requests_get.side_effect = requests.exceptions.Timeout
+
+        url = reverse('sickgenes:fetch_paper_info')
+        response = self.client.get(url, {'doi': '10.1000/timeout'})
+        
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertFalse(json_response['success'])
+        self.assertIn('Failed to connect to API', json_response['error'])
+        
+    def test_fetch_paper_info_missing_doi(self):
+        url = reverse('sickgenes:fetch_paper_info')
+        response = self.client.get(url) # No DOI provided
+        
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertFalse(json_response['success'])
+        self.assertEqual(json_response['error'], 'DOI is missing.')
 
 class StudyView(TestCase):
     @classmethod
