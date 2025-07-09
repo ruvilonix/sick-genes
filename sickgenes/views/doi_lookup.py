@@ -1,17 +1,7 @@
 import requests
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from datetime import datetime
 from sickgenes.models import Study
-import re
-
-def normalize_doi(doi_string):
-        if not doi_string:
-            return ""
-        normalized_doi = re.sub(r'^((?:https?:\/\/)?(?:dx\.)?doi\.org\/)?', '', doi_string.strip(), flags=re.IGNORECASE)
-        if not normalized_doi.startswith('10.'):
-            return None
-        return normalized_doi
 
 @require_GET
 def fetch_paper_info(request):
@@ -19,7 +9,7 @@ def fetch_paper_info(request):
     if not doi:
         return JsonResponse({'success': False, 'error': 'DOI is missing.'})
 
-    normalized_doi = Study.normalize_doi(doi)
+    normalized_doi = Study.normalize_doi(doi) # Use the local normalize_doi function
     if not normalized_doi:
         return JsonResponse({'success': False, 'error': 'Invalid DOI format.'})
 
@@ -32,55 +22,43 @@ def fetch_paper_info(request):
 
         if data and data.get('status') == 'ok' and data.get('message'):
             message = data['message']
-            title = message.get('title', [])[0] if message.get('title') else ''
-            
+            title = message.get('title', [''])[0]
+
             authors_list = []
             if message.get('author'):
                 for author in message['author']:
                     given = author.get('given', '')
                     family = author.get('family', '')
                     if given and family:
-                        authors_list.append(f"{given} {family}")
+                        authors_list.append(f"{family}, {given}")
                     elif family:
                         authors_list.append(family)
                     elif given:
                         authors_list.append(given)
-            authors = ", ".join(authors_list)
+            authors = "; ".join(authors_list)
+            
+            # Extract date parts
+            publication_year, publication_month, publication_day = None, None, None
+            date_info = message.get('issued')
+            if date_info and date_info.get('date-parts'):
+                date_parts = date_info['date-parts'][0]
+                if len(date_parts) >= 1:
+                    publication_year = date_parts[0]
+                if len(date_parts) >= 2:
+                    publication_month = date_parts[1]
+                if len(date_parts) >= 3:
+                    publication_day = date_parts[2]
 
-            publication_date = None
-            if message.get('published-print') and message['published-print'].get('date-parts'):
-                date_parts = message['published-print']['date-parts'][0]
-                try:
-                    if len(date_parts) == 3:
-                        publication_date = datetime(date_parts[0], date_parts[1], date_parts[2]).strftime('%Y-%m-%d')
-                    elif len(date_parts) == 2:
-                        publication_date = datetime(date_parts[0], date_parts[1], 1).strftime('%Y-%m-%d')
-                    elif len(date_parts) == 1:
-                        publication_date = datetime(date_parts[0], 1, 1).strftime('%Y-%m-%d')
-                except ValueError:
-                    publication_date = None
-            elif message.get('issued') and message['issued'].get('date-parts'):
-                 date_parts = message['issued']['date-parts'][0]
-                 try:
-                    if len(date_parts) == 3:
-                        publication_date = datetime(date_parts[0], date_parts[1], date_parts[2]).strftime('%Y-%m-%d')
-                    elif len(date_parts) == 2:
-                        publication_date = datetime(date_parts[0], date_parts[1], 1).strftime('%Y-%m-%d')
-                    elif len(date_parts) == 1:
-                        publication_date = datetime(date_parts[0], 1, 1).strftime('%Y-%m-%d')
-                 except ValueError:
-                    publication_date = None
-
-            publisher_url = None
-            if message.get('resource') and message['resource'].get('primary') and message['resource']['primary'].get('URL'):
-                publisher_url = message['resource']['primary']['URL']
+            publisher_url = message.get("resource", {}).get("primary", {}).get("URL", '')
 
 
             return JsonResponse({
                 'success': True,
                 'title': title,
                 'authors': authors,
-                'publication_date': publication_date,
+                'publication_year': publication_year,
+                'publication_month': publication_month,
+                'publication_day': publication_day,
                 'publisher_url': publisher_url,
             })
         else:

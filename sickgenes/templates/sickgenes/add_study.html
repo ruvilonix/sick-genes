@@ -25,7 +25,9 @@
                         if (response.success) {
                             $('#id_title').val(response.title || '');
                             $('#id_authors').val(response.authors || '');
-                            $('#id_publication_date').val(response.publication_date || '');
+                            $('#id_publication_year').val(response.publication_year || '');
+                            $('#id_publication_month').val(response.publication_month || '');
+                            $('#id_publication_day').val(response.publication_day || '');
                             $('#id_publisher_url').val(response.publisher_url || '');
                         } else {
                             alert(response.error); 
