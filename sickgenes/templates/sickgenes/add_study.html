@@ -1,17 +1,133 @@
 <form action="" method="POST">
     {% csrf_token %}
     
-    {{ form.as_p }}
+    <p>
+        {{ form.doi.label_tag }}
+        {{ form.doi }}
+        <button type="button" id="fetch-doi-btn" style="margin-left: 5px;">Fetch Metadata</button>
+        {% if form.doi.errors %}
+            <ul class="errorlist">
+                {% for error in form.doi.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
+
+    <p>
+        {{ form.title.label_tag }}
+        {{ form.title }}
+        {% if form.title.errors %}
+            <ul class="errorlist">
+                {% for error in form.title.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
+
+    <p>
+        {{ form.authors.label_tag }}
+        {{ form.authors }}
+        {% if form.authors.errors %}
+            <ul class="errorlist">
+                {% for error in form.authors.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
+
+    <p>
+        {{ form.publication_year.label_tag }}
+        {{ form.publication_year }}
+        {% if form.publication_year.errors %}
+            <ul class="errorlist">
+                {% for error in form.publication_year.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
+
+    <p>
+        {{ form.publication_month.label_tag }}
+        {{ form.publication_month }}
+        {% if form.publication_month.errors %}
+            <ul class="errorlist">
+                {% for error in form.publication_month.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
+
+    <p>
+        {{ form.publication_day.label_tag }}
+        {{ form.publication_day }}
+        {% if form.publication_day.errors %}
+            <ul class="errorlist">
+                {% for error in form.publication_day.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
+
+    <p>
+        {{ form.publisher_url.label_tag }}
+        {{ form.publisher_url }}
+        {% if form.publisher_url.errors %}
+            <ul class="errorlist">
+                {% for error in form.publisher_url.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
+
+    <p>
+        {{ form.s4me_url.label_tag }}
+        {{ form.s4me_url }}
+        {% if form.s4me_url.errors %}
+            <ul class="errorlist">
+                {% for error in form.s4me_url.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
+
+    <p>
+        {{ form.preprint.label_tag }}
+        {{ form.preprint }}
+        {% if form.preprint.errors %}
+            <ul class="errorlist">
+                {% for error in form.preprint.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
 
     <input type="submit" value="Add study">
+
+    {# Display non-field errors (e.g., errors related to the form as a whole) #}
+    {% if form.non_field_errors %}
+        <ul class="errorlist">
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
 </form>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function() {
         const doiInput = $('#id_doi');
-        const fetchButton = $('<button type="button" id="fetch-doi-btn" style="margin-left: 5px;">Fetch Metadata</button>');
-        doiInput.after(fetchButton);
+        const fetchButton = $('#fetch-doi-btn'); // Select the hardcoded button
 
         fetchButton.on('click', function() {
             var doi = doiInput.val();
