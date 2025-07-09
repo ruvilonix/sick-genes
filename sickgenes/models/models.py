@@ -22,9 +22,9 @@ class Study(models.Model):
     publisher_url = models.CharField(max_length=300, verbose_name="Publisher's URL", null=True, blank=True)
     authors = models.TextField(blank=True, null=True)
     
-    publication_year = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Year")
-    publication_month = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Month")
-    publication_day = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Day")
+    publication_year = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Publication Year")
+    publication_month = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Publication Month")
+    publication_day = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Publication Day")
 
     s4me_url = models.CharField(max_length=300, verbose_name="S4ME URL", null=True, blank=True)
     preprint = models.BooleanField(default=False, verbose_name="Preprint")
