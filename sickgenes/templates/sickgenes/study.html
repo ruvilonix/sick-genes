@@ -32,14 +32,14 @@
         {% for finding in study_cohort.variation_gene_findings %}
             {{ finding.hgnc_gene }}
         {% empty %}
-            <a href="{% url 'sickgenes:add_gene_findings' study_cohort.id gene_finding_type.VARIATION %}">Add findings</a>
+            <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}?type={{ gene_finding_type.VARIATION }}">Add findings</a>
         {% endfor %}
 
         <h3>Gene Abundance Findings</h3>
         {% for finding in study_cohort.abundance_gene_findings %}
             {{ finding.hgnc_gene }}
         {% empty %}
-            <a href="{% url 'sickgenes:add_gene_findings' study_cohort.id gene_finding_type.ABUNDANCE %}">Add findings</a>
+            <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}?type={{ gene_finding_type.ABUNDANCE }}">Add findings</a>
         {% endfor %}
 
 

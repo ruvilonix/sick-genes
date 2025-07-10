@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
-from sickgenes.forms import prepare_gene_identifiers
-from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, GeneFindingType
+from django.http import HttpResponse, Http404
+from sickgenes.forms import prepare_identifiers
+from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, GeneFindingType, HmdbMetabolite, MetaboliteFinding
 from sickgenes.forms import StudyForm, StudyCohortForm
 from django.db import transaction
 from django.db.models import Prefetch
@@ -56,32 +56,65 @@ def add_study_cohort(request, study_id):
 
     return render(request, 'sickgenes/add_study_cohort.html', context={'form': form})
 
+MODEL_CONFIG = {
+    'gene': {
+        'source_model': HgncGene,
+        'finding_model': GeneFinding,
+        'fk_name': 'hgnc_gene_id' # The foreign key field name on the finding model
+    },
+    'metabolite': {
+        'source_model': HmdbMetabolite,
+        'finding_model': MetaboliteFinding, # Assumed model
+        'fk_name': 'hmdb_metabolite_id'
+    },
+}
 
-def add_gene_findings(request, study_cohort_id, gene_finding_type):
-    
-    context = prepare_gene_identifiers(request, HgncGene)
-    context |= {'view_type': 'insert'}
+def identify_molecules(request, model_type):
+    config = MODEL_CONFIG.get(model_type)
+    if not config:
+        raise Http404(f"Model type '{model_type}' is not supported.")
 
-    if ('confirm_insert' in request.POST and context['items_only_exist_in_one_match']):
+    # Your existing logic for processing the input list
+    # (Assuming prepare_gene_identifiers is renamed to prepare_identifiers)
+    context = prepare_identifiers(request, config['source_model'])
+    context['view_type'] = 'search'
+
+    return render(request, 'sickgenes/molecule_match.html', context)
+
+def insert_findings(request, study_cohort_id, model_type):
+    """
+    Handles finding matches for a list of identifiers and inserting them
+    into a specific study_cohort.
+    """
+    config = MODEL_CONFIG.get(model_type)
+    if not config:
+        raise Http404(f"Model type '{model_type}' is not supported.")
+
+    source_model = config['source_model']
+    finding_model = config['finding_model']
+    fk_name = config['fk_name']
+
+    context = prepare_identifiers(request, source_model)
+    context['view_type'] = 'insert'
+
+    if ('confirm_insert' in request.POST and context.get('items_only_exist_in_one_match')):
         search_one_match_formset = context['search_one_match_formset']
         findings_to_insert = []
         for form in search_one_match_formset:
-            findings_to_insert.append(
-                GeneFinding(
-                    study_cohort_id=study_cohort_id,
-                    hgnc_gene_id=form['item_id'].value(),
-                    type=gene_finding_type,
-                )
-            )
+            instance_data = {
+                'study_cohort_id': study_cohort_id,
+                fk_name: form['item_id'].value(),
+            }
 
+            if model_type == 'gene':
+                gene_finding_type = request.GET.get('type')
+                if gene_finding_type:
+                    instance_data['type'] = gene_finding_type
 
-        GeneFinding.objects.bulk_create(findings_to_insert, ignore_conflicts=True)
+            findings_to_insert.append(finding_model(**instance_data))
 
+        finding_model.objects.bulk_create(findings_to_insert, ignore_conflicts=True)
         study = Study.objects.get(study_cohorts__id=study_cohort_id)
         return redirect(study)
 
     return render(request, 'sickgenes/molecule_match.html', context)
-
-def search_genes(request):
-    pass
-

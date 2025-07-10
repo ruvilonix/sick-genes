@@ -41,7 +41,7 @@ class SearchOneMatchForm(forms.Form):
 
 SearchOneMatchFormSet = formset_factory(SearchOneMatchForm, extra=0)
 
-def prepare_gene_identifiers(request, model):
+def prepare_identifiers(request, model):
     """Prepare forms/formsets for retrieving IDs for items (genes) from a list of search terms
     
     Args: 
