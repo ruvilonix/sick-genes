@@ -113,13 +113,38 @@ USE_I18N = True
 USE_TZ = True
 
 
+# Default primary key field type
+# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Make sure you add this line at first before adding other configs.
+WHITE_NOISE_ENABLED = os.environ.get('WHITE_NOISE_ENABLED', None) == 'True'
+
+
+# Add the following configs after the INSTALLED_APPS list.
+if WHITE_NOISE_ENABLED:
+    INSTALLED_APPS.remove('django.contrib.staticfiles')
+    INSTALLED_APPS.extend([
+        'whitenoise.runserver_nostatic',
+        'django.contrib.staticfiles',
+    ])
+    
+    
+# add this line after the MIDDLEWARE list.
+if WHITE_NOISE_ENABLED:
+    MIDDLEWARE.remove('django.middleware.security.SecurityMiddleware')
+    MIDDLEWARE = [
+                     'django.middleware.security.SecurityMiddleware',
+                     'whitenoise.middleware.WhiteNoiseMiddleware',
+    ] + MIDDLEWARE
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+if WHITE_NOISE_ENABLED:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage' # stores the file in compressed form '.gzip'.
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
