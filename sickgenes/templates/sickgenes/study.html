@@ -17,29 +17,34 @@
     {% for study_cohort in study.study_cohorts.all %}
         <div><b>Disease: </b>
             {% for disease_tag in study_cohort.disease_tags.all %}
-            {{ disease_tag }}
-            {% if not forloop.last %}, {% endif %}
+            {{ disease_tag }}{% if not forloop.last %}, {% endif %}
             {% endfor %}
         </div>
         <div><b>Control: </b>
             {% for control_tag in study_cohort.control_tags.all %}
-            {{ control_tag }}
-            {% if not forloop.last %}, {% endif %}
+            {{ control_tag }}{% if not forloop.last %}, {% endif %}
             {% endfor %}
         </div>
 
         <h3>Gene Variation Findings</h3>
         {% for finding in study_cohort.variation_gene_findings %}
-            {{ finding.hgnc_gene }}
+            <p>{{ finding.hgnc_gene }}</p>
         {% empty %}
             <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}?type={{ gene_finding_type.VARIATION }}">Add findings</a>
         {% endfor %}
 
         <h3>Gene Abundance Findings</h3>
         {% for finding in study_cohort.abundance_gene_findings %}
-            {{ finding.hgnc_gene }}
+            <p>{{ finding.hgnc_gene }}</p>
         {% empty %}
             <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}?type={{ gene_finding_type.ABUNDANCE }}">Add findings</a>
+        {% endfor %}
+
+        <h3>Metabolite Findings</h3>
+        {% for finding in study_cohort.metabolite_findings.all %}
+            <p>{{ finding.hmdb_metabolite }}</p>
+        {% empty %}
+            <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'metabolite' %}">Add findings</a>
         {% endfor %}
 
 

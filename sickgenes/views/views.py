@@ -12,6 +12,7 @@ def study(request, study_id):
             'study_cohorts',
             'study_cohorts__disease_tags',
             'study_cohorts__control_tags',
+            'study_cohorts__metabolite_findings',
             Prefetch(
                 'study_cohorts__gene_findings',
                 queryset=GeneFinding.objects.filter(type=GeneFindingType.ABUNDANCE),
