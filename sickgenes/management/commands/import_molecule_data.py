@@ -37,7 +37,7 @@ class Command(BaseCommand):
             if use_test_data:
                 data_path = os.path.join(
                     BASE_DIR,
-                    'approved_data/sample_data/sample_hgnc.json',
+                    'sample_data/sample_hgnc.json',
                 )
                 if not os.path.exists(data_path):
                     raise CommandError(f"Test data file not found: {data_path}")
@@ -62,7 +62,7 @@ class Command(BaseCommand):
             if use_test_data:
                 data_path = os.path.join(
                     BASE_DIR,
-                    'approved_data/sample_data/sample_hmdb.zip',
+                    'sample_data/sample_hmdb.zip',
                 )
                 if not os.path.exists(data_path):
                     raise CommandError(f"Test data file not found: {data_path}")
