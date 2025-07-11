@@ -4,6 +4,7 @@ from .models import (
     Study, GeneFinding, StudyCohort, Disease, HgncGene, 
     HmdbMetabolite, Ena, UniprotId, OmimId, AliasSymbol, 
     AliasName, PrevSymbol, PrevName, MetaboliteSynonym, SecondaryAccession,
+    MetaboliteFinding,
 )
 
 class ReadOnlyAdminMixin:
@@ -23,6 +24,11 @@ class GeneFindingAdmin(admin.ModelAdmin):
 admin.site.register(Study)
 admin.site.register(StudyCohort)
 admin.site.register(Disease)
+
+admin.site.register(GeneFinding)
+admin.site.register(MetaboliteFinding)
+
+
 
 class EnaInline(admin.TabularInline):
     model = Ena
