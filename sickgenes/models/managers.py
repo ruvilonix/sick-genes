@@ -1,6 +1,5 @@
 from django.db import models
 from django.apps import apps
-from django.utils import timezone
 
 class BaseMoleculeManager(models.Manager):
     """
@@ -24,7 +23,6 @@ class BaseMoleculeManager(models.Manager):
 
         app_label = self.model._meta.app_label
 
-        start = timezone.now()
         for search_string in search_strings:
             matching_ids = set()
 
@@ -76,7 +74,6 @@ class BaseMoleculeManager(models.Manager):
             else:
                 search_results['multiple_matches'].append({'search_string': search_string, 'items': items})
 
-        print(f"Query time is {timezone.now() - start} for {len(search_strings)} items")
         return search_results
 
 
