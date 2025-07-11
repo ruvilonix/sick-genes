@@ -11,6 +11,7 @@ from .models import (
 )
 from unittest.mock import patch, Mock
 import requests
+from django.contrib.auth.models import User
 
 class ImportHgncTest(TestCase):
     @classmethod
@@ -446,6 +447,8 @@ class FindMatchingHmdbMetabolitesTests(TestCase):
 class AddGenesView(TestCase):
     @classmethod
     def setUpTestData(cls):
+        cls.my_admin = User.objects.create_superuser('tesuser', 'myemail@test.com', 'testpassword')
+
         cls.study = Study.objects.create(title="Example study", doi="https://doi.org/fdfdsa")
         disease = Disease.objects.create(name="ME/CFS")
         control = Disease.objects.create(name="Healthy")
@@ -454,11 +457,13 @@ class AddGenesView(TestCase):
         cls.study_cohort.control_tags.add(control)
 
     def test_url_valid_response(self):
+        self.client.login(username=self.my_admin.username, password='testpassword')
         response = self.client.get(f'/manage/{self.study.id}/gene/insert/')
 
         self.assertEqual(response.status_code, 200)
 
     def test_view_returns_correct_data(self):
+        self.client.login(username=self.my_admin.username, password='testpassword')
         response = self.client.get(reverse('sickgenes:insert_findings', args=(self.study.id,"gene")))
 
         self.assertEqual(response.status_code, 200)
@@ -466,18 +471,25 @@ class AddGenesView(TestCase):
         self.assertContains(response, "Search terms:")
 
 class AddStudyView(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.my_admin = User.objects.create_superuser('tesuser', 'myemail@test.com', 'testpassword')
+
     def test_url_valid_response(self):
+        self.client.login(username=self.my_admin.username, password='testpassword')
         response = self.client.get('/manage/add_study/')
 
         self.assertEqual(response.status_code, 200)
 
     def test_add_study_view_get(self):
+        self.client.login(username=self.my_admin.username, password='testpassword')
         response = self.client.get(reverse('sickgenes:add_study'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'sickgenes/add_study.html')
         self.assertIn('form', response.context)
 
     def test_add_study_view_post_success(self):
+        self.client.login(username=self.my_admin.username, password='testpassword')
         form_data = {
             'doi': '10.1000/xyz123',
             'title': 'A Valid Study',
@@ -492,6 +504,7 @@ class AddStudyView(TestCase):
         self.assertRedirects(response, study.get_absolute_url())
 
     def test_add_study_view_post_invalid(self):
+        self.client.login(username=self.my_admin.username, password='testpassword')
         form_data = {'title': ''}
         response = self.client.post(reverse('sickgenes:add_study'), data=form_data)
         self.assertEqual(response.status_code, 200)
@@ -646,17 +659,21 @@ class StudyView(TestCase):
 class AddStudyCohortView(TestCase):
     @classmethod
     def setUpTestData(cls):
+        cls.my_admin = User.objects.create_superuser('tesuser', 'myemail@test.com', 'testpassword')
+
         cls.study = Study.objects.create(title="Example study", doi="https://doi.org/fdfdsa")
         cls.disease_mecfs = Disease.objects.create(name="ME/CFS")
         cls.disease_healthy = Disease.objects.create(name="Healthy")
         cls.disease_diabetes = Disease.objects.create(name="Diabetes")
 
     def test_url_valid_response(self):
+        self.client.login(username=self.my_admin.username, password='testpassword')
         response = self.client.get(f'/manage/add_study_cohort/{self.study.id}/')
 
         self.assertEqual(response.status_code, 200)
 
     def test_view_returns_correct_data(self):
+        self.client.login(username=self.my_admin.username, password='testpassword')
         response = self.client.get(reverse('sickgenes:add_study_cohort', args=(self.study.id,)))
 
         self.assertEqual(response.status_code, 200)
@@ -664,6 +681,7 @@ class AddStudyCohortView(TestCase):
         self.assertContains(response, "Disease tags:")
 
     def test_post_data_to_add_study_cohort(self):
+        self.client.login(username=self.my_admin.username, password='testpassword')
         post_data = {
             'disease_tags': [self.disease_mecfs.id, self.disease_diabetes.id],
             'control_tags': [self.disease_healthy.id],
