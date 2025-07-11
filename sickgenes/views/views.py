@@ -5,6 +5,7 @@ from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, GeneFind
 from sickgenes.forms import StudyForm, StudyCohortForm
 from django.db import transaction
 from django.db.models import Prefetch
+from django.contrib.admin.views.decorators import staff_member_required
 
 def study(request, study_id):
     study = get_object_or_404(
@@ -29,6 +30,7 @@ def study(request, study_id):
 
     return render(request, 'sickgenes/study.html', context={'study': study, 'gene_finding_type': GeneFindingType})
 
+@staff_member_required
 def add_study(request):
     if request.method == 'POST':
         form = StudyForm(request.POST)
@@ -40,6 +42,7 @@ def add_study(request):
 
     return render(request, 'sickgenes/add_study.html', context={'form': form})
 
+@staff_member_required
 def add_study_cohort(request, study_id):
     study = get_object_or_404(Study, pk=study_id)
 
@@ -82,6 +85,7 @@ def identify_molecules(request, model_type):
 
     return render(request, 'sickgenes/molecule_match.html', context)
 
+@staff_member_required
 def insert_findings(request, study_cohort_id, model_type):
     """
     Handles finding matches for a list of identifiers and inserting them
