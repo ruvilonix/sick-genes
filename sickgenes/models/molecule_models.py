@@ -1,5 +1,6 @@
 from django.db import models
 from .managers import HgncGeneManager, HmdbMetaboliteManager
+from django.db.models.functions import Upper
 
 
 class HgncGene(models.Model):
@@ -17,6 +18,16 @@ class HgncGene(models.Model):
 
     class Meta:
         ordering = ['symbol']
+
+        indexes = [
+            models.Index(Upper('hgnc_id'), name='hgncgene_hgncid_iexact_idx'),
+            models.Index(Upper('symbol'), name='hgncgene_symbol_iexact_idx'),
+            models.Index(Upper('name'), name='hgncgene_name_iexact_idx'),
+            models.Index(Upper('entrez_id'), name='hgncgene_entrez_id_iexact_idx'),
+            models.Index(Upper('ensembl_gene_id'), name='hgncgene_ensembl_iexact_idx'),
+            models.Index(Upper('vega_id'), name='hgncgene_vega_id_iexact_idx'),
+            models.Index(Upper('ucsc_id'), name='hgncgene_ucsc_id_iexact_idx'),
+        ]
     
     def __str__(self):
         return self.symbol or self.hgnc_id
@@ -27,6 +38,10 @@ class BaseGeneAssociation(models.Model):
     class Meta:
         abstract = True
         unique_together = ('gene', 'value')
+        
+        indexes = [
+            models.Index(Upper('value'), name='%(class)s_value_idx')
+        ]
 
     def __str__(self):
         return str(self.value)
@@ -37,6 +52,11 @@ class UniprotId(BaseGeneAssociation):
     value = models.CharField(max_length=15)
 class OmimId(BaseGeneAssociation):
     value = models.IntegerField()
+
+    class Meta:
+        unique_together = ('gene', 'value')
+        indexes = []
+
 class AliasSymbol(BaseGeneAssociation):
     value = models.CharField(max_length=40)
 class AliasName(BaseGeneAssociation):

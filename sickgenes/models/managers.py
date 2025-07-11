@@ -1,6 +1,6 @@
-from django.db.models import Q
 from django.db import models
 from django.apps import apps
+from django.utils import timezone
 
 class BaseMoleculeManager(models.Manager):
     """
@@ -12,10 +12,9 @@ class BaseMoleculeManager(models.Manager):
     related_models_to_search = {}
     related_fk_name = None
 
-    def find_matching_items(self, search_strings, debug_query=False):
+    def find_matching_items(self, search_strings):
         """
         Takes a list of strings and returns a dictionary with search results.
-        This version is optimized to be much faster by avoiding complex joins.
         """
         search_results = {
             'no_matches': [],
@@ -25,21 +24,23 @@ class BaseMoleculeManager(models.Manager):
 
         app_label = self.model._meta.app_label
 
+        start = timezone.now()
         for search_string in search_strings:
-            #  search on the main model first   
-            main_query = Q()
+            matching_ids = set()
+
             for field in self.str_fields:
-                main_query |= Q(**{f"{field}__iexact": search_string})
-            
+                qs = self.filter(**{f"{field}__iexact": search_string}).values_list('pk', flat=True)
+                if qs.exists():
+                    matching_ids.update(qs)
+
             try:
                 search_int = int(search_string)
                 for field in self.int_fields:
-                    main_query |= Q(**{f"{field}": search_int})
+                    qs = self.filter(**{f"{field}": search_int}).values_list('pk', flat=True)
+                    if qs.exists():
+                        matching_ids.update(qs)
             except ValueError:
                 pass
-            
-            # Use a set to store the primary keys of matching genes to avoid duplicates
-            matching_ids = set(self.filter(main_query).values_list('pk', flat=True))
             
             # String searches on related models
             for related_field, model_name in self.related_models_to_search.get('str_fields', {}).items():
@@ -66,7 +67,7 @@ class BaseMoleculeManager(models.Manager):
             if not matching_ids:
                 search_results['no_matches'].append(search_string)
                 continue
-
+            
             items = list(self.filter(pk__in=matching_ids))
             count = len(items)
 
@@ -75,6 +76,7 @@ class BaseMoleculeManager(models.Manager):
             else:
                 search_results['multiple_matches'].append({'search_string': search_string, 'items': items})
 
+        print(f"Query time is {timezone.now() - start} for {len(search_strings)} items")
         return search_results
 
 
