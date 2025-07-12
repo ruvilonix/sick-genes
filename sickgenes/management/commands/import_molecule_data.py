@@ -5,7 +5,11 @@ from sickgenes.importers import update_hgnc_data, update_hmdb_data
 
 BASE_DIR = settings.BASE_DIR
 
-HGNC_DATA_PATH = 'https://storage.googleapis.com/public-download-files/hgnc/json/json/non_alt_loci_set.json'
+HGNC_DATA_PATHS = [
+
+    'https://storage.googleapis.com/public-download-files/hgnc/json/json/alternative_loci_set.json',
+    'https://storage.googleapis.com/public-download-files/hgnc/json/json/non_alt_loci_set.json',
+]
 
 HMDB_DATA_PATH = os.path.join(BASE_DIR, 'approved_data/hmdb_metabolites.zip')
 HMDB_XML_NAME = 'hmdb_metabolites.xml'
@@ -41,11 +45,12 @@ class Command(BaseCommand):
                 )
                 if not os.path.exists(data_path):
                     raise CommandError(f"Test data file not found: {data_path}")
+                data_paths = [data_path]
             else:
-                data_path = HGNC_DATA_PATH
+                data_paths = HGNC_DATA_PATHS
 
             try:
-                processed_count = update_hgnc_data(data_path, self.stdout)
+                processed_count = update_hgnc_data(data_paths, self.stdout)
 
                 self.stdout.write(
                     self.style.SUCCESS(
