@@ -25,7 +25,6 @@ admin.site.register(Study)
 admin.site.register(StudyCohort)
 admin.site.register(Disease)
 
-admin.site.register(GeneFinding)
 admin.site.register(MetaboliteFinding)
 
 
