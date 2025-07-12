@@ -1,6 +1,7 @@
 from django import forms
-from sickgenes.models import Study, StudyCohort
+from sickgenes.models import Study, StudyCohort, Disease
 import datetime
+from django.db.models import Count, Q
 
 class StudyForm(forms.ModelForm):
     class Meta:
@@ -41,6 +42,21 @@ class StudyForm(forms.ModelForm):
         return cleaned_data
 
 class StudyCohortForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        last_20_cohort_pks = StudyCohort.objects.order_by('-created_at').values_list('pk', flat=True)[:20]
+
+        disease_queryset = Disease.objects.annotate(
+            recent_cohort_count=Count('study_cohorts', filter=Q(study_cohorts__pk__in=list(last_20_cohort_pks))),
+            total_cohort_count=Count('study_cohorts')
+        ).order_by('-recent_cohort_count', '-total_cohort_count', 'name')
+
+        self.fields['disease_tags'].queryset = disease_queryset
+
     class Meta:
         model = StudyCohort
         fields = ['disease_tags', 'note']
+
+    
