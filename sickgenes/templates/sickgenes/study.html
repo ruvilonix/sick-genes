@@ -26,7 +26,7 @@
             {% endfor %}
         </div>
 
-        <h3>Gene Variation Findings</h3>
+        <h3>Gene Findings</h3>
         {% for finding in study_cohort.gene_findings.all %}
             <p>{{ finding.hgnc_gene }}</p>
         {% empty %}
