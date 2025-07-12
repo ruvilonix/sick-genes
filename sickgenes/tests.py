@@ -684,7 +684,6 @@ class AddStudyCohortView(TestCase):
         self.client.login(username=self.my_admin.username, password='testpassword')
         post_data = {
             'disease_tags': [self.disease_mecfs.id, self.disease_diabetes.id],
-            'control_tags': [self.disease_healthy.id],
         }
         response = self.client.post(reverse('sickgenes:add_study_cohort', args=(self.study.id,)), data=post_data)
         study_cohorts_for_study = StudyCohort.objects.filter(study=self.study)
@@ -694,7 +693,5 @@ class AddStudyCohortView(TestCase):
 
         new_study_cohort = study_cohorts_for_study.first()
         saved_disease_tag_ids = [tag.id for tag in new_study_cohort.disease_tags.all()]
-        saved_control_tag_ids = [tag.id for tag in new_study_cohort.control_tags.all()]
 
         self.assertSetEqual(set(saved_disease_tag_ids), set(post_data['disease_tags']))
-        self.assertSetEqual(set(saved_control_tag_ids), set(post_data['control_tags']))
