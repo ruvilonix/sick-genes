@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<p>Title: {{ study.title }}</p>
+<p>{{ study.title }}</p>
 <p>DOI: {{ study.doi }}</p>
 
 {% if study.publisher_url %}<p><a href="{{ study.publisher_url }}" target="_blank">View on publisher website</a></p>{% endif %}
