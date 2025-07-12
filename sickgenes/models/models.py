@@ -74,6 +74,9 @@ class Disease(models.Model):
     def __str__(self):
         return self.name
     
+    class Meta:
+        ordering = ['name']
+    
 class StudyCohort(models.Model):
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='study_cohorts')
     disease_tags = models.ManyToManyField(Disease, related_name="disease_study_cohorts")
