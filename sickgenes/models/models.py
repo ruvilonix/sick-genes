@@ -80,7 +80,6 @@ class Disease(models.Model):
 class StudyCohort(models.Model):
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='study_cohorts')
     disease_tags = models.ManyToManyField(Disease, related_name="disease_study_cohorts")
-    control_tags = models.ManyToManyField(Disease, related_name="control_study_cohorts")
     note = models.TextField(default=None, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)

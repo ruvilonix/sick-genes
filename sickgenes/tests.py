@@ -451,10 +451,8 @@ class AddGenesView(TestCase):
 
         cls.study = Study.objects.create(title="Example study", doi="https://doi.org/fdfdsa")
         disease = Disease.objects.create(name="ME/CFS")
-        control = Disease.objects.create(name="Healthy")
         cls.study_cohort = StudyCohort.objects.create(study=cls.study)
         cls.study_cohort.disease_tags.add(disease)
-        cls.study_cohort.control_tags.add(control)
 
     def test_url_valid_response(self):
         self.client.login(username=self.my_admin.username, password='testpassword')
@@ -636,10 +634,8 @@ class StudyView(TestCase):
     def setUpTestData(cls):
         study = Study.objects.create(title="Example study", doi="https://doi.org/fdfdsa")
         disease = Disease.objects.create(name="ME/CFS")
-        control = Disease.objects.create(name="Healthy")
         study_cohort = StudyCohort.objects.create(study=study)
         study_cohort.disease_tags.add(disease)
-        study_cohort.control_tags.add(control)
         cls.study_id = study.id
 
     def test_url_valid_response(self):
@@ -654,7 +650,6 @@ class StudyView(TestCase):
         self.assertTemplateUsed(response, 'sickgenes/study.html')
         self.assertContains(response, "Example study")
         self.assertContains(response, "ME/CFS")
-        self.assertContains(response, "Healthy")
 
 class AddStudyCohortView(TestCase):
     @classmethod

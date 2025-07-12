@@ -12,7 +12,6 @@ def study(request, study_id):
         Study.objects.prefetch_related(
             'study_cohorts',
             'study_cohorts__disease_tags',
-            'study_cohorts__control_tags',
             'study_cohorts__metabolite_findings',
             'study_cohorts__gene_findings',
         ),

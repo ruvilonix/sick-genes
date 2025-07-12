@@ -20,11 +20,6 @@
             {{ disease_tag }}{% if not forloop.last %}, {% endif %}
             {% endfor %}
         </div>
-        <div><b>Control: </b>
-            {% for control_tag in study_cohort.control_tags.all %}
-            {{ control_tag }}{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-        </div>
 
         <h3>Gene Findings</h3>
         {% for finding in study_cohort.gene_findings.all %}
