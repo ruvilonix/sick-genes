@@ -27,17 +27,10 @@
         </div>
 
         <h3>Gene Variation Findings</h3>
-        {% for finding in study_cohort.variation_gene_findings %}
+        {% for finding in study_cohort.gene_findings.all %}
             <p>{{ finding.hgnc_gene }}</p>
         {% empty %}
-            <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}?type={{ gene_finding_type.VARIATION }}">Add findings</a>
-        {% endfor %}
-
-        <h3>Gene Abundance Findings</h3>
-        {% for finding in study_cohort.abundance_gene_findings %}
-            <p>{{ finding.hgnc_gene }}</p>
-        {% empty %}
-            <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}?type={{ gene_finding_type.ABUNDANCE }}">Add findings</a>
+            <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}">Add findings</a>
         {% endfor %}
 
         <h3>Metabolite Findings</h3>

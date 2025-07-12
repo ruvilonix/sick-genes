@@ -88,26 +88,16 @@ class StudyCohort(models.Model):
         control_names = ", ".join([c.name for c in self.control_tags.all()])
         return f"[{self.study.title[:20]}]... - [{disease_names}]/[{control_names}]"
     
-class GeneFindingType(models.TextChoices):
-    VARIATION = "V", "Genetic variation"
-    ABUNDANCE = "A", "Molecular abundance"
-    
 class GeneFinding(models.Model):
     study_cohort = models.ForeignKey(StudyCohort, on_delete=models.CASCADE, related_name="gene_findings")
     hgnc_gene = models.ForeignKey('HgncGene', on_delete=models.PROTECT, null=True, default=None)
-    type = models.CharField(max_length=1, choices=GeneFindingType.choices, default=None, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['study_cohort', 'hgnc_gene', 'type'], name='unique_study_gene_type'),
-
-            models.CheckConstraint(
-                name="%(app_label)s_%(class)s_type_valid",
-                check=models.Q(type__in=GeneFindingType.values),
-            )
+            models.UniqueConstraint(fields=['study_cohort', 'hgnc_gene'], name='unique_study_gene'),
         ]
 
     def __str__(self):

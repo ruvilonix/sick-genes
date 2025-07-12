@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, Http404
 from sickgenes.forms import prepare_identifiers
-from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, GeneFindingType, HmdbMetabolite, MetaboliteFinding
+from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding
 from sickgenes.forms import StudyForm, StudyCohortForm
 from django.db import transaction
 from django.db.models import Prefetch
@@ -14,21 +14,12 @@ def study(request, study_id):
             'study_cohorts__disease_tags',
             'study_cohorts__control_tags',
             'study_cohorts__metabolite_findings',
-            Prefetch(
-                'study_cohorts__gene_findings',
-                queryset=GeneFinding.objects.filter(type=GeneFindingType.ABUNDANCE),
-                to_attr='abundance_gene_findings'
-            ),
-            Prefetch(
-                'study_cohorts__gene_findings',
-                queryset=GeneFinding.objects.filter(type=GeneFindingType.VARIATION),
-                to_attr='variation_gene_findings'
-            ),
+            'study_cohorts__gene_findings',
         ),
         pk=study_id
     )
 
-    return render(request, 'sickgenes/study.html', context={'study': study, 'gene_finding_type': GeneFindingType})
+    return render(request, 'sickgenes/study.html', context={'study': study})
 
 @staff_member_required
 def add_study(request):
@@ -110,11 +101,6 @@ def insert_findings(request, study_cohort_id, model_type):
                 'study_cohort_id': study_cohort_id,
                 fk_name: form['item_id'].value(),
             }
-
-            if model_type == 'gene':
-                gene_finding_type = request.GET.get('type')
-                if gene_finding_type:
-                    instance_data['type'] = gene_finding_type
 
             findings_to_insert.append(finding_model(**instance_data))
 
