@@ -55,7 +55,9 @@ class OmimId(BaseGeneAssociation):
 
     class Meta:
         unique_together = ('gene', 'value')
-        indexes = []
+        indexes = [
+            models.Index('value', name='omimid_value_idx')
+        ]
 
 class AliasSymbol(BaseGeneAssociation):
     value = models.CharField(max_length=40)
@@ -90,6 +92,24 @@ class HmdbMetabolite(models.Model):
     class Meta:
         ordering = ['name']
 
+        indexes = [
+            models.Index(Upper('accession'), name='metab_accession_idx'),
+            models.Index(Upper('name'), name='metab_name_idx'),
+            models.Index(Upper('cas_registry_number'), name='metab_cas_registry_idx'),
+            models.Index(Upper('drugbank_id'), name='metab_drugbank_id_idx'),
+            models.Index(Upper('foodb_id'), name='metab_foodb_id_idx'),
+            models.Index(Upper('knapsack_id'), name='metab_knapsack_id_idx'),
+            models.Index(Upper('biocyc_id'), name='metab_biocyc_id_idx'),
+            models.Index(Upper('wikipedia_id'), name='metab_wikipedia_id_idx'),
+            models.Index(Upper('iupac_name'), name='metab_iupac_name_idx'),
+            models.Index(Upper('traditional_iupac'), name='metab_traditional_iupac_idx'),
+
+            models.Index('bigg_id', name='metab_bigg_id_idx'),
+            models.Index('pubchem_compound_id', name='metab_pubchem_compound_idx'),
+            models.Index('chemspider_id', name='metab_chemspider_id_idx'),
+            models.Index('chebi_id', name='metab_chebi_id_idx'),
+        ]
+
     def __str__(self):
         return self.name
 
@@ -100,6 +120,10 @@ class MetaboliteSynonym(models.Model):
     class Meta:
         unique_together = ('metabolite', 'value')
 
+        indexes = [
+            models.Index(Upper('value'), name='metab_synonym_idx'),
+        ]
+
     def __str__(self):
         return self.value
 
@@ -109,6 +133,10 @@ class SecondaryAccession(models.Model):
 
     class Meta:
         unique_together = ('metabolite', 'value')
+
+        indexes = [
+            models.Index(Upper('value'), name='metab_second_acc_idx'),
+        ]
 
     def __str__(self):
         return self.value
