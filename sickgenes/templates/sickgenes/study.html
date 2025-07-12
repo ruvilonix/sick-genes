@@ -5,8 +5,8 @@
 <p>Title: {{ study.title }}</p>
 <p>DOI: {{ study.doi }}</p>
 
-{% if study.publisher_url %}<p>Publisher URL: {{ study.publisher_url }}</p>{% endif %}
-{% if study.s4me_url %}<p>S4ME URL: {{ study.s4me_url }}</p>{% endif %}
+{% if study.publisher_url %}<p><a href="{{ study.publisher_url }}" target="_blank">View on publisher website</a></p>{% endif %}
+{% if study.s4me_url %}<p><a href="{{ study.s4me_url }}" target="_blank">View on S4ME</a> {% endif %}
 {% if study.preprint %}<p>Preprint</p>{% endif %}
 
 <hr>
