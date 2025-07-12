@@ -87,8 +87,7 @@ class StudyCohort(models.Model):
 
     def __str__(self):
         disease_names = ", ".join([d.name for d in self.disease_tags.all()])
-        control_names = ", ".join([c.name for c in self.control_tags.all()])
-        return f"[{self.study.title[:20]}]... - [{disease_names}]/[{control_names}]"
+        return f"[{self.study.title[:20]}]... - [{disease_names}]"
     
 class GeneFinding(models.Model):
     study_cohort = models.ForeignKey(StudyCohort, on_delete=models.CASCADE, related_name="gene_findings")

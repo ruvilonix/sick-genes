@@ -690,3 +690,6 @@ class AddStudyCohortView(TestCase):
         saved_disease_tag_ids = [tag.id for tag in new_study_cohort.disease_tags.all()]
 
         self.assertSetEqual(set(saved_disease_tag_ids), set(post_data['disease_tags']))
+        self.assertEqual(str(new_study_cohort), f"[{self.study.title[:20]}]... - [Diabetes, ME/CFS]")
+
+    
