@@ -21,7 +21,10 @@ class ReadOnlyAdminMixin:
 class GeneFindingAdmin(admin.ModelAdmin):
     readonly_fields = ['study_cohort', 'hgnc_gene']
 
-admin.site.register(Study)
+@admin.register(Study)
+class StudyAdmin(admin.ModelAdmin):
+    list_display = ['title', 'not_finished']
+
 admin.site.register(StudyCohort)
 admin.site.register(Disease)
 
