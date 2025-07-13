@@ -24,17 +24,14 @@
         <h3>Gene Findings</h3>
         {% for finding in study_cohort.gene_findings.all %}
             <p>{{ finding.hgnc_gene }}</p>
-        {% empty %}
-            <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}">Add findings</a>
         {% endfor %}
+        <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}">Add genes</a>
 
         <h3>Metabolite Findings</h3>
         {% for finding in study_cohort.metabolite_findings.all %}
             <p>{{ finding.hmdb_metabolite }}</p>
-        {% empty %}
-            <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'metabolite' %}">Add findings</a>
         {% endfor %}
-
+        <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'metabolite' %}">Add metabolites</a>
 
     {% endfor %}
 </div>
