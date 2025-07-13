@@ -8,6 +8,14 @@
     <body>
         <div id="header">
             <span class="logo">Sick Genes</span>
+
+            {% if request.user.is_staff %}
+                <ul class="menu">
+                    <li>
+                        <a href="{% url "sickgenes:add_study" %}">Add study</a>
+                    </li>
+                </ul>
+            {% endif %}
         </div>
         <div id="content">
             {% block content %}
