@@ -1,3 +1,8 @@
+{% extends 'sickgenes/base.html' %}
+
+{% block title %}Add study{% endblock %}
+
+{% block content %}
 <form action="" method="POST">
     {% csrf_token %}
     
@@ -160,3 +165,4 @@
         });
     });
 </script>
+{% endblock %}

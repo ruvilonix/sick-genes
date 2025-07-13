@@ -1,6 +1,14 @@
+{% extends 'sickgenes/base.html' %}
+
+{% block title %}Add study cohort{% endblock %}
+
+{% block content %}
+
 <form action="" method="POST">
     {% csrf_token %}
     {{ form }}
 
     <input type="submit" value="Add study cohort">
 </form>
+
+{% endblock %}
