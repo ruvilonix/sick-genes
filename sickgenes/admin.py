@@ -81,8 +81,10 @@ class HmdbMetaboliteAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
 
 @admin.register(StringProtein)
 class StringProteinAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+    search_fields = ['protein_id']
     pass
 
 @admin.register(StringInteraction)
 class StringInteractionAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+    search_fields = ['protein1', 'protein2']
     pass
