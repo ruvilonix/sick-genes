@@ -1,7 +1,7 @@
 import os
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from sickgenes.importers import update_hgnc_data, update_hmdb_data
+from sickgenes.importers import update_hgnc_data, update_hmdb_data, update_string_data
 
 BASE_DIR = settings.BASE_DIR
 
@@ -22,7 +22,7 @@ class Command(BaseCommand):
         parser.add_argument(
             'database', 
             type=str, 
-            choices=['hgnc', 'hmdb'],
+            choices=['hgnc', 'hmdb', 'string'],
             help="Which database to import from"
         )
         
@@ -89,3 +89,5 @@ class Command(BaseCommand):
                 raise CommandError(f'Unexpected error during HMDB import: {e}')
             
 
+        elif database_type == 'string':
+            update_string_data(self.stdout, use_test_data)
