@@ -4,7 +4,7 @@ from .models import (
     Study, GeneFinding, StudyCohort, Disease, HgncGene, 
     HmdbMetabolite, Ena, UniprotId, OmimId, AliasSymbol, 
     AliasName, PrevSymbol, PrevName, MetaboliteSynonym, SecondaryAccession,
-    MetaboliteFinding,
+    MetaboliteFinding, StringProtein
 )
 
 class ReadOnlyAdminMixin:
@@ -30,7 +30,7 @@ admin.site.register(Disease)
 
 admin.site.register(MetaboliteFinding)
 
-
+admin.site.register(StringProtein)
 
 class EnaInline(admin.TabularInline):
     model = Ena
