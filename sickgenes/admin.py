@@ -30,7 +30,9 @@ admin.site.register(Disease)
 
 admin.site.register(MetaboliteFinding)
 
-admin.site.register(StringProtein)
+@admin.register(StringProtein)
+class StringProteinAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+    pass
 
 class EnaInline(admin.TabularInline):
     model = Ena
