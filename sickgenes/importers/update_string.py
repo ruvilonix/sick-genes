@@ -15,15 +15,18 @@ STRING_INTERACTION_PATH = os.path.join(BASE_DIR, 'approved_data/9606.protein.lin
 
 def process_string_aliases(file_path, stdout):
     """
-    Process STRING alias file and create/update StringProtein records.
+    Process STRING alias file and create StringProtein records in batches.
     """
     if not os.path.exists(file_path):
         raise CommandError(f'STRING alias file not found at: {file_path}')
     
     created_count = 0
-    updated_count = 0
     error_count = 0
     processed_count = 0
+    batch_size = 1000
+    batch_data = []
+    
+    StringProtein.objects.all().delete()
     
     try:
         with gzip.open(file_path, 'rt', encoding='utf-8') as file:
@@ -51,18 +54,16 @@ def process_string_aliases(file_path, stdout):
                         try:
                             hgnc_gene = HgncGene.objects.get(hgnc_id=hgnc_id)
                             
-                            string_protein, created = StringProtein.objects.update_or_create(
+                            batch_data.append(StringProtein(
                                 protein_id=protein_id,
-                                defaults={
-                                    'hgnc_id': hgnc_id,
-                                    'hgnc_gene': hgnc_gene
-                                }
-                            )
+                                hgnc_id=hgnc_id,
+                                hgnc_gene=hgnc_gene
+                            ))
                             
-                            if created:
-                                created_count += 1
-                            else:
-                                updated_count += 1
+                            if len(batch_data) >= batch_size:
+                                StringProtein.objects.bulk_create(batch_data, ignore_conflicts=True)
+                                created_count += len(batch_data)
+                                batch_data = []
                                 
                         except HgncGene.DoesNotExist:
                             if stdout:
@@ -79,6 +80,10 @@ def process_string_aliases(file_path, stdout):
                 
                 if processed_count % 1000 == 0 and stdout:
                     stdout.write(f"Processed {processed_count} alias lines...")
+        
+        if batch_data:
+            StringProtein.objects.bulk_create(batch_data, ignore_conflicts=True)
+            created_count += len(batch_data)
     
     except Exception as e:
         raise CommandError(f'Failed to process STRING alias file: {e}')
@@ -86,7 +91,6 @@ def process_string_aliases(file_path, stdout):
     stdout.write(f"\nString alias import completed:")
     stdout.write(f"  Total lines processed: {processed_count}")
     stdout.write(f"  Records created: {created_count}")
-    stdout.write(f"  Records updated: {updated_count}")
     stdout.write(f"  Errors: {error_count}")
     stdout.write("")
     
@@ -94,95 +98,109 @@ def process_string_aliases(file_path, stdout):
 
 def process_string_interactions(file_path, stdout=None):
     """
-    Process STRING interaction file and create/update StringInteraction records.
+    Process STRING interaction file and save to database
     """
     if not os.path.exists(file_path):
         raise CommandError(f'STRING interaction file not found at: {file_path}')
+
+    stdout.write("Step 1: Reading all protein IDs from the file...")
+    protein_ids_to_fetch = set()
+    with gzip.open(file_path, 'rt', encoding='utf-8') as file:
+        for line in file:
+            if line.startswith('protein1') or line.startswith('#') or not line.strip():
+                continue
+            parts = line.split()
+            if len(parts) >= 2:
+                protein1_id = parts[0][5:] if parts[0].startswith('9606.') else parts[0]
+                protein2_id = parts[1][5:] if parts[1].startswith('9606.') else parts[1]
+                protein_ids_to_fetch.add(protein1_id)
+                protein_ids_to_fetch.add(protein2_id)
+
+    stdout.write(f"Step 2: Fetching {len(protein_ids_to_fetch)} unique proteins from the database...")
+    protein_cache = StringProtein.objects.in_bulk(list(protein_ids_to_fetch), field_name='protein_id')
     
+    stdout.write(f"Found {len(protein_cache)} proteins in the database.")
+
+    stdout.write("Step 3: Processing interactions and batch inserting...")
+    
+    batch_size = 5000
+    batch_data = []
     created_count = 0
-    updated_count = 0
-    error_count = 0
     processed_count = 0
+    error_count = 0
+    missing_proteins = set()
+    
+    StringInteraction.objects.all().delete()
     
     try:
-        with gzip.open(file_path, 'rt', encoding='utf-8') as file:
-            for line_num, line in enumerate(file, 1):
-                line = line.strip()
-                
-                if not line or line.startswith('#') or line.startswith('protein1'):
-                    continue
-                
-                parts = line.split()
-                
-                if len(parts) >= 3:
-                    protein1_id = parts[0]
-                    protein2_id = parts[1]
-                    combined_score = parts[2]
-                    
-                    if protein1_id.startswith('9606.'):
-                        protein1_id = protein1_id[5:]
-                    if protein2_id.startswith('9606.'):
-                        protein2_id = protein2_id[5:]
+        with transaction.atomic():
+            with gzip.open(file_path, 'rt', encoding='utf-8') as file:
+                for line_num, line in enumerate(file, 1):
+                    if line.startswith('protein1') or line.startswith('#') or not line.strip():
+                        continue
+
+                    parts = line.split()
                     
                     try:
-                        combined_score = int(combined_score)
-                        
-                        protein1 = StringProtein.objects.get(protein_id=protein1_id)
-                        protein2 = StringProtein.objects.get(protein_id=protein2_id)
-                        
-                        # To avoid duplicate interactions, ensure consistent ordering
-                        if protein1.id <= protein2.id:
-                            p1, p2 = protein1, protein2
-                        else:
-                            p1, p2 = protein2, protein1
-                        
-                        interaction, created = StringInteraction.objects.update_or_create(
+                        protein1_id = parts[0][5:] if parts[0].startswith('9606.') else parts[0]
+                        protein2_id = parts[1][5:] if parts[1].startswith('9606.') else parts[1]
+                        combined_score = int(parts[2])
+
+                        try:
+                            protein1 = protein_cache[protein1_id]
+                        except KeyError:
+                            error_count += 1
+                            if protein1_id not in missing_proteins:
+                                stdout.write(f"Warning: No protein found for {protein1_id}")
+                                missing_proteins.add(protein1_id)
+                            continue
+
+                        try:
+                            protein2 = protein_cache[protein2_id]
+                        except KeyError:
+                            error_count += 1
+                            if protein2_id not in missing_proteins:
+                                stdout.write(f"Warning: No protein found for {protein2_id}")
+                                missing_proteins.add(protein2_id)
+                            continue
+
+                        p1, p2 = (protein1, protein2) if protein1.id <= protein2.id else (protein2, protein1)
+
+                        batch_data.append(StringInteraction(
                             protein1=p1,
                             protein2=p2,
-                            defaults={
-                                'combined_score': combined_score
-                            }
-                        )
-                        
-                        if created:
-                            created_count += 1
-                        else:
-                            updated_count += 1
-                            
-                    except StringProtein.DoesNotExist as e:
-                        if stdout:
-                            stdout.write(f"Warning: StringProtein not found for interaction {protein1_id} - {protein2_id}")
+                            combined_score=combined_score
+                        ))
+
+                        if len(batch_data) >= batch_size:
+                            StringInteraction.objects.bulk_create(batch_data, ignore_conflicts=True)
+                            created_count += len(batch_data)
+                            batch_data = []
+                            stdout.write(f"Processed {processed_count} lines, inserted {created_count} records...")
+
+                    except (ValueError, IndexError) as e:
+                        stdout.write(f"Warning: Skipping malformed line {line_num}: {line.strip()} | Error: {e}")
                         error_count += 1
                         continue
-                    except ValueError as e:
-                        if stdout:
-                            stdout.write(f"Error parsing combined_score on line {line_num}: {e}")
-                        error_count += 1
-                        continue
-                    except Exception as e:
-                        if stdout:
-                            stdout.write(f"Error processing interaction line {line_num}: {e}")
-                        error_count += 1
-                        continue
-                
-                processed_count += 1
-                
-                # Output progress every 1000 lines
-                if processed_count % 1000 == 0 and stdout:
-                    stdout.write(f"Processed {processed_count} interaction lines...")
-    
+                    
+                    processed_count += 1
+
+                if batch_data:
+                    StringInteraction.objects.bulk_create(batch_data, ignore_conflicts=True)
+                    created_count += len(batch_data)
+
     except Exception as e:
         raise CommandError(f'Failed to process STRING interaction file: {e}')
-    
+
+    stdout.write(f"Processing complete. Total interactions created: {created_count}. Errors/Skipped lines: {error_count}.")
     stdout.write(f"\nString interaction import completed:")
     stdout.write(f"  Total lines processed: {processed_count}")
     stdout.write(f"  Records created: {created_count}")
-    stdout.write(f"  Records updated: {updated_count}")
     stdout.write(f"  Errors: {error_count}")
+    stdout.write(f"  Missing proteins encountered: {len(missing_proteins)}")
     stdout.write("")
 
     return True
-
 
 @transaction.atomic
 def update_string_data(stdout, use_test_data):
