@@ -4,7 +4,7 @@ from .models import (
     Study, GeneFinding, StudyCohort, Disease, HgncGene, 
     HmdbMetabolite, Ena, UniprotId, OmimId, AliasSymbol, 
     AliasName, PrevSymbol, PrevName, MetaboliteSynonym, SecondaryAccession,
-    MetaboliteFinding, StringProtein
+    MetaboliteFinding, StringProtein, StringInteraction
 )
 
 class ReadOnlyAdminMixin:
@@ -30,9 +30,7 @@ admin.site.register(Disease)
 
 admin.site.register(MetaboliteFinding)
 
-@admin.register(StringProtein)
-class StringProteinAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
-    pass
+## HGNC
 
 class EnaInline(admin.TabularInline):
     model = Ena
@@ -64,6 +62,8 @@ class HgncGeneAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
         PrevNameInline,
     ]
 
+## HMDB
+
 class MetaboliteSynonymInline(admin.TabularInline):
     model = MetaboliteSynonym
 class SecondaryAccessionInline(admin.TabularInline):
@@ -75,3 +75,14 @@ class HmdbMetaboliteAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
 
     inlines = [MetaboliteSynonymInline, SecondaryAccessionInline]
+
+
+## STRING
+
+@admin.register(StringProtein)
+class StringProteinAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+    pass
+
+@admin.register(StringInteraction)
+class StringInteractionAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+    pass
