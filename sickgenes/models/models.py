@@ -21,6 +21,7 @@ class Study(models.Model):
     doi = models.CharField(max_length=255, verbose_name="DOI URL", unique=True, null=True, blank=True)
     publisher_url = models.CharField(max_length=300, verbose_name="Publisher's URL", null=True, blank=True)
     authors = models.TextField(blank=True, null=True)
+    journal_titles = models.TextField(null=True, blank=True)
     
     publication_year = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Publication Year")
     publication_month = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Publication Month")
