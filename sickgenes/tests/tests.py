@@ -519,6 +519,7 @@ class StudyFormTest(TestCase):
             'publication_year': 2023,
             'publication_month': 10,
             'publication_day': 26,
+            'journal_titles': 'Frontiers in Medicine',
             'publisher_url': 'https://example.com',
             's4me_url': 'https://example.com/s4me',
             'preprint': False,
