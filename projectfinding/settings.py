@@ -14,6 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 import os
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -128,3 +129,17 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
+# Django debug toolbar
+TESTING = "test" in sys.argv or "PYTEST_VERSION" in os.environ
+
+if not TESTING:
+    INSTALLED_APPS = [
+        *INSTALLED_APPS,
+        "debug_toolbar",
+    ]
+    MIDDLEWARE.insert(1, "debug_toolbar.middleware.DebugToolbarMiddleware")
+
+    INTERNAL_IPS = [
+        "127.0.0.1",
+    ]
