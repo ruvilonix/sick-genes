@@ -80,6 +80,18 @@
     </p>
 
     <p>
+        {{ form.journal_titles.label_tag }}
+        {{ form.journal_titles }}
+        {% if form.journal_titles.errors %}
+            <ul class="errorlist">
+                {% for error in form.journal_titles.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
+
+    <p>
         {{ form.publisher_url.label_tag }}
         {{ form.publisher_url }}
         {% if form.publisher_url.errors %}
@@ -149,6 +161,7 @@
                             $('#id_publication_year').val(response.publication_year || '');
                             $('#id_publication_month').val(response.publication_month || '');
                             $('#id_publication_day').val(response.publication_day || '');
+                            $('#id_journal_titles').val(response.journal_titles || '');
                             $('#id_publisher_url').val(response.publisher_url || '');
                         } else {
                             alert(response.error); 

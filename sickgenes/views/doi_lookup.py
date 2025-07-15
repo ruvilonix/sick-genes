@@ -36,6 +36,12 @@ def fetch_paper_info(request):
                     elif given:
                         authors_list.append(given)
             authors = "; ".join(authors_list)
+
+            journal_title_list = []
+            if message.get('container-title'):
+                for journal_title in message['container-title']:
+                    journal_title_list.append(journal_title)
+            journal_titles = "; ".join(journal_title_list)
             
             # Extract date parts
             publication_year, publication_month, publication_day = None, None, None
@@ -59,6 +65,7 @@ def fetch_paper_info(request):
                 'publication_year': publication_year,
                 'publication_month': publication_month,
                 'publication_day': publication_day,
+                'journal_titles': journal_titles,
                 'publisher_url': publisher_url,
             })
         else:
