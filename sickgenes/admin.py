@@ -87,4 +87,5 @@ class StringProteinAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
 @admin.register(StringInteraction)
 class StringInteractionAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
     search_fields = ['protein1', 'protein2']
+    list_select_related = ['protein1', 'protein2']
     pass
