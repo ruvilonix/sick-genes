@@ -5,7 +5,7 @@ from io import StringIO
 from django.utils import timezone
 from django.urls import reverse
 from sickgenes.forms import StudyForm
-from .models import (
+from sickgenes.models import (
     HgncGene, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName,
     HmdbMetabolite, MetaboliteSynonym, SecondaryAccession
 )
