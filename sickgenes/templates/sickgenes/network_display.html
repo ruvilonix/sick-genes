@@ -68,21 +68,11 @@
                         });
                     });
                     
-                    // Apply ForceAtlas2 layout for clustering
+                    const inferredSettings = forceAtlas2.inferSettings(graph);
+
                     forceAtlas2.assign(graph, {
                         iterations: 50,
-                        settings: {
-                            gravity: 1,
-                            scalingRatio: 1,
-                            strongGravityMode: false,
-                            barnesHutOptimize: true,
-                            barnesHutTheta: 0.5,
-                            adjustSizes: false,
-                            edgeWeightInfluence: 1,
-                            slowDown: 1,
-                            linLogMode: false,
-                            outboundAttractionDistribution: false
-                        }
+                        settings: inferredSettings
                     });
                     
                     // Instantiate Sigma.js
