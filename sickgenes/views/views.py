@@ -2,9 +2,9 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, Http404
 from sickgenes.forms import prepare_identifiers
 from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding
-from sickgenes.forms import StudyForm, StudyCohortForm
+from sickgenes.forms import StudyForm, StudyCohortForm, GeneFilterForm
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Count
 from django.contrib.admin.views.decorators import staff_member_required
 
 def study(request, study_id):
@@ -19,6 +19,32 @@ def study(request, study_id):
     )
 
     return render(request, 'sickgenes/study.html', context={'study': study})
+
+def gene_list(request):
+    """
+    Displays a paginated and filterable table of genes.
+    """
+    base_queryset = HgncGene.objects.all()
+    
+    form = GeneFilterForm(request.GET)
+    
+    if form.is_valid() and form.cleaned_data.get('disease'):
+        disease = form.cleaned_data['disease']
+        
+        base_queryset = base_queryset.filter(
+            genefinding__study_cohort__disease_tags=disease
+        ).distinct() 
+
+    genes = base_queryset.annotate(
+        study_count=Count('genefinding__study_cohort__study', distinct=True)
+    )
+
+    context = {
+        'form': form,
+        'genes': genes,
+    }
+    
+    return render(request, 'sickgenes/gene_list.html', context)
 
 @staff_member_required
 def add_study(request):

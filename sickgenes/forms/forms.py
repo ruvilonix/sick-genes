@@ -60,3 +60,10 @@ class StudyCohortForm(forms.ModelForm):
         fields = ['disease_tags', 'note']
 
     
+class GeneFilterForm(forms.Form):
+    disease = forms.ModelChoiceField(
+        queryset=Disease.objects.all().order_by('name'),
+        required=False,
+        empty_label="All Diseases",
+        widget=forms.Select(attrs={'class': 'form-control form-control-sm'})
+    )
