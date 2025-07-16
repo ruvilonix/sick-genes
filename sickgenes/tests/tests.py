@@ -148,7 +148,7 @@ class GeneDetailTests(TestCase):
         """
         Tests that the gene detail page for an existing gene returns a 200 OK response.
         """
-        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'pk': self.gene.pk}))
+        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': self.gene.symbol}))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'sickgenes/gene_detail.html')
         self.assertEqual(response.context['gene'], self.gene)
@@ -157,14 +157,14 @@ class GeneDetailTests(TestCase):
         """
         Tests that the view returns a 404 Not Found for a non-existent gene PK.
         """
-        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'pk': 999}))
+        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': 'NOTREAL'}))
         self.assertEqual(response.status_code, 404)
 
     def test_studies_data_context_is_correctly_structured_and_sorted(self):
         """
         Tests that 'studies_data' is correctly aggregated, grouped, and sorted.
         """
-        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'pk': self.gene.pk}))
+        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': self.gene.symbol}))
         self.assertEqual(response.status_code, 200)
         
         studies_data = response.context['studies_data']
@@ -203,7 +203,7 @@ class GeneDetailTests(TestCase):
         # - 1 query for the prefetched study_cohort__disease_tags.
         # Total = 1 + 7 + 1 + 1 = 10 queries.
         with self.assertNumQueries(10):
-            response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'pk': self.gene.pk}))
+            response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': self.gene.symbol}))
             # Accessing the context data forces the querysets to be evaluated.
             self.assertIsNotNone(response.context['gene'])
             self.assertGreater(len(response.context['studies_data']), 0)
