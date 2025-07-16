@@ -16,6 +16,7 @@ def study(request, study_id):
             'study_cohorts__disease_tags',
             'study_cohorts__metabolite_findings',
             'study_cohorts__gene_findings',
+            'study_cohorts__gene_findings__hgnc_gene'
         ),
         pk=study_id
     )
