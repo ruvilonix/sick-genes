@@ -11,4 +11,6 @@ urlpatterns = [
     path('search/identify/<str:model_type>/', views.identify_molecules, name='identify_molecules'),
     path('manage/<int:study_cohort_id>/<str:model_type>/insert/', views.insert_findings, name='insert_findings'),
 
+    path('graph/retrieve-network/', views.gene_network_data, name="gene_network_data"),
+    path('graph/display/', views.graph_display, name='graph_display'),
 ]

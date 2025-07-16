@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gene Network Graph</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: sans-serif;
+        }
+        #sigma-container {
+            width: 100%;
+            height: 95vh; /* Use most of the viewport height */
+            background: #f9f9f9;
+            border-bottom: 1px solid #ccc;
+        }
+        h1 {
+            padding-left: 20px;
+            height: 5vh;
+            margin: 0;
+            line-height: 5vh;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Gene Interaction Network</h1>
+    <div id="sigma-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/graphology@0.25.4/dist/graphology.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sigma@3.0.0-beta.23/sigma.min.js"></script>
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const container = document.getElementById("sigma-container");
+            
+            // --- 1. Define disease IDs and construct the data URL ---
+            // For this example, we'll hardcode some IDs.
+            // In a real app, you might get this from a form or URL parameter.
+            const diseaseIds = '1'; 
+
+            // Use Django's `url` template tag to generate the base URL securely.
+            // Then, append the query parameters.
+            const dataUrl = `{% url 'sickgenes:gene_network_data' %}?disease_ids=${diseaseIds}`;
+
+            // --- 2. Fetch data and render the graph ---
+            fetch(dataUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(data);
+                    // Your JSON has a 'nodes' and 'edges' structure, which is perfect for Graphology.
+                    const graph = new graphology.Graph();
+                    graph.import(data);
+
+                    // --- 3. Instantiate Sigma.js ---
+                    // The 'x', 'y', 'size', and 'color' attributes in your JSON will be
+                    // automatically used by Sigma.js for positioning and styling.
+                    const renderer = new Sigma(graph, container, {
+                        // We can add sigma settings here if needed
+                        // e.g., renderEdgeLabels: true,
+                    });
+                })
+                .catch(error => {
+                    console.error("Failed to load graph data:", error);
+                    container.innerHTML = `<p style="color: red; text-align: center;">Could not load graph. Check the console for errors.</p>`;
+                });
+        });
+    </script>
+</body>
+</html>
