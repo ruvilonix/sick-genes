@@ -1,0 +1,56 @@
+{% extends "sickgenes/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <h1 class="display-4">{{ gene.symbol }}</h1>
+        <p class="lead text-muted">{{ gene.name }}</p>
+        <ul class="list-inline">
+            <li class="list-inline-item"><strong>HGNC ID:</strong> {{ gene.hgnc_id }}</li>
+            <li class="list-inline-item"><strong>Entrez ID:</strong> {{ gene.entrez_id }}</li>
+            <li class="list-inline-item"><strong>Ensembl ID:</strong> {{ gene.ensembl_gene_id }}</li>
+        </ul>
+    </div>
+
+    <hr>
+
+    <h2>Studies</h2>
+
+    {% if studies_data %}
+        {% for study, cohorts in studies_data %}
+            <div class="card my-4">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <a href="{{ study.get_absolute_url }}">{{ study.title }}</a>
+                    </h4>
+                    <small class="text-muted">{{ study.publication_year }} | {{ study.authors }}</small>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Cohorts in this Study</h5>
+                    {% for cohort in cohorts %}
+                        <div class="cohort-item ml-3 mb-2 p-2 border-left">
+                            <strong>Diseases:</strong>
+                            {% for disease in cohort.disease_tags.all %}
+                                <span class="badge badge-info">{{ disease.name }}</span>
+                            {% empty %}
+                                <span class="badge badge-secondary">No diseases specified</span>
+                            {% endfor %}
+                            
+                            {% if cohort.note %}
+                                <p class="card-text mt-2 bg-light p-2 rounded">
+                                    <small><strong>Note:</strong> {{ cohort.note }}</small>
+                                </p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            No studies have been associated with this gene yet.
+        </div>
+    {% endif %}
+
+</div>
+{% endblock content %}

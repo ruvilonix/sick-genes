@@ -5,6 +5,7 @@ app_name = 'sickgenes'
 urlpatterns = [
     path('study/<int:study_id>/', views.study, name="study"),
     path('genes/', views.gene_list, name='gene_list'),
+    path('gene/<int:pk>/', views.gene_detail, name='gene_detail'),
 
     path('manage/add_study/', views.add_study, name="add_study"),
     path('fetch_paper_info/', views.fetch_paper_info, name='fetch_paper_info'),

@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.models import Prefetch, Count
 from django.contrib.admin.views.decorators import staff_member_required
 from sickgenes.tables import GeneTable
+from collections import defaultdict
 
 def study(request, study_id):
     study = get_object_or_404(
@@ -48,6 +49,40 @@ def gene_list(request):
     }
     
     return render(request, 'sickgenes/gene_list.html', context)
+
+def gene_detail(request, pk):
+    """
+    Displays details for a single gene
+    """
+    gene = get_object_or_404(HgncGene, pk=pk)
+
+    gene_findings = GeneFinding.objects.filter(hgnc_gene=gene).select_related(
+        'study_cohort__study'
+    ).prefetch_related(
+        'study_cohort__disease_tags'
+    )
+
+    studies_data = defaultdict(list)
+    for finding in gene_findings:
+        study = finding.study_cohort.study
+        cohort = finding.study_cohort
+        
+        if cohort not in studies_data[study]:
+            studies_data[study].append(cohort)
+
+    sorted_studies = sorted(
+        studies_data.items(), 
+        key=lambda item: (item[0].publication_year or 0, item[0].title), 
+        reverse=True
+    )
+
+    context = {
+        'gene': gene,
+        'studies_data': sorted_studies
+    }
+    
+    return render(request, 'sickgenes/gene_detail.html', context)
+
 
 @staff_member_required
 def add_study(request):
