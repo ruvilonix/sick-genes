@@ -7,6 +7,5 @@ class GeneTable(tables.Table):
 
     class Meta:
         model = HgncGene
-        template_name = "django_tables2/bootstrap5.html" 
         fields = ("symbol", "name", "study_count")
         order_by = ("-study_count", "symbol")

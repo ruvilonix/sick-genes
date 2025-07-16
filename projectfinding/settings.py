@@ -145,3 +145,6 @@ if not TESTING:
     INTERNAL_IPS = [
         "127.0.0.1",
     ]
+
+# django-tables2
+DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5.html"
