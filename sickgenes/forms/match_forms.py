@@ -3,7 +3,7 @@ from django.forms import formset_factory
 
 class SearchInitialForm(forms.Form):
     search_terms = forms.CharField(
-        widget=forms.Textarea(),
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 6}),
         required=False,
     )
 
@@ -19,25 +19,49 @@ class SearchInitialForm(forms.Form):
         return search_terms
     
 class SearchNoMatchesForm(forms.Form):
-    search_term = forms.CharField(max_length=300, required=False)
-    delete = forms.BooleanField(required=False)
+    search_term = forms.CharField(
+        max_length=300, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    delete = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
 
 SearchNoMatchesFormSet = formset_factory(SearchNoMatchesForm, extra=0)
 
 class SearchMultipleMatchesForm(forms.Form):
-    search_term = forms.CharField(max_length=300, required=False)
-    item_id = forms.ChoiceField(choices=[('', 'Please select one')], required=False)
-    delete = forms.BooleanField(required=False)
+    search_term = forms.CharField(
+        max_length=300, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': True})
+    )
+    item_id = forms.ChoiceField(
+        choices=[('', 'Please select one')], required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    delete = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
 
 
 SearchMultipleMatchesFormSet = formset_factory(SearchMultipleMatchesForm, extra=0)
 
 
 class SearchOneMatchForm(forms.Form):
-    search_term = forms.CharField(max_length=300, required=False)
-    item_id = forms.IntegerField()
-    item_string = forms.CharField(max_length=300, required=False)
-    delete = forms.BooleanField(required=False)
+    search_term = forms.CharField(
+        max_length=300, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': True})
+    )
+    item_id = forms.IntegerField(widget=forms.HiddenInput())
+    item_string = forms.CharField(
+        max_length=300, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': True})
+    )
+    delete = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
 
 SearchOneMatchFormSet = formset_factory(SearchOneMatchForm, extra=0)
 

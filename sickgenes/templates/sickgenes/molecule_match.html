@@ -3,40 +3,112 @@
 {% block title %}{{ title }} | Sick Genes{% endblock %}
 
 {% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">{{ title }}</h1>
 
-<form action="" method="POST">
-    {% csrf_token %}
-    {{ search_no_matches_formset.management_form }}
-    {{ search_multiple_matches_formset.management_form }}
-    {{ search_one_match_formset.management_form }}
+    <form action="" method="POST" novalidate>
+        {% csrf_token %}
+        {# These management forms are required for formsets to work correctly #}
+        {{ search_no_matches_formset.management_form }}
+        {{ search_multiple_matches_formset.management_form }}
+        {{ search_one_match_formset.management_form }}
 
-    {% if items_only_exist_in_one_match and view_type == 'insert' %}
-    Matches found for all search terms! <input type="submit" name="confirm_insert" value="Insert items into database">
-    {% endif %}
+        {# --- Initial Search Box and Action Buttons --- #}
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="{{ search_initial_form.search_terms.id_for_label }}" class="form-label fs-5">
+                        <strong>Enter Search Terms</strong> (one per line)
+                    </label>
+                    {{ search_initial_form.search_terms }}
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    {% if items_only_exist_in_one_match and view_type == 'insert' %}
+                        <button type="submit" name="confirm_insert" value="Insert items into database" class="btn btn-success btn-lg">✅ Confirm and Insert All</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
-    {{ search_initial_form }}
-    
-    <table>
-        {% for form in search_no_matches_formset %}
-        <tr>
-            <td>{{ form }}</td>
-        </tr>
-        {% endfor %}
+        {# --- Results Sections --- #}
 
-        {% for form in search_multiple_matches_formset %}
-        <tr>
-            <td>{{ form }}</td>
-        </tr>
-        {% endfor %}
+        {# No Matches Found #}
+        {% if search_no_matches_formset.forms %}
+            <h2 class="mt-5 border-bottom pb-2 mb-3">⚠️ No Matches Found</h2>
+            <p class="text-muted">You can correct the search terms below or mark them for deletion.</p>
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col" style="width: 90%;">Search Term (Editable)</th>
+                        <th scope="col" class="text-center">Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for form in search_no_matches_formset %}
+                        {{ form.id }} {# Renders the hidden ID for the form in the formset #}
+                        <tr>
+                            <td>{{ form.search_term }}</td>
+                            <td class="text-center">{{ form.delete }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
 
-        {% for form in search_one_match_formset %}
-        <tr>
-            <td>{{ form }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+        {# Multiple Matches Found #}
+        {% if search_multiple_matches_formset.forms %}
+            <h2 class="mt-5 border-bottom pb-2 mb-3">🤔 Multiple Matches Found</h2>
+            <p class="text-muted">Please select the correct item for each search term.</p>
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Search Term</th>
+                        <th scope="col">Select Correct Item</th>
+                        <th scope="col" class="text-center">Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for form in search_multiple_matches_formset %}
+                        {{ form.id }}
+                        <tr>
+                            <td>{{ form.search_term }}</td>
+                            <td>{{ form.item_id }}</td>
+                            <td class="text-center">{{ form.delete }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
 
-    <input type="submit" name="find_matches" value="Submit">
-</form>
+        <button type="submit" name="find_matches" value="Submit" class="btn btn-primary btn-lg">🔍 Find Matches</button>
 
+
+        {# One Match Found #}
+        {% if search_one_match_formset.forms %}
+            <h2 class="mt-5 border-bottom pb-2 mb-3">👍 One Match Found</h2>
+            <p class="text-muted">These items were match to a single item. Mark any incorrect matches for deletion.</p>
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Search Term</th>
+                        <th scope="col">Matched Item</th>
+                        <th scope="col" class="text-center">Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for form in search_one_match_formset %}
+                        {{ form.id }}
+                        {{ form.item_id }} {# This is a hidden field and won't be visible #}
+                        <tr>
+                            <td>{{ form.search_term }}</td>
+                            <td>{{ form.item_string }}</td>
+                            <td class="text-center">{{ form.delete }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+    </form>
+</div>
 {% endblock %}
