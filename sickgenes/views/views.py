@@ -6,6 +6,7 @@ from sickgenes.forms import StudyForm, StudyCohortForm, GeneFilterForm
 from django.db import transaction
 from django.db.models import Prefetch, Count
 from django.contrib.admin.views.decorators import staff_member_required
+from sickgenes.tables import GeneTable
 
 def study(request, study_id):
     study = get_object_or_404(
@@ -39,9 +40,11 @@ def gene_list(request):
         study_count=Count('genefinding__study_cohort__study', distinct=True)
     )
 
+    genes_table = GeneTable(genes)
+
     context = {
         'form': form,
-        'genes': genes,
+        'genes_table': genes_table,
     }
     
     return render(request, 'sickgenes/gene_list.html', context)
