@@ -90,7 +90,7 @@ def gene_network_data(request):
                     'key': f'e{interaction.id}',
                     'source': source_gene_symbol,
                     'target': target_gene_symbol,
-                    'size': interaction.combined_score / 500, # Scale score for better visualization
+                    'size': interaction.combined_score / 100, # Scale score for better visualization
                     'type': 'line',
                     'color': '#ccc'
                 })
