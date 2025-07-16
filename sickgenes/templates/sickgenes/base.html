@@ -9,6 +9,12 @@
         <div id="header">
             <span class="logo">Sick Genes</span>
 
+            <ul class="menu">
+                <li>
+                    <a href="{% url "sickgenes:gene_list" %}">Genes</a>
+                </li>
+            </ul>
+
             {% if request.user.is_staff %}
                 <ul class="menu">
                     <li>
