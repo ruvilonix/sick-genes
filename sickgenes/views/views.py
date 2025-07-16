@@ -54,7 +54,16 @@ def gene_detail(request, pk):
     """
     Displays details for a single gene
     """
-    gene = get_object_or_404(HgncGene, pk=pk)
+    gene_queryset = HgncGene.objects.prefetch_related(
+        'ena_set',
+        'uniprotid_set',
+        'omimid_set',
+        'aliassymbol_set',
+        'aliasname_set',
+        'prevsymbol_set',
+        'prevname_set'
+    )
+    gene = get_object_or_404(gene_queryset, pk=pk)
 
     gene_findings = GeneFinding.objects.filter(hgnc_gene=gene).select_related(
         'study_cohort__study'
