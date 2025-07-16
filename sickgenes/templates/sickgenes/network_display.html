@@ -35,7 +35,10 @@
         
         document.addEventListener("DOMContentLoaded", () => {
             const container = document.getElementById("sigma-container");
-            const diseaseIds = '1';
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const diseaseIds = urlParams.get('disease_ids') || '1';
+            
             const dataUrl = `{% url 'sickgenes:gene_network_data' %}?disease_ids=${diseaseIds}`;
             
             fetch(dataUrl)
