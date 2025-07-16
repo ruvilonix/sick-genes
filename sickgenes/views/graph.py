@@ -19,15 +19,17 @@ def gene_network_data(request):
     - Edges: STRING DB interactions between the identified genes.
       - 'size' attribute corresponds to the 'combined_score'.
     """
-    # 1. Get and validate disease IDs from the GET request
-    disease_id_list = request.GET.getlist('disease_ids')
-    if not disease_id_list:
+    disease_ids_param = request.GET.get('disease_ids')
+    if not disease_ids_param:
         return JsonResponse({'error': 'Please provide at least one disease ID.'}, status=400)
 
     try:
-        # Convert all provided IDs to integers
-        disease_ids = [int(id) for id in disease_id_list]
+        disease_ids = list(set(int(id.strip()) for id in disease_ids_param.split(',') if id.strip()))
         num_diseases = len(disease_ids)
+        
+        if num_diseases == 0:
+            return JsonResponse({'error': 'Please provide at least one valid disease ID.'}, status=400)
+            
     except ValueError:
         return JsonResponse({'error': 'Invalid disease ID provided.'}, status=400)
 
