@@ -51,7 +51,7 @@ def gene_list(request):
     
     return render(request, 'sickgenes/gene_list.html', context)
 
-def gene_detail(request, pk):
+def gene_detail(request, hgnc_symbol):
     """
     Displays details for a single gene
     """
@@ -64,7 +64,7 @@ def gene_detail(request, pk):
         'prevsymbol_set',
         'prevname_set'
     )
-    gene = get_object_or_404(gene_queryset, pk=pk)
+    gene = get_object_or_404(gene_queryset, symbol=hgnc_symbol)
 
     gene_findings = GeneFinding.objects.filter(hgnc_gene=gene).select_related(
         'study_cohort__study'
