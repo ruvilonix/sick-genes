@@ -7,11 +7,206 @@ from django.urls import reverse
 from sickgenes.forms import StudyForm
 from sickgenes.models import (
     HgncGene, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName,
-    HmdbMetabolite, MetaboliteSynonym, SecondaryAccession
+    HmdbMetabolite, MetaboliteSynonym, SecondaryAccession, GeneFinding
 )
 from unittest.mock import patch, Mock
 import requests
 from django.contrib.auth.models import User
+
+class GeneListTests(TestCase):
+    """
+    Tests for the gene_list view.
+    """
+    @classmethod
+    def setUpTestData(cls):
+        """Set up non-modified objects used by all test methods."""
+        # Create Diseases
+        cls.disease1 = Disease.objects.create(name='Cardiomyopathy')
+        cls.disease2 = Disease.objects.create(name='Epilepsy')
+
+        # Create Genes
+        cls.gene_brca1 = HgncGene.objects.create(symbol='BRCA1')
+        cls.gene_scn1a = HgncGene.objects.create(symbol='SCN1A')
+        cls.gene_ttn = HgncGene.objects.create(symbol='TTN')
+
+        # Create Studies
+        cls.study1 = Study.objects.create(title='Cardio Study A', publication_year=2020)
+        cls.study2 = Study.objects.create(title='Neuro Study B', publication_year=2021)
+        cls.study3 = Study.objects.create(title='Multi-gene Study C', publication_year=2022)
+
+        # Create Study Cohorts and link diseases
+        cls.cohort1 = StudyCohort.objects.create(study=cls.study1)
+        cls.cohort1.disease_tags.add(cls.disease1)
+
+        cls.cohort2 = StudyCohort.objects.create(study=cls.study2)
+        cls.cohort2.disease_tags.add(cls.disease2)
+        
+        cls.cohort3 = StudyCohort.objects.create(study=cls.study3)
+        cls.cohort3.disease_tags.add(cls.disease1, cls.disease2)
+
+        # Create GeneFindings to link genes to cohorts
+        # Gene TTN is in two studies (Study1, Study3)
+        GeneFinding.objects.create(hgnc_gene=cls.gene_ttn, study_cohort=cls.cohort1)
+        GeneFinding.objects.create(hgnc_gene=cls.gene_ttn, study_cohort=cls.cohort3)
+        
+        # Gene SCN1A is in two studies (Study2, Study3)
+        GeneFinding.objects.create(hgnc_gene=cls.gene_scn1a, study_cohort=cls.cohort2)
+        GeneFinding.objects.create(hgnc_gene=cls.gene_scn1a, study_cohort=cls.cohort3)
+
+        # Gene BRCA1 is only in one study (Study3)
+        GeneFinding.objects.create(hgnc_gene=cls.gene_brca1, study_cohort=cls.cohort3)
+        
+    def test_gene_list_view_loads_successfully(self):
+        """
+        Tests that the gene list page returns a 200 OK response.
+        """
+        response = self.client.get(reverse('sickgenes:gene_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'sickgenes/gene_list.html')
+        self.assertIn('form', response.context)
+        self.assertIn('genes_table', response.context)
+
+    def test_gene_list_unfiltered_study_counts(self):
+        """
+        Tests that the annotated study_count is correct without any filters.
+        """
+        response = self.client.get(reverse('sickgenes:gene_list'))
+        genes_in_context = {gene.symbol: gene for gene in response.context['genes_table'].data}
+
+        # Check that all genes are present
+        self.assertEqual(len(genes_in_context), 3)
+
+        # Verify the study count for each gene
+        self.assertEqual(genes_in_context['TTN'].study_count, 2)    # Associated with study1 and study3
+        self.assertEqual(genes_in_context['SCN1A'].study_count, 2) # Associated with study2 and study3
+        self.assertEqual(genes_in_context['BRCA1'].study_count, 1) # Associated with study3 only
+        
+    def test_gene_list_filters_by_disease(self):
+        """
+        Tests that the list is correctly filtered when a disease is selected.
+        """
+        # Filter by Cardiomyopathy (disease1)
+        url = f"{reverse('sickgenes:gene_list')}?disease={self.disease1.pk}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        genes_in_context = response.context['genes_table'].data
+        gene_symbols = {gene.symbol for gene in genes_in_context}
+
+        # TTN (via cohort1) and SCN1A/BRCA1 (via cohort3) are linked to disease1
+        self.assertEqual(len(genes_in_context), 3)
+        self.assertIn('TTN', gene_symbols)
+        self.assertIn('SCN1A', gene_symbols)
+        self.assertIn('BRCA1', gene_symbols)
+        
+        # Filter by Epilepsy (disease2)
+        url = f"{reverse('sickgenes:gene_list')}?disease={self.disease2.pk}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        genes_in_context = response.context['genes_table'].data
+        gene_symbols = {gene.symbol for gene in genes_in_context}
+
+        # SCN1A (via cohort2) and TTN/BRCA1 (via cohort3) are linked to disease2
+        self.assertEqual(len(genes_in_context), 3)
+        self.assertIn('TTN', gene_symbols)
+        self.assertIn('SCN1A', gene_symbols)
+        self.assertIn('BRCA1', gene_symbols)
+
+class GeneDetailTests(TestCase):
+    """
+    Tests for the gene_detail view.
+    """
+    @classmethod
+    def setUpTestData(cls):
+        """Set up non-modified objects used by all test methods."""
+        # Create a single gene to test in detail
+        cls.gene = HgncGene.objects.create(pk=1, symbol='TTN')
+
+        # Create studies with different publication years for sorting test
+        cls.study_2022 = Study.objects.create(title='Newer Study', publication_year=2022)
+        cls.study_2020 = Study.objects.create(title='Older Study', publication_year=2020)
+        cls.study_no_year = Study.objects.create(title='Study with no year', publication_year=None)
+
+        # Create cohorts belonging to the studies
+        # Two cohorts are in the same study to test grouping
+        cls.cohort_a_2022 = StudyCohort.objects.create(study=cls.study_2022)
+        cls.cohort_b_2022 = StudyCohort.objects.create(study=cls.study_2022)
+        cls.cohort_c_2020 = StudyCohort.objects.create(study=cls.study_2020)
+        
+        # Link the gene to these cohorts
+        GeneFinding.objects.create(hgnc_gene=cls.gene, study_cohort=cls.cohort_a_2022)
+        GeneFinding.objects.create(hgnc_gene=cls.gene, study_cohort=cls.cohort_b_2022)
+        GeneFinding.objects.create(hgnc_gene=cls.gene, study_cohort=cls.cohort_c_2020)
+
+        # Create another gene and finding that should NOT appear on the detail page
+        other_gene = HgncGene.objects.create(pk=2, symbol='OTHER')
+        other_cohort = StudyCohort.objects.create(study=cls.study_2022)
+        GeneFinding.objects.create(hgnc_gene=other_gene, study_cohort=other_cohort)
+
+    def test_gene_detail_view_loads_successfully(self):
+        """
+        Tests that the gene detail page for an existing gene returns a 200 OK response.
+        """
+        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'pk': self.gene.pk}))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'sickgenes/gene_detail.html')
+        self.assertEqual(response.context['gene'], self.gene)
+
+    def test_gene_detail_view_returns_404_for_invalid_pk(self):
+        """
+        Tests that the view returns a 404 Not Found for a non-existent gene PK.
+        """
+        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'pk': 999}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_studies_data_context_is_correctly_structured_and_sorted(self):
+        """
+        Tests that 'studies_data' is correctly aggregated, grouped, and sorted.
+        """
+        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'pk': self.gene.pk}))
+        self.assertEqual(response.status_code, 200)
+        
+        studies_data = response.context['studies_data']
+
+        # Should be 2 studies associated with the gene
+        self.assertEqual(len(studies_data), 2)
+        
+        # Check sorting: newest study (2022) should be first
+        self.assertEqual(studies_data[0][0], self.study_2022)
+        self.assertEqual(studies_data[1][0], self.study_2020)
+
+        # Check study 1 (Newer Study, 2022)
+        study1, cohorts1 = studies_data[0]
+        self.assertEqual(study1, self.study_2022)
+        # Check that both cohorts from this study are present
+        self.assertEqual(len(cohorts1), 2)
+        self.assertIn(self.cohort_a_2022, cohorts1)
+        self.assertIn(self.cohort_b_2022, cohorts1)
+        
+        # Check study 2 (Older Study, 2020)
+        study2, cohorts2 = studies_data[1]
+        self.assertEqual(study2, self.study_2020)
+        self.assertEqual(len(cohorts2), 1)
+        self.assertIn(self.cohort_c_2020, cohorts2)
+
+    def test_database_query_efficiency(self):
+        """
+        Verifies that prefetching prevents N+1 query problems.
+        The number of queries should be small and constant, regardless of the
+        number of related findings, cohorts, etc.
+        """
+        # We expect 10 queries, and this test ensures that number doesn't increase.
+        # - 1 query for the main HgncGene object.
+        # - 7 queries for each of the prefetched related sets on HgncGene (ena_set, uniprotid_set, etc.).
+        # - 1 query for GeneFinding (with StudyCohort and Study joined via select_related).
+        # - 1 query for the prefetched study_cohort__disease_tags.
+        # Total = 1 + 7 + 1 + 1 = 10 queries.
+        with self.assertNumQueries(10):
+            response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'pk': self.gene.pk}))
+            # Accessing the context data forces the querysets to be evaluated.
+            self.assertIsNotNone(response.context['gene'])
+            self.assertGreater(len(response.context['studies_data']), 0)
 
 class ImportHgncTest(TestCase):
     @classmethod

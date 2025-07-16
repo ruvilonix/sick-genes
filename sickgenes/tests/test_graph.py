@@ -72,22 +72,22 @@ class GeneGraphAPITestCase(TestCase):
         
         # Check nodes
         self.assertEqual(len(data['nodes']), 2)
-        node_symbols = {node['id'] for node in data['nodes']}
+        node_symbols = {node['key'] for node in data['nodes']}
         self.assertEqual(node_symbols, {'TP53', 'BRCA1'})
         
         # Verify study counts for each node
         for node in data['nodes']:
-            if node['id'] == 'TP53':
+            if node['key'] == 'TP53':
                 # TP53 is in Study 1 (Cancer) and Study 2 (Neuro)
                 self.assertEqual(node['size'], 2) 
-            elif node['id'] == 'BRCA1':
+            elif node['key'] == 'BRCA1':
                 # BRCA1 is in Study 1 (Cancer) and Study 4 (Neuro)
                 self.assertEqual(node['size'], 2)
 
         # Check edges
         self.assertEqual(len(data['edges']), 1)
         edge = data['edges'][0]
-        self.assertEqual(edge['id'], f'e{self.interaction.id}')
+        self.assertEqual(edge['key'], f'e{self.interaction.id}')
         self.assertIn(edge['source'], {'TP53', 'BRCA1'})
         self.assertIn(edge['target'], {'TP53', 'BRCA1'})
         self.assertEqual(edge['size'], 9.5) # 950 / 100

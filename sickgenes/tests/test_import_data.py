@@ -177,8 +177,8 @@ class StringDataImportTests(TestCase):
         
         # Check the console output
         output = self.stdout.getvalue()
-        self.assertIn("Records created: 2", output)
-        self.assertIn("Errors: 3", output)
+        self.assertIn("interactions created: 2", output)
+        self.assertIn("missing protein IDs encountered: 3", output)
 
     @patch('sickgenes.importers.update_string.os.path.exists', return_value=False)
     def test_process_string_interactions_file_not_found(self, mock_exists):
