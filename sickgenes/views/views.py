@@ -8,6 +8,7 @@ from django.db.models import Prefetch, Count
 from django.contrib.admin.views.decorators import staff_member_required
 from sickgenes.tables import GeneTable
 from collections import defaultdict
+from django_tables2.config import RequestConfig
 
 def study(request, study_id):
     study = get_object_or_404(
@@ -43,6 +44,7 @@ def gene_list(request):
     )
 
     genes_table = GeneTable(genes)
+    RequestConfig(request, paginate={"per_page": 25}).configure(genes_table)
 
     context = {
         'form': form,
