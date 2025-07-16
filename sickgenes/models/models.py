@@ -6,16 +6,6 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 import re
 
-@ArrayField.register_lookup
-class ArrayIContains(Lookup):
-    lookup_name = "icontains"
-
-    def as_sql(self, compiler, connection):
-        lhs, lhs_params = self.process_lhs(compiler, connection)
-        rhs, rhs_params = self.process_rhs(compiler, connection)
-        params = rhs_params + lhs_params
-        return "%s ILIKE ANY(%s)" % (rhs, lhs), params
-
 class Study(models.Model):
     title = models.CharField(max_length=500, verbose_name="Title")
     doi = models.CharField(max_length=255, verbose_name="DOI URL", unique=True, null=True, blank=True)
