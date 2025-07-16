@@ -61,8 +61,8 @@ class StudyCohortForm(forms.ModelForm):
 
     
 class GeneFilterForm(forms.Form):
-    disease = forms.ModelChoiceField(
-        queryset=Disease.objects.all().order_by('name'),
+    disease = forms.ModelChoiceField(   
+        queryset = Disease.objects.annotate(gene_findings_count=Count('study_cohorts__gene_findings')).filter(gene_findings_count__gte=1).order_by('name'),
         required=False,
         empty_label="All Diseases",
         widget=forms.Select(attrs={'class': 'form-control form-control-sm'})
