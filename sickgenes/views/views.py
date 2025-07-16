@@ -46,6 +46,7 @@ def gene_list(request):
     context = {
         'form': form,
         'genes_table': genes_table,
+        'title': 'Gene List',
     }
     
     return render(request, 'sickgenes/gene_list.html', context)
