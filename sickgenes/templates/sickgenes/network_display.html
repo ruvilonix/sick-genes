@@ -1,9 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gene Network Graph</title>
+{% extends 'sickgenes/base.html' %}
+
+{% block content %}
+
     <style>
         body, html {
             margin: 0;
@@ -25,30 +23,21 @@
             line-height: 5vh;
         }
     </style>
-</head>
-<body>
+
 
     <h1>Gene Interaction Network</h1>
     <div id="sigma-container"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/graphology@0.25.4/dist/graphology.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sigma@3.0.0-beta.23/sigma.min.js"></script>
-
-
-    <script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/graphology/0.26.0/graphology.umd.min.js" integrity="sha512-Hqa5FKQ53pYDWaRnytoNvRT3JXRac7dcH+kB3RUCX69CGNrnz5LE76Mp0z186qDv0LBWrwx5QipEoenZB5CE4w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/3.0.2/sigma.min.js" integrity="sha512-c90IgWzW14albFH675ZqMPL7t0hQtA+lZ9Pc1VuF45QButMHnyOUY2i2OBURHdeE2al9k96X+02zV3cYF+ynOw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script type="module">
+        import forceAtlas2 from 'https://cdn.skypack.dev/graphology-layout-forceatlas2@0.10.1';
+        
         document.addEventListener("DOMContentLoaded", () => {
             const container = document.getElementById("sigma-container");
-            
-            // --- 1. Define disease IDs and construct the data URL ---
-            // For this example, we'll hardcode some IDs.
-            // In a real app, you might get this from a form or URL parameter.
-            const diseaseIds = '1'; 
-
-            // Use Django's `url` template tag to generate the base URL securely.
-            // Then, append the query parameters.
+            const diseaseIds = '1';
             const dataUrl = `{% url 'sickgenes:gene_network_data' %}?disease_ids=${diseaseIds}`;
-
-            // --- 2. Fetch data and render the graph ---
+            
             fetch(dataUrl)
                 .then(response => {
                     if (!response.ok) {
@@ -57,24 +46,49 @@
                     return response.json();
                 })
                 .then(data => {
-                    console.log(data);
-                    // Your JSON has a 'nodes' and 'edges' structure, which is perfect for Graphology.
                     const graph = new graphology.Graph();
-                    graph.import(data);
-
-                    // --- 3. Instantiate Sigma.js ---
-                    // The 'x', 'y', 'size', and 'color' attributes in your JSON will be
-                    // automatically used by Sigma.js for positioning and styling.
-                    const renderer = new Sigma(graph, container, {
-                        // We can add sigma settings here if needed
-                        // e.g., renderEdgeLabels: true,
+                    
+                    // Add nodes and edges
+                    data.nodes.forEach(node => {
+                        graph.addNode(node.key, {
+                            x: parseFloat(node.x),
+                            y: parseFloat(node.y),
+                            size: node.size,
+                            label: node.label,
+                            color: node.color
+                        });
                     });
+                    
+                    data.edges.forEach(edge => {
+                        graph.addEdge(edge.source, edge.target, {
+                            size: edge.size
+                        });
+                    });
+                    
+                    // Apply ForceAtlas2 layout for clustering
+                    forceAtlas2.assign(graph, {
+                        iterations: 50,
+                        settings: {
+                            gravity: 1,
+                            scalingRatio: 1,
+                            strongGravityMode: false,
+                            barnesHutOptimize: true,
+                            barnesHutTheta: 0.5,
+                            adjustSizes: false,
+                            edgeWeightInfluence: 1,
+                            slowDown: 1,
+                            linLogMode: false,
+                            outboundAttractionDistribution: false
+                        }
+                    });
+                    
+                    // Instantiate Sigma.js
+                    const sigma = new Sigma(graph, container);
                 })
                 .catch(error => {
-                    console.error("Failed to load graph data:", error);
-                    container.innerHTML = `<p style="color: red; text-align: center;">Could not load graph. Check the console for errors.</p>`;
+                    console.error('Error loading graph data:', error);
                 });
         });
     </script>
-</body>
-</html>
+
+{% endblock %}
