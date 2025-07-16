@@ -4,6 +4,8 @@ from django.shortcuts import render
 from django.db.models import Count, Q
 from sickgenes.models import HgncGene, StringInteraction
 
+CONFIDENCE_THRESHOLD = 700
+
 def gene_network_data(request):
     """
     API view to generate data for a Sigma.js graph.
@@ -63,7 +65,7 @@ def gene_network_data(request):
             'label': gene.symbol,
             'x': random.random(), # Assign random coordinates for initial layout
             'y': random.random(),
-            'size': gene.study_count*10, # Size node by study count
+            'size': gene.study_count*2, # Size node by study count
             'type': 'circle'
         })
         common_gene_pks.append(gene.pk)
@@ -73,7 +75,8 @@ def gene_network_data(request):
     if common_gene_pks:
         interactions = StringInteraction.objects.filter(
             protein1__hgnc_gene_id__in=common_gene_pks,
-            protein2__hgnc_gene_id__in=common_gene_pks
+            protein2__hgnc_gene_id__in=common_gene_pks,
+            combined_score__gte=CONFIDENCE_THRESHOLD,
         ).select_related('protein1__hgnc_gene', 'protein2__hgnc_gene')
 
         for interaction in interactions:
@@ -87,7 +90,7 @@ def gene_network_data(request):
                     'key': f'e{interaction.id}',
                     'source': source_gene_symbol,
                     'target': target_gene_symbol,
-                    'size': interaction.combined_score / 200, # Scale score for better visualization
+                    'size': interaction.combined_score / 500, # Scale score for better visualization
                     'type': 'line',
                     'color': '#ccc'
                 })
