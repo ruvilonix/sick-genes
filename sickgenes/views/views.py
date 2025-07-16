@@ -149,7 +149,7 @@ def identify_molecules(request, model_type):
     # (Assuming prepare_gene_identifiers is renamed to prepare_identifiers)
     context = prepare_identifiers(request, config['source_model'])
     context['view_type'] = 'search'
-    context['title'] = f'Search for {model_type}s'
+    context['title'] = f'Search'
 
     return render(request, 'sickgenes/molecule_match.html', context)
 
