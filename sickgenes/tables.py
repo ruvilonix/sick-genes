@@ -3,6 +3,7 @@ from .models import HgncGene
 
 class GeneTable(tables.Table):
     study_count = tables.Column(verbose_name="# of Studies")
+    symbol = tables.Column(linkify=True)
 
     class Meta:
         model = HgncGene
