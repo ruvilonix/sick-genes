@@ -1,55 +1,90 @@
 {% extends "sickgenes/base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="mb-4">
-        <h1 class="display-4">{{ gene.symbol }}</h1>
-        <p class="lead text-muted">{{ gene.name }}</p>
-        <ul class="list-inline">
-            <li class="list-inline-item"><strong>HGNC ID:</strong> {{ gene.hgnc_id }}</li>
-            <li class="list-inline-item"><strong>Entrez ID:</strong> {{ gene.entrez_id }}</li>
-            <li class="list-inline-item"><strong>Ensembl ID:</strong> {{ gene.ensembl_gene_id }}</li>
+<div>
+    <div>
+        <h1>{{ gene.symbol }}</h1>
+        <p>{{ gene.name }}</p>
+        <hr>
+        <h3>Primary Identifiers</h3>
+        <ul>
+            <li><strong>HGNC ID:</strong> {{ gene.hgnc_id }}</li>
+            <li><strong>Entrez ID:</strong> {{ gene.entrez_id }}</li>
+            <li><strong>Ensembl ID:</strong> {{ gene.ensembl_gene_id }}</li>
+            <li><strong>VEGA ID:</strong> {{ gene.vega_id }}</li>
+            <li><strong>UCSC ID:</strong> {{ gene.ucsc_id }}</li>
         </ul>
     </div>
+    
+    <hr>
+    
+    <h3>Other Identifiers & Names</h3>
+    
+    <div>
+        <strong>OMIM IDs:</strong>
+        {% for item in gene.omimid_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
+    </div>
+    <div>
+        <strong>UniProt IDs:</strong>
+        {% for item in gene.uniprotid_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
+    </div>
+    <div>
+        <strong>ENA IDs:</strong>
+        {% for item in gene.ena_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
+    </div>
+
+    <h4>Aliases & Previous Symbols</h4>
+    <ul>
+        <li>
+            <strong>Alias Symbols:</strong>
+            {% for item in gene.aliassymbol_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
+        </li>
+        <li>
+            <strong>Previous Symbols:</strong>
+            {% for item in gene.prevsymbol_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
+        </li>
+        <li>
+            <strong>Alias Names:</strong>
+            {% for item in gene.aliasname_set.all %}"{{ item.value }}"{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
+        </li>
+        <li>
+            <strong>Previous Names:</strong>
+            {% for item in gene.prevname_set.all %}"{{ item.value }}"{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
+        </li>
+    </ul>
 
     <hr>
 
-    <h2>Studies</h2>
+    <h2>Associated Studies</h2>
 
     {% if studies_data %}
         {% for study, cohorts in studies_data %}
-            <div class="card my-4">
-                <div class="card-header">
-                    <h4 class="mb-0">
+            <div style="border: 1px solid #ccc; margin: 1em 0; padding: 1em;">
+                <header>
+                    <h4>
                         <a href="{{ study.get_absolute_url }}">{{ study.title }}</a>
                     </h4>
-                    <small class="text-muted">{{ study.publication_year }} | {{ study.authors }}</small>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">Cohorts in this Study</h5>
+                    <p><small>{{ study.publication_year }} | {{ study.authors }}</small></p>
+                </header>
+                <div>
+                    <h5>Cohorts in this Study</h5>
                     {% for cohort in cohorts %}
-                        <div class="cohort-item ml-3 mb-2 p-2 border-left">
-                            <strong>Diseases:</strong>
+                        <div style="padding-left: 1em; margin-bottom: 0.5em;">
+                            <strong>Disease:</strong>
                             {% for disease in cohort.disease_tags.all %}
-                                <span class="badge badge-info">{{ disease.name }}</span>
+                                <span>{{ disease.name }}</span>{% if not forloop.last %}, {% endif %}
                             {% empty %}
-                                <span class="badge badge-secondary">No diseases specified</span>
+                                <span>No diseases specified</span>
                             {% endfor %}
-                            
-                            {% if cohort.note %}
-                                <p class="card-text mt-2 bg-light p-2 rounded">
-                                    <small><strong>Note:</strong> {{ cohort.note }}</small>
-                                </p>
-                            {% endif %}
                         </div>
                     {% endfor %}
                 </div>
             </div>
         {% endfor %}
     {% else %}
-        <div class="alert alert-info" role="alert">
+        <p>
             No studies have been associated with this gene yet.
-        </div>
+        </p>
     {% endif %}
 
 </div>
