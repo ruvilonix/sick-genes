@@ -22,3 +22,5 @@ class StringInteraction(models.Model):
             models.Index(fields=['protein1'], name='stringinteraction_protein1_idx'),
             models.Index(fields=['protein2'], name='stringinteraction_protein2_idx'),
         ]
+
+        unique_together = ['protein1', 'protein2']
