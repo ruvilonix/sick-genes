@@ -1,6 +1,7 @@
 from django.db import models
 from .managers import HgncGeneManager, HmdbMetaboliteManager
 from django.db.models.functions import Upper
+from django.urls import reverse
 
 
 class HgncGene(models.Model):
@@ -31,6 +32,9 @@ class HgncGene(models.Model):
     
     def __str__(self):
         return self.symbol or self.hgnc_id
+    
+    def get_absolute_url(self):
+        return reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': self.symbol})
 
 class BaseGeneAssociation(models.Model):
     gene = models.ForeignKey(HgncGene, on_delete=models.CASCADE)
