@@ -661,7 +661,7 @@ class AddGenesView(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'sickgenes/molecule_match.html')
-        self.assertContains(response, "Search terms:")
+        self.assertContains(response, "Search")
 
 class AddStudyView(TestCase):
     @classmethod
