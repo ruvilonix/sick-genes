@@ -4,6 +4,12 @@
 
 {% block content %}
 
-
+<div class="p-5 mb-4 bg-light container rounded-3 mt-4">
+    <div class="container-fluid py-5 text-center">
+        <h1 class="display-5 fw-bold">Sick Genes</h1>
+        <p class="fs-4">A resource for comparing significant gene findings from different studies.</p>
+        <a class="btn btn-primary btn-lg" href="{% url "sickgenes:gene_list" %}" role="button">Browse all genes</a>
+    </div>
+</div>
 
 {% endblock %}
