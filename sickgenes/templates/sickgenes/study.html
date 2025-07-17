@@ -31,7 +31,10 @@
 
 {# Cohorts and Findings Section #}
 <h2>Cohorts in this study</h2>
+
+{% if request.user.is_staff %}
 <p><a href="{% url 'sickgenes:add_study_cohort' study.id %}">Add new cohort</a></p>
+{% endif %}
 
 <div>
     {% for study_cohort in study.study_cohorts.all %}
@@ -52,7 +55,11 @@
                     </p>
                 {% endif %}
             {% endwith %}
+
+            {% if request.user.is_staff %}
             <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}">Add genes to this cohort</a>
+            {% endif %}
+            
         </div>
         {% if not forloop.last %}<hr style="border-style: dotted;">{% endif %}
     {% empty %}
