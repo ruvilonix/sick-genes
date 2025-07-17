@@ -68,6 +68,13 @@ class Study(models.Model):
         parts.append(str(self.publication_year))
         
         return " ".join(parts)
+    
+    @property
+    def first_journal_title(self):
+        """Returns the first journal title from the semi-colon separated list."""
+        if not self.journal_titles:
+            return None
+        return self.journal_titles.split(';')[0].strip()
 
     class Meta:
         verbose_name_plural = 'studies'
