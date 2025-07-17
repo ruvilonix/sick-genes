@@ -4,9 +4,9 @@ from sickgenes.forms import prepare_identifiers
 from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding
 from sickgenes.forms import StudyForm, StudyCohortForm, GeneFilterForm
 from django.db import transaction
-from django.db.models import Prefetch, Count
+from django.db.models import Prefetch, Count, Q
 from django.contrib.admin.views.decorators import staff_member_required
-from sickgenes.tables import GeneTable
+from sickgenes.tables import GeneTable, StudyTable
 from collections import defaultdict
 from django_tables2.config import RequestConfig
 
@@ -29,6 +29,43 @@ def study(request, study_id):
     )
 
     return render(request, 'sickgenes/study.html', context={'study': study})
+
+def study_list(request):
+    """
+    Displays a paginated and filterable table of genes.
+    """
+    base_queryset = Study.objects.all()
+    form = GeneFilterForm(request.GET)
+
+    count_filter = Q()
+
+    if form.is_valid() and form.cleaned_data.get('disease'):
+        disease = form.cleaned_data['disease']
+        
+        base_queryset = base_queryset.filter(
+            study_cohorts__disease_tags=disease
+        ).distinct()
+        
+        count_filter = Q(study_cohorts__disease_tags=disease)
+
+    studies = base_queryset.annotate(
+        gene_count=Count(
+            'study_cohorts__gene_findings__hgnc_gene',
+            filter=count_filter,
+            distinct=True
+        )
+    )
+    
+
+    study_table = StudyTable(studies)
+    RequestConfig(request, paginate={"per_page": 25}).configure(study_table)
+
+    context = {
+        'form': form,
+        'study_table': study_table,
+    }
+    
+    return render(request, 'sickgenes/study_list.html', context)
 
 def gene_list(request):
     """
