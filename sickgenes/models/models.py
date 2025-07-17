@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
+from datetime import date
 import re
 
 class Study(models.Model):
@@ -46,6 +47,27 @@ class Study(models.Model):
             return None
             
         return normalized_doi
+    
+    @property
+    def publication_date(self):
+        """
+        Returns a formatted publication date string, e.g., "15 Jul 2024".
+        Handles missing day or month.
+        """
+        if not self.publication_year:
+            return "N/A"
+        
+        parts = []
+        if self.publication_day:
+            parts.append(str(self.publication_day))
+        
+        if self.publication_month:
+            month_abbr = date(1900, self.publication_month, 1).strftime('%b')
+            parts.append(month_abbr)
+            
+        parts.append(str(self.publication_year))
+        
+        return " ".join(parts)
 
     class Meta:
         verbose_name_plural = 'studies'
