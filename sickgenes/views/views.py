@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.http import HttpResponse, Http404
 from sickgenes.forms import prepare_identifiers
 from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding
@@ -72,6 +73,10 @@ def gene_list(request):
     Displays a paginated and filterable table of genes.
     """
     base_queryset = HgncGene.objects.all()
+
+    gene_symbols_to_filter = request.GET.getlist('symbol')
+    if gene_symbols_to_filter:
+        base_queryset = base_queryset.filter(symbol__in=gene_symbols_to_filter)
     
     form = GeneFilterForm(request.GET)
     
@@ -188,11 +193,23 @@ def identify_molecules(request, model_type):
     if not config:
         raise Http404(f"Model type '{model_type}' is not supported.")
 
-    # Your existing logic for processing the input list
-    # (Assuming prepare_gene_identifiers is renamed to prepare_identifiers)
     context = prepare_identifiers(request, config['source_model'])
     context['view_type'] = 'search'
     context['title'] = f'Search'
+
+    if context.get('items_only_exist_in_one_match'):
+        search_one_match_formset = context['search_one_match_formset']
+
+        item_ids_to_search = []
+        for form in search_one_match_formset:
+            item_ids_to_search.append(form['item_id'].value())
+
+        items_to_search = list(HgncGene.objects.filter(id__in=item_ids_to_search).values_list('symbol', flat=True))
+
+        if items_to_search:
+            query_params = '&'.join([f'symbol={symbol}' for symbol in items_to_search])
+            redirect_url = f"{reverse('sickgenes:gene_list')}?{query_params}"
+            return redirect(redirect_url)
 
     return render(request, 'sickgenes/molecule_match.html', context)
 
