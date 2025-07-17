@@ -55,7 +55,7 @@ def study_list(request):
             filter=count_filter,
             distinct=True
         )
-    )
+    ).filter(gene_count__gt=0)
     
 
     study_table = StudyTable(studies)
