@@ -3,60 +3,81 @@
 {% block title %}{{ gene.symbol }}{% endblock %}
 
 {% block content %}
-<div>
-    <div>
+<section class="card p-3">
+    <header>
         <h1>{{ gene.symbol }}</h1>
-        <p>{{ gene.name }}</p>
-        <hr>
-        <h3>Primary Identifiers</h3>
-        <ul>
-            <li><strong>HGNC ID:</strong> {{ gene.hgnc_id }}</li>
-            <li><strong>Entrez ID:</strong> {{ gene.entrez_id }}</li>
-            <li><strong>Ensembl ID:</strong> {{ gene.ensembl_gene_id }}</li>
-            <li><strong>VEGA ID:</strong> {{ gene.vega_id }}</li>
-            <li><strong>UCSC ID:</strong> {{ gene.ucsc_id }}</li>
-        </ul>
-    </div>
-    
-    <hr>
-    
-    <h3>Other Identifiers & Names</h3>
-    
-    <div>
-        <strong>OMIM IDs:</strong>
-        {% for item in gene.omimid_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
-    </div>
-    <div>
-        <strong>UniProt IDs:</strong>
-        {% for item in gene.uniprotid_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
-    </div>
-    <div>
-        <strong>ENA IDs:</strong>
-        {% for item in gene.ena_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
-    </div>
+        <p class="text-muted">{{ gene.name }}</p>
+    </header>
+</section>
 
-    <h4>Aliases & Previous Symbols</h4>
-    <ul>
-        <li>
-            <strong>Alias Symbols:</strong>
-            {% for item in gene.aliassymbol_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
-        </li>
-        <li>
-            <strong>Previous Symbols:</strong>
-            {% for item in gene.prevsymbol_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
-        </li>
-        <li>
-            <strong>Alias Names:</strong>
-            {% for item in gene.aliasname_set.all %}"{{ item.value }}"{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
-        </li>
-        <li>
-            <strong>Previous Names:</strong>
-            {% for item in gene.prevname_set.all %}"{{ item.value }}"{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
-        </li>
-    </ul>
+<section class="card p-3">
+    <h3>Details</h3>
+    
+    <dl class="identifier-list">
+        {# --- Primary & External Identifiers --- #}
+        <dt>HGNC</dt>
+        <dd><a href="https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/{{ gene.hgnc_id }}" target="_blank" rel="noopener noreferrer">{{ gene.hgnc_id }}</a></dd>
 
-    <hr>
+        <dt>GeneCards</dt>
+        <dd><a href="https://www.genecards.org/cgi-bin/carddisp.pl?gene={{ gene.symbol }}" target="_blank" rel="noopener noreferrer">{{ gene.symbol }}</a>
+        <dt>NCBI</dt>
+        <dd>{% if gene.entrez_id %}<a href="https://www.ncbi.nlm.nih.gov/gene/{{ gene.entrez_id }}" target="_blank" rel="noopener noreferrer">{{ gene.entrez_id }}</a>{% else %}None{% endif %}</dd>
+        
+        <dt>Ensembl</dt>
+        <dd>{% if gene.ensembl_gene_id %}<a href="https://ensembl.org/id/{{ gene.ensembl_gene_id }}" target="_blank" rel="noopener noreferrer">{{ gene.ensembl_gene_id }}</a>{% else %}None{% endif %}</dd>
 
+        <dt>UniProt</dt>
+        <dd>
+            {% for item in gene.uniprotid_set.all %}
+                <a href="https://www.uniprot.org/uniprot/{{ item.value }}" target="_blank" rel="noopener noreferrer">{{ item.value }}</a>{% if not forloop.last %}, {% endif %}
+            {% empty %}
+                None
+            {% endfor %}
+        </dd>
+
+        <dt>OMIM</dt>
+        <dd>
+            {% for item in gene.omimid_set.all %}
+                <a href="https://www.omim.org/entry/{{ item.value }}" target="_blank" rel="noopener noreferrer">{{ item.value }}</a>{% if not forloop.last %}, {% endif %}
+            {% empty %}
+                None
+            {% endfor %}
+        </dd>
+
+        {# --- Other Identifiers --- #}
+        <dt>UCSC</dt>
+        <dd>{% if gene.ucsc_id %}<a href="http://genome.ucsc.edu/cgi-bin/hgGene?db=hg38&hgg_gene={{ gene.ucsc_id }}" target="_blank" rel="noopener noreferrer">{{ gene.ucsc_id }}</a>{% else %}None{% endif %}</dd>
+        
+        <dt>VEGA</dt>
+        <dd>{% if gene.vega_id %}<a href="http://vega.archive.ensembl.org/id/{{ gene.vega_id }}" target="_blank" rel="noopener noreferrer">{{ gene.vega_id }}</a>{% else %}None{% endif %}</dd>
+
+        <dt>ENA</dt>
+        <dd>
+            {% for item in gene.ena_set.all %}
+                <a href="https://www.ebi.ac.uk/ena/browser/view/{{ item.value }}" target="_blank" rel="noopener noreferrer">{{ item.value }}</a>{% if not forloop.last %}, {% endif %}
+            {% empty %}
+                None
+            {% endfor %}
+        </dd>
+        
+        <hr style="margin: 1rem 0;">
+
+        {# --- Aliases and Previous Names --- #}
+        <dt>Alias Symbols</dt>
+        <dd>{% for item in gene.aliassymbol_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</dd>
+        
+        <dt>Previous Symbols</dt>
+        <dd>{% for item in gene.prevsymbol_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</dd>
+
+        <dt>Alias Names</dt>
+        <dd>{% for item in gene.aliasname_set.all %}"{{ item.value }}"{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</dd>
+        
+        <dt>Previous Names</dt>
+        <dd>{% for item in gene.prevname_set.all %}"{{ item.value }}"{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</dd>
+    </dl>
+</section>
+
+<section class="card p-3">
     <h2>Associated Studies</h2>
 
     {% if studies_data %}
@@ -89,5 +110,6 @@
         </p>
     {% endif %}
 
-</div>
+</section>
+
 {% endblock content %}
