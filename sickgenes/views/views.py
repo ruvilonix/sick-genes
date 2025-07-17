@@ -77,6 +77,8 @@ def gene_list(request):
     gene_symbols_to_filter = request.GET.getlist('symbol')
     if gene_symbols_to_filter:
         base_queryset = base_queryset.filter(symbol__in=gene_symbols_to_filter)
+    else:
+        gene_symbols_to_filter = []
     
     form = GeneFilterForm(request.GET)
     
@@ -97,6 +99,7 @@ def gene_list(request):
     context = {
         'form': form,
         'genes_table': genes_table,
+        'filtered_genes': gene_symbols_to_filter,
         'title': 'Gene List',
     }
     
