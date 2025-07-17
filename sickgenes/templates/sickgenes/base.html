@@ -8,14 +8,24 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
     
         <style>
-          a {
-            color: #3487cf; 
-            text-decoration: none;
-          }
+            body a:not(.navbar-nav .nav-link, .navbar-brand, .btn) {
+                color: #3487cf; 
+                text-decoration: none;
+            }
 
-          a:hover {
-            text-decoration: underline;
-          }
+            body a:not(.navbar-nav .nav-link, .navbar-brand, .btn):hover {
+                text-decoration: underline;
+            }
+
+            .navbar-nav .nav-link {
+                color: #dddddd !important; /* Makes the text white */
+            }
+
+            .navbar-nav .nav-link:hover,
+            .navbar-nav .nav-link:focus {
+                color: #f8f9fa !important; /* Lighter white for hover/focus */
+                /* You can adjust this to a slightly different bright color if you want a subtle change on hover */
+            }
         </style>
 
     </head>
