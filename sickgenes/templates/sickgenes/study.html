@@ -4,37 +4,59 @@
 
 {% block content %}
 
-<p>{{ study.title }}</p>
-<p>DOI: {{ study.doi }}</p>
+{# Study Metadata Section #}
+<h1>{{ study.title }}</h1>
+{% if study.authors %}
+    <p><strong>Authors:</strong> {{ study.authors }}</p>
+{% endif %}
 
-{% if study.publisher_url %}<p><a href="{{ study.publisher_url }}" target="_blank">View on publisher website</a></p>{% endif %}
-{% if study.s4me_url %}<p><a href="{{ study.s4me_url }}" target="_blank">View on S4ME</a> {% endif %}
-{% if study.preprint %}<p>Preprint</p>{% endif %}
+<p>
+    {% if study.first_journal_title %}
+        <em>{{ study.first_journal_title }}</em>,
+    {% endif %}
+    {{ study.publication_date }}
+    {% if study.preprint %}(Preprint){% endif %}
+</p>
+
+<p>
+    {% if study.doi %}
+        <a href="https://doi.org/{{ study.doi }}" target="_blank">View article</a>
+    {% endif %}
+    {% if study.s4me_url %}
+        {% if study.doi %}|{% endif %} <a href="{{ study.s4me_url }}" target="_blank">Discussion on S4ME</a>
+    {% endif %}
+</p>
 
 <hr>
+
+{# Cohorts and Findings Section #}
 <h2>Cohorts in this study</h2>
-<a href="{% url 'sickgenes:add_study_cohort' study.id %}">Add cohort</a>
+<p><a href="{% url 'sickgenes:add_study_cohort' study.id %}">Add new cohort</a></p>
 
 <div>
     {% for study_cohort in study.study_cohorts.all %}
-        <div><b>Disease: </b>
-            {% for disease_tag in study_cohort.disease_tags.all %}
-            {{ disease_tag }}{% if not forloop.last %}, {% endif %}
-            {% endfor %}
+        <div style="margin-bottom: 2em;">
+            <h5>
+            Disease: 
+                {% for disease_tag in study_cohort.disease_tags.all %}
+                    {{ disease_tag }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </h5>
+
+            {% with gene_findings=study_cohort.gene_findings.all|dictsort:"hgnc_gene.symbol" %}
+                {% if gene_findings %}
+                    <p>
+                    {% for finding in gene_findings %}
+                        <a href="{{ finding.hgnc_gene.get_absolute_url }}">{{ finding.hgnc_gene }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                    </p>
+                {% endif %}
+            {% endwith %}
+            <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}">Add genes to this cohort</a>
         </div>
-
-        <h3>Gene Findings</h3>
-        {% for finding in study_cohort.gene_findings.all %}
-            <p>{{ finding.hgnc_gene }}</p>
-        {% endfor %}
-        <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}">Add genes</a>
-
-        <h3>Metabolite Findings</h3>
-        {% for finding in study_cohort.metabolite_findings.all %}
-            <p>{{ finding.hmdb_metabolite }}</p>
-        {% endfor %}
-        <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'metabolite' %}">Add metabolites</a>
-
+        {% if not forloop.last %}<hr style="border-style: dotted;">{% endif %}
+    {% empty %}
+        <p><em>No cohorts have been added to this study yet.</em></p>
     {% endfor %}
 </div>
 
