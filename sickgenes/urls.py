@@ -3,6 +3,7 @@ from . import views
 
 app_name = 'sickgenes'
 urlpatterns = [
+    path('', views.home, name='home'),
     path('study/<int:study_id>/', views.study, name="study"),
     path('genes/', views.gene_list, name='gene_list'),
     path('gene/<str:hgnc_symbol>/', views.gene_detail, name='gene_detail'),

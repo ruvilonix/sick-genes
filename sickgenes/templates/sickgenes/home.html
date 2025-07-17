@@ -1,41 +1,9 @@
 {% extends 'sickgenes/base.html' %}
 
-{% block title %}{{ study.title }}{% endblock %}
+{% block title %}Home{% endblock %}
 
 {% block content %}
 
-<p>{{ study.title }}</p>
-<p>DOI: {{ study.doi }}</p>
 
-{% if study.publisher_url %}<p><a href="{{ study.publisher_url }}" target="_blank">View on publisher website</a></p>{% endif %}
-{% if study.s4me_url %}<p><a href="{{ study.s4me_url }}" target="_blank">View on S4ME</a> {% endif %}
-{% if study.preprint %}<p>Preprint</p>{% endif %}
-
-<hr>
-<h2>Cohorts in this study</h2>
-<a href="{% url 'sickgenes:add_study_cohort' study.id %}">Add cohort</a>
-
-<div>
-    {% for study_cohort in study.study_cohorts.all %}
-        <div><b>Disease: </b>
-            {% for disease_tag in study_cohort.disease_tags.all %}
-            {{ disease_tag }}{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-        </div>
-
-        <h3>Gene Findings</h3>
-        {% for finding in study_cohort.gene_findings.all %}
-            <p>{{ finding.hgnc_gene }}</p>
-        {% endfor %}
-        <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}">Add genes</a>
-
-        <h3>Metabolite Findings</h3>
-        {% for finding in study_cohort.metabolite_findings.all %}
-            <p>{{ finding.hmdb_metabolite }}</p>
-        {% endfor %}
-        <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'metabolite' %}">Add metabolites</a>
-
-    {% endfor %}
-</div>
 
 {% endblock %}
