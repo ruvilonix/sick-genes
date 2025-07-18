@@ -23,6 +23,8 @@ class Study(models.Model):
 
     not_finished = models.BooleanField(default=False)
 
+    note = models.TextField(null=True, blank=True, default='')
+
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
