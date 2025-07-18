@@ -1,6 +1,6 @@
 This is the source code repository for the website [sickgenes.xyz](https://sickgenes.xyz).
 
-To install and run, place these variables in a `.env.` file in the project root (fill in secret key and database URL):
+To install and run, place these variables in a `.env` file in the project root (fill in secret key and database URL):
 
 ```
 SECRET_KEY="<CREATE SECRET KEY> "
