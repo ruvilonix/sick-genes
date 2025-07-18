@@ -10,12 +10,16 @@ from django.contrib.admin.views.decorators import staff_member_required
 from sickgenes.tables import GeneTable, StudyTable
 from collections import defaultdict
 from django_tables2.config import RequestConfig
+from django.conf import settings
 
 def home(request):
     return render(request, 'sickgenes/home.html')
 
 def about(request):
-    return render(request, 'sickgenes/about.html')
+    context = {
+        'contact_email_address': settings.CONTACT_EMAIL_ADDRESS,
+    }
+    return render(request, 'sickgenes/about.html', context)
 
 def study(request, study_id):
     study = get_object_or_404(

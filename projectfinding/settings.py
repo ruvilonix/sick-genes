@@ -148,3 +148,6 @@ if not TESTING:
 
 # django-tables2
 DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5.html"
+
+# For about page
+CONTACT_EMAIL_ADDRESS = os.getenv('CONTACT_EMAIL_ADDRESS', '<Email not set>')
