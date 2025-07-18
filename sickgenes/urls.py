@@ -4,9 +4,11 @@ from . import views
 app_name = 'sickgenes'
 urlpatterns = [
     path('', views.home, name='home'),
+    path('about/', views.about, name='about'),
+    
     path('studies/', views.study_list, name='study_list'),
     path('study/<int:study_id>/', views.study, name="study"),
-    
+
     path('genes/', views.gene_list, name='gene_list'),
     path('gene/<str:hgnc_symbol>/', views.gene_detail, name='gene_detail'),
     path('search/identify/<str:model_type>/', views.identify_molecules, name='identify_molecules'),

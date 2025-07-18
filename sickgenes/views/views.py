@@ -12,10 +12,10 @@ from collections import defaultdict
 from django_tables2.config import RequestConfig
 
 def home(request):
-    context = {
-        'title': 'Home',
-    }
     return render(request, 'sickgenes/home.html')
+
+def about(request):
+    return render(request, 'sickgenes/about.html')
 
 def study(request, study_id):
     study = get_object_or_404(
