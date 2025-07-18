@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.db.models import Count, Q
 from sickgenes.models import HgncGene, StringInteraction
 
-CONFIDENCE_THRESHOLD = 700
+CONFIDENCE_THRESHOLD = 999
 
 def gene_network_data(request):
     """
@@ -90,7 +90,7 @@ def gene_network_data(request):
                     'key': f'e{interaction.id}',
                     'source': source_gene_symbol,
                     'target': target_gene_symbol,
-                    'size': interaction.combined_score / 100, # Scale score for better visualization
+                    'size': interaction.combined_score / 300, # Scale score for better visualization
                     'type': 'line',
                     'color': '#ccc'
                 })
