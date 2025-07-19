@@ -163,16 +163,27 @@ def process_search_forms(
         search_no_matches_formset = SearchNoMatchesFormSet(initial=no_matches_initial, prefix="no_matches")
 
         # Multiple matches formset from multiple_matches in search_results
-        multiple_matches_data = search_results['multiple_matches'] 
-        multiple_matches_initial = [{"search_term": result['search_string']} for result in multiple_matches_data]
-        search_multiple_matches_formset = SearchMultipleMatchesFormSet(initial=multiple_matches_initial, prefix="multiple_matches")
+        multiple_matches_data = search_results['multiple_matches']
+        multiple_matches_initial = []
+        for result in multiple_matches_data:
+            initial_data = {'search_term': result['search_string']}
+            # Check for an exact case-insensitive match to set as a default
+            for item in result['items']:
+                if str(item).lower() == result['search_string'].lower():
+                    initial_data['item_id'] = item.id
+                    break
+            multiple_matches_initial.append(initial_data)
+        
+        search_multiple_matches_formset = SearchMultipleMatchesFormSet(
+            initial=multiple_matches_initial, prefix="multiple_matches"
+        )
 
         # Populate choices for the new multiple matches formset
         for i, form in enumerate(search_multiple_matches_formset):
             result_items = multiple_matches_data[i]['items']
             item_choices = [(item.id, str(item)) for item in result_items]
-            # Add the null choice for the new forms
-            form.fields['item_id'].choices = form.fields['item_id'].choices + item_choices
+            form.fields['item_id'].choices += item_choices
+
 
 
         # Populate new one_match formset
