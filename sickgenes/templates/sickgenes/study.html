@@ -30,7 +30,7 @@
 <hr>
 
 {# Cohorts and Findings Section #}
-<h2>Cohorts in this study</h2>
+<h3>Cohorts in this study</h3>
 
 {% if request.user.is_staff %}
 <p><a href="{% url 'sickgenes:add_study_cohort' study.id %}">Add new cohort</a></p>
