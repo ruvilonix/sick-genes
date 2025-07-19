@@ -7,6 +7,11 @@ from .models import (
     MetaboliteFinding, StringProtein, StringInteraction
 )
 
+from solo.admin import SingletonModelAdmin
+from sickgenes.models import SiteConfiguration
+
+admin.site.register(SiteConfiguration, SingletonModelAdmin)
+
 class ReadOnlyAdminMixin:
     def has_add_permission(self, request, obj=None):
         return False
