@@ -33,7 +33,12 @@ def study(request, study_id):
         pk=study_id
     )
 
-    return render(request, 'sickgenes/study.html', context={'study': study})
+    context = {
+        'opts': Study._meta,
+        'study': study,
+    }
+
+    return render(request, 'sickgenes/study.html', context)
 
 def study_list(request):
     """

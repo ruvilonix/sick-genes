@@ -1,4 +1,5 @@
 {% extends 'sickgenes/base.html' %}
+{% load admin_urls %}
 
 {% block title %}{{ study.title }}{% endblock %}
 
@@ -26,6 +27,12 @@
         {% if study.doi %}|{% endif %} <a href="{{ study.s4me_url }}" target="_blank">Discussion on S4ME</a>
     {% endif %}
 </p>
+
+{% if request.user.is_staff %}
+<p>
+    <a href="{% url opts|admin_urlname:'change' study.pk %}" target="_blank">Edit on Admin page</a>
+</p>
+{% endif %}
 
 <hr>
 
