@@ -47,7 +47,7 @@
     {% for study_cohort in study.study_cohorts.all %}
         <div style="margin-bottom: 2em;">
             <h5>
-            Disease: 
+            Phenotype: 
                 {% for disease_tag in study_cohort.disease_tags.all %}
                     {{ disease_tag }}{% if not forloop.last %}, {% endif %}
                 {% endfor %}

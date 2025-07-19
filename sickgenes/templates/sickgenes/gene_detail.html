@@ -93,11 +93,11 @@
                     <h5>Associated cohorts</h5>
                     {% for cohort in cohorts %}
                         <div style="padding-left: 1em; margin-bottom: 0.5em;">
-                            <strong>Disease:</strong>
+                            <strong>Phenotype:</strong>
                             {% for disease in cohort.disease_tags.all %}
                                 <span>{{ disease.name }}</span>{% if not forloop.last %}, {% endif %}
                             {% empty %}
-                                <span>No diseases specified</span>
+                                <span>No phenotypes specified</span>
                             {% endfor %}
                         </div>
                     {% endfor %}
