@@ -59,7 +59,9 @@ class DatabaseDumpJsonTest(TestCase):
             "journal_titles": "Journal of Science",
             "note": "A study note.",
             "s4me_url": "http://example.com/study",
-            "publication_date": "25 Jul 2025",
+            "publication_year": 2025,
+            "publication_month": 7,
+            "publication_day": 25,
             "study_cohorts": [
                 {
                     "note": "Cohort note.",
@@ -91,7 +93,6 @@ class DatabaseDumpJsonTest(TestCase):
             note="",               # Should be omitted
             publication_year="2025",
             publication_month="1",
-            publication_day="1",
         )
         
         response = self.client.get(self.url)
@@ -102,7 +103,8 @@ class DatabaseDumpJsonTest(TestCase):
 
         expected_study = {
             "title": "Minimal Study",
-            "publication_date": "1 Jan 2025"
+            "publication_year": 2025,
+            "publication_month": 1,
         }
         self.assertDictEqual(data["studies"][0], expected_study)
 
@@ -117,7 +119,7 @@ class DatabaseDumpJsonTest(TestCase):
         
         self.assertEqual(response.status_code, 200)
         self.assertDictEqual(data["studies"][0], {"title": "NA Date Study"})
-        self.assertNotIn("publication_date", data["studies"][0])
+        self.assertNotIn("publication_year", data["studies"][0])
 
     def test_omits_empty_cohort_from_list(self):
         """

@@ -28,10 +28,12 @@ def database_dump_json(request):
             study_data["note"] = study.note
         if study.s4me_url:
             study_data["s4me_url"] = study.s4me_url
-        
-        publication_date = study.publication_date
-        if publication_date and publication_date != "N/A":
-            study_data["publication_date"] = publication_date
+        if study.publication_year:
+            study_data["publication_year"] = study.publication_year
+        if study.publication_month:
+            study_data["publication_month"] = study.publication_month
+        if study.publication_day:
+            study_data["publication_day"] = study.publication_day
 
         cohorts_list = []
         for cohort in study.study_cohorts.all():
