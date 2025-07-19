@@ -20,21 +20,6 @@ class ReadOnlyAdminMixin:
 @admin.register(GeneFinding)
 class GeneFindingAdmin(admin.ModelAdmin):
     readonly_fields = ['study_cohort', 'hgnc_gene']
-
-class GeneFindingInline(admin.TabularInline):
-    model = GeneFinding
-    extra = 0
-    show_change_link = True
-
-    def has_add_permission(self, request, obj=None):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-    
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.select_related('study_cohort__study', 'hgnc_gene')
     
 class StudyCohortInline(admin.TabularInline):
     model = StudyCohort
@@ -54,9 +39,6 @@ class StudyAdmin(admin.ModelAdmin):
 
 @admin.register(StudyCohort)
 class StudyCohortAdmin(admin.ModelAdmin):
-    inlines = [
-        GeneFindingInline,
-    ]
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
