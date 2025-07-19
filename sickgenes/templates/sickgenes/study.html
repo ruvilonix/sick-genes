@@ -59,12 +59,21 @@
             {% if request.user.is_staff %}
             <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}">Add genes to this cohort</a>
             {% endif %}
-            
+
         </div>
         {% if not forloop.last %}<hr style="border-style: dotted;">{% endif %}
     {% empty %}
         <p><em>No cohorts have been added to this study yet.</em></p>
     {% endfor %}
 </div>
+
+<hr>
+
+<h3>Notes</h3>
+{% if study.note %}
+{{ study.note|linebreaks }}
+{% else %}
+No notes yet.
+{% endif %}
 
 {% endblock %}
