@@ -21,6 +21,9 @@ def about(request):
     }
     return render(request, 'sickgenes/about.html', context)
 
+def criteria(request):
+    return render(request, 'sickgenes/criteria.html')
+
 def study(request, study_id):
     study = get_object_or_404(
         Study.objects.prefetch_related(
