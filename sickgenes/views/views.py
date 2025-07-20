@@ -70,7 +70,7 @@ def study_list(request):
         
         base_queryset = base_queryset.filter(
             study_cohorts__disease_tags=disease
-        ).distinct()
+        ).exclude(not_finished=True).distinct()
         
         count_filter = Q(study_cohorts__disease_tags=disease)
 
@@ -112,7 +112,7 @@ def gene_list(request):
         
         base_queryset = base_queryset.filter(
             genefinding__study_cohort__disease_tags=disease
-        ).distinct() 
+        ).exclude(genefinding__study_cohort__study__not_finished=True).distinct() 
 
     genes = base_queryset.annotate(
         study_count=Count('genefinding__study_cohort__study', distinct=True)

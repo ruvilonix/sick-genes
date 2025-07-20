@@ -32,11 +32,13 @@ class GeneListTests(TestCase):
         cls.gene_brca1 = HgncGene.objects.create(symbol='BRCA1')
         cls.gene_scn1a = HgncGene.objects.create(symbol='SCN1A')
         cls.gene_ttn = HgncGene.objects.create(symbol='TTN')
+        cls.gene_abc = HgncGene.objects.create(symbol="ABC")
 
         # Create Studies
         cls.study1 = Study.objects.create(title='Cardio Study A', publication_year=2020)
         cls.study2 = Study.objects.create(title='Neuro Study B', publication_year=2021)
         cls.study3 = Study.objects.create(title='Multi-gene Study C', publication_year=2022)
+        cls.study4 = Study.objects.create(title="Not finished study", not_finished=True)
 
         # Create Study Cohorts and link diseases
         cls.cohort1 = StudyCohort.objects.create(study=cls.study1)
@@ -47,6 +49,9 @@ class GeneListTests(TestCase):
         
         cls.cohort3 = StudyCohort.objects.create(study=cls.study3)
         cls.cohort3.disease_tags.add(cls.disease1, cls.disease2)
+
+        cls.cohort4 = StudyCohort.objects.create(study=cls.study4)
+        cls.cohort4.disease_tags.add(cls.disease1)
 
         # Create GeneFindings to link genes to cohorts
         # Gene TTN is in two studies (Study1, Study3)
@@ -59,6 +64,8 @@ class GeneListTests(TestCase):
 
         # Gene BRCA1 is only in one study (Study3)
         GeneFinding.objects.create(hgnc_gene=cls.gene_brca1, study_cohort=cls.cohort3)
+
+        GeneFinding.objects.create(hgnc_gene=cls.gene_abc, study_cohort=cls.cohort4)
         
     def test_gene_list_view_loads_successfully(self):
         """
@@ -78,7 +85,7 @@ class GeneListTests(TestCase):
         genes_in_context = {gene.symbol: gene for gene in response.context['genes_table'].data}
 
         # Check that all genes are present
-        self.assertEqual(len(genes_in_context), 3)
+        self.assertEqual(len(genes_in_context), 4)
 
         # Verify the study count for each gene
         self.assertEqual(genes_in_context['TTN'].study_count, 2)    # Associated with study1 and study3
@@ -211,6 +218,140 @@ class GeneDetailTests(TestCase):
             # Accessing the context data forces the querysets to be evaluated.
             self.assertIsNotNone(response.context['gene'])
             self.assertGreater(len(response.context['studies_data']), 0)
+
+class StudyListViewTest(TestCase):
+    """
+    Test suite for the study_list view.
+    """
+    @classmethod
+    def setUpTestData(cls):
+        """
+        Set up non-modified objects used by all test methods once for the whole class.
+        This is more efficient than setUp() for data that doesn't change.
+        """
+        # Create Genes
+        cls.gene_a = HgncGene.objects.create(hgnc_id="HGNC:1", symbol="GENA")
+        cls.gene_b = HgncGene.objects.create(hgnc_id="HGNC:2", symbol="GENB")
+
+        # Create Diseases
+        cls.disease_x = Disease.objects.create(name="Disease X")
+        cls.disease_y = Disease.objects.create(name="Disease Y")
+
+        # Study 1: Linked to Disease X with Gene A. Should appear in unfiltered and filtered lists.
+        cls.study1 = Study.objects.create(title="Study 1 About Disease X", not_finished=False)
+        cohort1 = StudyCohort.objects.create(study=cls.study1)
+        cohort1.disease_tags.add(cls.disease_x)
+        GeneFinding.objects.create(study_cohort=cohort1, hgnc_gene=cls.gene_a)
+
+        # Study 2: Linked to Disease Y with Gene B. Should appear in unfiltered, but not when filtering by Disease X.
+        cls.study2 = Study.objects.create(title="Study 2 About Disease Y", not_finished=False)
+        cohort2 = StudyCohort.objects.create(study=cls.study2)
+        cohort2.disease_tags.add(cls.disease_y)
+        GeneFinding.objects.create(study_cohort=cohort2, hgnc_gene=cls.gene_b)
+
+        # Study 3: Linked to both Disease X (Gene A) and Disease Y (Gene B).
+        # Should appear in all lists, but its gene_count will change based on the filter.
+        cls.study3 = Study.objects.create(title="Study 3 About Both Diseases", not_finished=False)
+        # Cohort for Disease X
+        cohort3x = StudyCohort.objects.create(study=cls.study3)
+        cohort3x.disease_tags.add(cls.disease_x)
+        GeneFinding.objects.create(study_cohort=cohort3x, hgnc_gene=cls.gene_a)
+        # Cohort for Disease Y
+        cohort3y = StudyCohort.objects.create(study=cls.study3)
+        cohort3y.disease_tags.add(cls.disease_y)
+        GeneFinding.objects.create(study_cohort=cohort3y, hgnc_gene=cls.gene_b)
+
+        # Study 4: Linked to Disease X, but not_finished=True.
+        # Should appear in the unfiltered list but be excluded when any filter is active.
+        cls.study4 = Study.objects.create(title="Study 4 Unfinished", not_finished=True)
+        cohort4 = StudyCohort.objects.create(study=cls.study4)
+        cohort4.disease_tags.add(cls.disease_x)
+        GeneFinding.objects.create(study_cohort=cohort4, hgnc_gene=cls.gene_a)
+
+        # Study 5: Has a cohort but no genes. Should never appear as its gene_count is 0.
+        cls.study5 = Study.objects.create(title="Study 5 With No Genes")
+        cohort5 = StudyCohort.objects.create(study=cls.study5)
+        cohort5.disease_tags.add(cls.disease_x)
+        
+        # This assumes your project has a URL named 'study_list' in the 'sickgenes' app namespace.
+        cls.url = reverse('sickgenes:study_list')
+
+    def test_view_url_and_template(self):
+        """Tests that the view's URL is accessible and renders the correct template."""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'sickgenes/study_list.html')
+
+    def test_unfiltered_study_list_content(self):
+        """Tests the view without any GET parameters. It should show all studies with a gene_count > 0."""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+        table = response.context['study_table']
+        displayed_titles = [item.title for item in table.data]
+
+        # Check that studies with genes are present, including the 'not_finished' one
+        self.assertIn('Study 1 About Disease X', displayed_titles)
+        self.assertIn('Study 2 About Disease Y', displayed_titles)
+        self.assertIn('Study 3 About Both Diseases', displayed_titles)
+        self.assertIn('Study 4 Unfinished', displayed_titles) # Included because no filter is active
+
+        # Check that study with no genes is absent
+        self.assertNotIn('Study 5 With No Genes', displayed_titles)
+        self.assertEqual(len(displayed_titles), 4)
+
+        # Check the total gene counts for each study
+        for study in table.data:
+            if study.pk == self.study1.pk:
+                self.assertEqual(study.gene_count, 1)
+            elif study.pk == self.study3.pk:
+                self.assertEqual(study.gene_count, 2) # Has two distinct genes
+
+    def test_filtered_study_list_by_disease(self):
+        """Tests filtering by a disease. It should only show relevant, finished studies."""
+        response = self.client.get(self.url, {'disease': self.disease_x.id})
+        self.assertEqual(response.status_code, 200)
+
+        table = response.context['study_table']
+        displayed_titles = [item.title for item in table.data]
+        
+        # Check that only studies related to Disease X are present
+        self.assertIn('Study 1 About Disease X', displayed_titles)
+        self.assertIn('Study 3 About Both Diseases', displayed_titles)
+        
+        # Check that other studies are correctly excluded
+        self.assertNotIn('Study 2 About Disease Y', displayed_titles) # Wrong disease
+        self.assertNotIn('Study 4 Unfinished', displayed_titles) # Excluded because not_finished=True
+        self.assertEqual(len(displayed_titles), 2)
+
+    def test_filtered_gene_count_is_correct(self):
+        """Tests that gene_count is correctly calculated based on the disease filter."""
+        response = self.client.get(self.url, {'disease': self.disease_x.id})
+        self.assertEqual(response.status_code, 200)
+        
+        table = response.context['study_table']
+
+        # Check gene counts, which should now be specific to Disease X
+        for study in table.data:
+            if study.pk == self.study1.pk:
+                # Study 1 has 1 gene, which is related to Disease X
+                self.assertEqual(study.gene_count, 1)
+            elif study.pk == self.study3.pk:
+                # Study 3 has 2 total genes, but only 1 is related to Disease X
+                self.assertEqual(study.gene_count, 1)
+
+    def test_filter_with_no_results(self):
+        """Tests that filtering for a disease with no associated 'finished' studies yields an empty list."""
+        # Disease Y is only associated with Study 2, let's mark it as not finished
+        self.study2.not_finished = True
+        self.study2.save()
+
+        response = self.client.get(self.url, {'disease': self.disease_y.id})
+        self.assertEqual(response.status_code, 200)
+        
+        table = response.context['study_table']
+        self.assertEqual(len(table.data), 1)
+
 
 class ImportHgncTest(TestCase):
     @classmethod

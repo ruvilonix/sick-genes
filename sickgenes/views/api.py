@@ -10,7 +10,7 @@ def database_dump_json(request):
         'study_cohorts__disease_tags',
         'study_cohorts__gene_findings__hgnc_gene',
         'study_cohorts__metabolite_findings__hmdb_metabolite',
-    ).all()
+    ).exclude(not_finished=True)
 
     studies_list = []
     for study in studies_query:

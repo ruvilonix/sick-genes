@@ -170,3 +170,29 @@ class DatabaseDumpJsonTest(TestCase):
         # Check for titles to confirm both studies are present (order isn't guaranteed)
         titles = {s["title"] for s in data["studies"]}
         self.assertEqual(titles, {"First Study", "Second Study"})
+
+    def test_omit_not_finished_study(self):
+        study = Study.objects.create(
+            title="Full Study Title",
+            doi="10.1000/xyz123",
+            authors="Doe, J.",
+            journal_titles="Journal of Science",
+            note="A study note.",
+            s4me_url="http://example.com/study",
+            publication_year="2025",
+            publication_month="7",
+            publication_day="25",
+            not_finished=True,
+        )
+        cohort = StudyCohort.objects.create(study=study, note="Cohort note.")
+        cohort.disease_tags.add(self.disease1, self.disease2)
+        GeneFinding.objects.create(study_cohort=cohort, hgnc_gene=self.gene1)
+        GeneFinding.objects.create(study_cohort=cohort, hgnc_gene=self.gene2)
+
+        # 2. Action
+        response = self.client.get(self.url)
+        data = response.json()
+
+        # 3. Assert
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(data["studies"]), 0)
