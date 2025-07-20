@@ -12,6 +12,7 @@ from sickgenes.models import (
 from unittest.mock import patch, Mock
 import requests
 from django.contrib.auth.models import User
+from sickgenes.templatetags.markdown_tags import markdown_format
 
 class GeneListTests(TestCase):
     """
@@ -888,4 +889,48 @@ class AddStudyCohortView(TestCase):
         self.assertSetEqual(set(saved_disease_tag_ids), set(post_data['disease_tags']))
         self.assertEqual(str(new_study_cohort), f"[{self.study.title[:20]}]... - [Diabetes, ME/CFS]")
 
+
+class MarkdownTemplateFilterTest(TestCase):
+    """Tests for the markdown template filter"""
     
+    def test_markdown_filter_basic(self):
+        """Test basic markdown formatting"""
+        text = "# Header\n\nThis is **bold** text."
+        result = markdown_format(text)
+        
+        self.assertIsInstance(result, SafeString)
+        self.assertIn('<h1>Header</h1>', result)
+        self.assertIn('<strong>bold</strong>', result)
+    
+    def test_markdown_filter_empty_string(self):
+        """Test markdown filter with empty string"""
+        result = markdown_format("")
+        self.assertEqual(result, "")
+        self.assertIsInstance(result, SafeString)
+    
+    def test_markdown_filter_plain_text(self):
+        """Test markdown filter with plain text"""
+        text = "Just plain text"
+        result = markdown_format(text)
+        self.assertIn('<p>Just plain text</p>', result)
+    
+    def test_markdown_filter_complex_formatting(self):
+        """Test markdown filter with complex formatting"""
+        text = """
+# Main Header
+
+## Sub Header
+
+- List item 1
+- List item 2
+
+This is a [link](http://example.com).
+"""
+        result = markdown_format(text)
+        
+        self.assertIn('<h1>Main Header</h1>', result)
+        self.assertIn('<h2>Sub Header</h2>', result)
+        self.assertIn('<ul>', result)
+        self.assertIn('<li>List item 1</li>', result)
+        self.assertIn('<a href="http://example.com">link</a>', result)
+
