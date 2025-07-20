@@ -11,6 +11,8 @@ from sickgenes.tables import GeneTable, StudyTable
 from collections import defaultdict
 from django_tables2.config import RequestConfig
 from django.conf import settings
+import markdown
+import os
 
 def home(request):
     return render(request, 'sickgenes/home.html')
@@ -22,7 +24,19 @@ def about(request):
     return render(request, 'sickgenes/about.html', context)
 
 def criteria(request):
-    return render(request, 'sickgenes/criteria.html')
+    criteria_file = os.path.join(settings.BASE_DIR, 'criteria.md')
+
+    try:
+        with open(criteria_file, 'r') as f:
+            content = f.read()
+
+        criteria_html = markdown.markdown(content)
+        print(criteria_html)
+
+    except FileNotFoundError:
+        criteria_html = "<p>Criteria file not found</p>"
+    
+    return render(request, 'sickgenes/criteria.html', {'criteria_html': criteria_html})
 
 def study(request, study_id):
     study = get_object_or_404(
