@@ -7,15 +7,15 @@ from django.urls import reverse
 from sickgenes.forms import StudyForm
 from sickgenes.models import (
     HgncGene, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName,
-    HmdbMetabolite, MetaboliteSynonym, SecondaryAccession, GeneFinding, SiteConfiguration
+    HmdbMetabolite, MetaboliteSynonym, SecondaryAccession, GeneFinding
 )
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, mock_open
 import requests
 from django.contrib.auth.models import User
 from django.template import Context, Template
 from django.utils.safestring import SafeString
 from unittest.mock import patch
-from sickgenes.templatetags.markdown_tags import markdown_format
+import markdown
 
 class GeneListTests(TestCase):
     """
@@ -893,68 +893,9 @@ class AddStudyCohortView(TestCase):
         self.assertEqual(str(new_study_cohort), f"[{self.study.title[:20]}]... - [Diabetes, ME/CFS]")
 
 
-class SiteConfigurationModelTest(TestCase):
-    """Tests for the SiteConfiguration model"""
-    
-    def test_criteria_field_accepts_text(self):
-        """Test that criteria field accepts long text"""
-        long_text = "Lorem ipsum " * 100
-        config = SiteConfiguration.objects.create(criteria=long_text)
-        self.assertEqual(config.criteria, long_text)
-
-
-class MarkdownTemplateFilterTest(TestCase):
-    """Tests for the markdown template filter"""
-    
-    def test_markdown_filter_basic(self):
-        """Test basic markdown formatting"""
-        text = "# Header\n\nThis is **bold** text."
-        result = markdown_format(text)
-        
-        self.assertIsInstance(result, SafeString)
-        self.assertIn('<h1>Header</h1>', result)
-        self.assertIn('<strong>bold</strong>', result)
-    
-    def test_markdown_filter_empty_string(self):
-        """Test markdown filter with empty string"""
-        result = markdown_format("")
-        self.assertEqual(result, "")
-        self.assertIsInstance(result, SafeString)
-    
-    def test_markdown_filter_plain_text(self):
-        """Test markdown filter with plain text"""
-        text = "Just plain text"
-        result = markdown_format(text)
-        self.assertIn('<p>Just plain text</p>', result)
-    
-    def test_markdown_filter_complex_formatting(self):
-        """Test markdown filter with complex formatting"""
-        text = """
-# Main Header
-
-## Sub Header
-
-- List item 1
-- List item 2
-
-This is a [link](http://example.com).
-"""
-        result = markdown_format(text)
-        
-        self.assertIn('<h1>Main Header</h1>', result)
-        self.assertIn('<h2>Sub Header</h2>', result)
-        self.assertIn('<ul>', result)
-        self.assertIn('<li>List item 1</li>', result)
-        self.assertIn('<a href="http://example.com">link</a>', result)
-
 
 class CriteriaViewTest(TestCase):
     """Tests for the criteria view"""
-    
-    def setUp(self):
-        self.site_config = SiteConfiguration.objects.create(
-            criteria="# Test Criteria\n\nThis is test criteria content."
-        )
     
     def test_criteria_view_status_code(self):
         """Test that criteria view returns 200 status"""
@@ -965,9 +906,31 @@ class CriteriaViewTest(TestCase):
         """Test that criteria view uses correct template"""
         response = self.client.get('/about/criteria/')
         self.assertTemplateUsed(response, 'sickgenes/criteria.html')
-    
-    def test_criteria_view_context(self):
-        """Test that the view provides access to site configuration"""
+
+    @patch('sickgenes.views.views.open', side_effect=FileNotFoundError)
+    def test_criteria_view_file_not_found(self, mock_file):
+        """Test behavior when criteria.md file is not found"""
         response = self.client.get('/about/criteria/')
         
-        self.assertContains(response, "<h1>Test Criteria</h1>")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<p>Criteria file not found</p>')
+
+    def test_criteria_view_context_is_correct(self):
+        """Test the view passes the correct HTML to the render context."""
+        # 1. Define mock markdown and the expected HTML output
+        mock_md_content = "# Test Title\n\n* List item"
+        expected_html = markdown.markdown(mock_md_content)
+
+        # 2. Patch 'open' to simulate reading the file
+        mock_file = mock_open(read_data=mock_md_content)
+        
+        with patch('sickgenes.views.views.open', mock_file):
+            # 3. Make the request to the view
+            response = self.client.get('/about/criteria/')
+
+        # 4. Check that render was called correctly
+        self.assertEqual(response.status_code, 200)
+    
+        
+        # 6. Assert the context variable is correct
+        self.assertEqual(response.context['criteria_html'], expected_html)
