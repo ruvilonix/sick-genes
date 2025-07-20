@@ -7,11 +7,14 @@ from django.urls import reverse
 from sickgenes.forms import StudyForm
 from sickgenes.models import (
     HgncGene, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName,
-    HmdbMetabolite, MetaboliteSynonym, SecondaryAccession, GeneFinding
+    HmdbMetabolite, MetaboliteSynonym, SecondaryAccession, GeneFinding, SiteConfiguration
 )
 from unittest.mock import patch, Mock
 import requests
 from django.contrib.auth.models import User
+from django.template import Context, Template
+from django.utils.safestring import SafeString
+from unittest.mock import patch
 from sickgenes.templatetags.markdown_tags import markdown_format
 
 class GeneListTests(TestCase):
@@ -890,6 +893,16 @@ class AddStudyCohortView(TestCase):
         self.assertEqual(str(new_study_cohort), f"[{self.study.title[:20]}]... - [Diabetes, ME/CFS]")
 
 
+class SiteConfigurationModelTest(TestCase):
+    """Tests for the SiteConfiguration model"""
+    
+    def test_criteria_field_accepts_text(self):
+        """Test that criteria field accepts long text"""
+        long_text = "Lorem ipsum " * 100
+        config = SiteConfiguration.objects.create(criteria=long_text)
+        self.assertEqual(config.criteria, long_text)
+
+
 class MarkdownTemplateFilterTest(TestCase):
     """Tests for the markdown template filter"""
     
@@ -934,3 +947,27 @@ This is a [link](http://example.com).
         self.assertIn('<li>List item 1</li>', result)
         self.assertIn('<a href="http://example.com">link</a>', result)
 
+
+class CriteriaViewTest(TestCase):
+    """Tests for the criteria view"""
+    
+    def setUp(self):
+        self.site_config = SiteConfiguration.objects.create(
+            criteria="# Test Criteria\n\nThis is test criteria content."
+        )
+    
+    def test_criteria_view_status_code(self):
+        """Test that criteria view returns 200 status"""
+        response = self.client.get('/about/criteria/') 
+        self.assertEqual(response.status_code, 200)
+    
+    def test_criteria_view_uses_correct_template(self):
+        """Test that criteria view uses correct template"""
+        response = self.client.get('/about/criteria/')
+        self.assertTemplateUsed(response, 'sickgenes/criteria.html')
+    
+    def test_criteria_view_context(self):
+        """Test that the view provides access to site configuration"""
+        response = self.client.get('/about/criteria/')
+        
+        self.assertContains(response, "<h1>Test Criteria</h1>")
