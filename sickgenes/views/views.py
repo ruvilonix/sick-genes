@@ -31,7 +31,6 @@ def criteria(request):
             content = f.read()
 
         criteria_html = markdown.markdown(content)
-        print(criteria_html)
 
     except FileNotFoundError:
         criteria_html = "<p>Criteria file not found</p>"
