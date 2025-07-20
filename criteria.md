@@ -3,10 +3,9 @@ Overview
 
 The purpose of this database is to identify genes of interest in disease phenotypes compared to healthy populations, enabling cross-study comparison and replication analysis.
 
-Genes to Include
-----------------
+## Genes to Include
 
-### Primary Inclusion Criteria
+#### Primary Inclusion Criteria
 
 *   **Gene product levels:** Level of a gene product is significantly associated with having the phenotype in question (the phenotype(s) assigned to the Study Cohort being edited)
     
@@ -23,7 +22,7 @@ Genes to Include
 *   **Longitudinal studies:** If a gene is significant at any timepoint in a longitudinal study, include it
     
 
-### Protein Complexes and Heterodimers
+#### Protein Complexes and Heterodimers
 
 *   **Simple complexes (≤3 components):** Include all constituent genes when the complex is significantly associated with the phenotype (e.g., TSH → include TSHB and CGA)
     
@@ -31,9 +30,9 @@ Genes to Include
     
 *   **Complex assemblies (5+ components):** Do not include constituent genes due to unclear biological relevance of individual components
     
+---
 
-Genes to NOT Include
---------------------
+## Genes to NOT Include
 
 *   **External database predictions:** Genes predicted to be of interest based on predictions made using external protein-protein or gene-gene interaction databases (e.g., GSEA or STRING network analysis)
     
@@ -44,10 +43,11 @@ Genes to NOT Include
 *   **Complex protein assemblies:** Constituent genes of protein complexes with 5 or more components
     
 
-Statistical Significance Criteria
----------------------------------
+---
 
-### P-value Thresholds
+## Statistical Significance Criteria
+
+#### P-value Thresholds
 
 *   Genes are primarily limited to those that pass a p-value threshold defined in the paper, or 0.05 if none is specified
     
@@ -56,12 +56,11 @@ Statistical Significance Criteria
 *   **Multiple testing correction:** If authors performed multiple test correction, use the adjusted p-value. If not, use the nominal p-value
     
 
-    
+--- 
 
-Special Cases and Notes
------------------------
+## Special Cases and Notes
 
-### Multiple Phenotype Comparisons
+#### Multiple Phenotype Comparisons
 
 *   **Disease A vs. Disease B only:** Do not store genes from studies that only compare diseased groups without healthy controls
     
