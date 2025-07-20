@@ -6,13 +6,6 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from datetime import date
 import re
-from solo.models import SingletonModel
-
-class SiteConfiguration(SingletonModel):
-    criteria = models.TextField(null=True)
-
-    class Meta:
-        verbose_name = "Site Configuration"
 
 class Study(models.Model):
     title = models.CharField(max_length=500, verbose_name="Title")
