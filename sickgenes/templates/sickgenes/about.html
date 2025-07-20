@@ -17,17 +17,8 @@
         <p>Once there is a study cohort for a study, I add gene findings to the study cohort. I look for any genes in the study's published paper that the authors describe as significant.</p>
         <p>Though genes that are added are mostly limited to those that pass a p-value threshold defined in the paper, or 0.05 if none is specified, this is not a hard rule. If the authors mention a finding because it is approaching a significance cut-off (e.g. p=.053) and thus they believe it may still be important, it can be added.</p>
         <p>If the authors performed multiple test correction, the adjusted p-value should be used to determine significance. If not, the nominal p-value should be used.</p>
+        <p>Specific criteria can be seen on the <a href="{% url 'sickgenes:criteria' %}">criteria page</a>. (Work in progress.)</p>
         <hr>
-
-        <h4 class="text-center">Specific Criteria</h4>
-        <h5>Genes to Add</h5>
-        <ul>
-            <li>A gene associated with a health condition when compared to another group that does not have the health condition, whether due to more or less of the gene, or due to mutations. (Save once for each study cohort for both health conditions is one is not healthy controls.)</li>
-            <li>A gene associated with the severity of a health condition.</li>
-            <li>A gene suggested to be potentially of interest due to a significant mutation being found in or near the gene.</li>
-            <li>A gene predicted to be of interest by a machine learning algorithm, but not relying on external gene interaction databases.</li>
-            <li>A gene that describes differential levels of a cell type (e.g. save CD8 if a study reports that CD8+ T cells are overexpressed.)</li>
-        </ul>
 
         <h5>Genes to skip</h5>
         <ul>
