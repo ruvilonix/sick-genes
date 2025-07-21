@@ -138,17 +138,20 @@ class GeneDetailTests(TestCase):
         cls.study_2022 = Study.objects.create(title='Newer Study', publication_year=2022)
         cls.study_2020 = Study.objects.create(title='Older Study', publication_year=2020)
         cls.study_no_year = Study.objects.create(title='Study with no year', publication_year=None)
+        cls.study_not_finished = Study.objects.create(title='Not finished notating study', not_finished=True)
 
         # Create cohorts belonging to the studies
         # Two cohorts are in the same study to test grouping
         cls.cohort_a_2022 = StudyCohort.objects.create(study=cls.study_2022)
         cls.cohort_b_2022 = StudyCohort.objects.create(study=cls.study_2022)
         cls.cohort_c_2020 = StudyCohort.objects.create(study=cls.study_2020)
+        cls.cohort_d_notfinihsed = StudyCohort.objects.create(study=cls.study_not_finished)
         
         # Link the gene to these cohorts
         GeneFinding.objects.create(hgnc_gene=cls.gene, study_cohort=cls.cohort_a_2022)
         GeneFinding.objects.create(hgnc_gene=cls.gene, study_cohort=cls.cohort_b_2022)
         GeneFinding.objects.create(hgnc_gene=cls.gene, study_cohort=cls.cohort_c_2020)
+        GeneFinding.objects.create(hgnc_gene=cls.gene, study_cohort=cls.cohort_d_notfinihsed)
 
         # Create another gene and finding that should NOT appear on the detail page
         other_gene = HgncGene.objects.create(pk=2, symbol='OTHER')
