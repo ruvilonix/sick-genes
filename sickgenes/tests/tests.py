@@ -241,13 +241,13 @@ class StudyListViewTest(TestCase):
         cls.disease_y = Disease.objects.create(name="Disease Y")
 
         # Study 1: Linked to Disease X with Gene A. Should appear in unfiltered and filtered lists.
-        cls.study1 = Study.objects.create(title="Study 1 About Disease X", not_finished=False)
+        cls.study1 = Study.objects.create(title="Study 1 About Disease X", not_finished=False, authors='Smith, Bridget; Jones, Tony')
         cohort1 = StudyCohort.objects.create(study=cls.study1)
         cohort1.disease_tags.add(cls.disease_x)
         GeneFinding.objects.create(study_cohort=cohort1, hgnc_gene=cls.gene_a)
 
         # Study 2: Linked to Disease Y with Gene B. Should appear in unfiltered, but not when filtering by Disease X.
-        cls.study2 = Study.objects.create(title="Study 2 About Disease Y", not_finished=False)
+        cls.study2 = Study.objects.create(title="Study 2 About Disease Y", not_finished=False, authors='Lewis, John')
         cohort2 = StudyCohort.objects.create(study=cls.study2)
         cohort2.disease_tags.add(cls.disease_y)
         GeneFinding.objects.create(study_cohort=cohort2, hgnc_gene=cls.gene_b)
@@ -353,6 +353,11 @@ class StudyListViewTest(TestCase):
         
         table = response.context['study_table']
         self.assertEqual(len(table.data), 1)
+
+    def test_shortened_author_list_shown(self):
+        '''Test that view returns shortened author list in et al format'''
+        response = self.client.get(self.url)
+        self.assertContains(response, 'Smith et al.')
 
 
 class ImportHgncTest(TestCase):
