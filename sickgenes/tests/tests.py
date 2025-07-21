@@ -85,7 +85,7 @@ class GeneListTests(TestCase):
         genes_in_context = {gene.symbol: gene for gene in response.context['genes_table'].data}
 
         # Check that all genes are present
-        self.assertEqual(len(genes_in_context), 4)
+        self.assertEqual(len(genes_in_context), 3)
 
         # Verify the study count for each gene
         self.assertEqual(genes_in_context['TTN'].study_count, 2)    # Associated with study1 and study3
@@ -294,11 +294,10 @@ class StudyListViewTest(TestCase):
         self.assertIn('Study 1 About Disease X', displayed_titles)
         self.assertIn('Study 2 About Disease Y', displayed_titles)
         self.assertIn('Study 3 About Both Diseases', displayed_titles)
-        self.assertIn('Study 4 Unfinished', displayed_titles) # Included because no filter is active
 
         # Check that study with no genes is absent
         self.assertNotIn('Study 5 With No Genes', displayed_titles)
-        self.assertEqual(len(displayed_titles), 4)
+        self.assertEqual(len(displayed_titles), 3)
 
         # Check the total gene counts for each study
         for study in table.data:

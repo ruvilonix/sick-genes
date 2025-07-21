@@ -60,7 +60,7 @@ def study_list(request):
     """
     Displays a paginated and filterable table of genes.
     """
-    base_queryset = Study.objects.all()
+    base_queryset = Study.objects.exclude(not_finished=True)
     form = GeneFilterForm(request.GET)
 
     count_filter = Q()
@@ -70,7 +70,7 @@ def study_list(request):
         
         base_queryset = base_queryset.filter(
             study_cohorts__disease_tags=disease
-        ).exclude(not_finished=True).distinct()
+        ).distinct()
         
         count_filter = Q(study_cohorts__disease_tags=disease)
 
@@ -97,7 +97,7 @@ def gene_list(request):
     """
     Displays a paginated and filterable table of genes.
     """
-    base_queryset = HgncGene.objects.all()
+    base_queryset = HgncGene.objects.exclude(genefinding__study_cohort__study__not_finished=True)
 
     gene_symbols_to_filter = request.GET.getlist('symbol')
     if gene_symbols_to_filter:
@@ -112,7 +112,7 @@ def gene_list(request):
         
         base_queryset = base_queryset.filter(
             genefinding__study_cohort__disease_tags=disease
-        ).exclude(genefinding__study_cohort__study__not_finished=True).distinct() 
+        ).distinct() 
 
     genes = base_queryset.annotate(
         study_count=Count('genefinding__study_cohort__study', distinct=True)
