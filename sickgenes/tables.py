@@ -13,6 +13,7 @@ class GeneTable(tables.Table):
 class StudyTable(tables.Table):
     gene_count = tables.Column(verbose_name="# of Genes")
     title = tables.Column(linkify=True)
+    short_authors = tables.Column(verbose_name='Authors')
 
     publication_date = tables.Column(
         verbose_name="Published", 
@@ -23,5 +24,5 @@ class StudyTable(tables.Table):
 
     class Meta:
         model = Study
-        fields = ("title", "publication_date", "authors", "gene_count", "created_at")
+        fields = ("title", "publication_date", "short_authors", "gene_count", "created_at")
         order_by = ("-created_at")
