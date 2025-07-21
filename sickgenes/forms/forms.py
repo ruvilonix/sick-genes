@@ -6,7 +6,7 @@ from django.db.models import Count, Q
 class StudyForm(forms.ModelForm):
     class Meta:
         model = Study
-        fields = ['doi', 'title', 'authors', 'publication_year', 'publication_month', 'publication_day', 'journal_titles', 'publisher_url', 's4me_url', 'preprint']
+        fields = ['doi', 'title', 'authors', 'publication_year', 'publication_month', 'publication_day', 'journal_titles', 'publisher_url', 's4me_url', 'preprint', 'not_finished']
 
     def clean_publication_year(self):
         year = self.cleaned_data.get('publication_year')
