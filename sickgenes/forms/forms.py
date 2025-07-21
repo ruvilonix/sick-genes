@@ -8,6 +8,10 @@ class StudyForm(forms.ModelForm):
         model = Study
         fields = ['doi', 'title', 'authors', 'publication_year', 'publication_month', 'publication_day', 'journal_titles', 'publisher_url', 's4me_url', 'preprint', 'not_finished']
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['not_finished'].initial = True
+
     def clean_publication_year(self):
         year = self.cleaned_data.get('publication_year')
         return None if year == 0 else year
