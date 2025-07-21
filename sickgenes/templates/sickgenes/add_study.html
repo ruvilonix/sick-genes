@@ -127,6 +127,18 @@
         {% endif %}
     </p>
 
+    <p>
+        {{ form.not_finished.label_tag }}
+        {{ form.not_finished }}
+        {% if form.not_finished.errors %}
+            <ul class="errorlist">
+                {% for error in form.not_finished.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
+
     <input type="submit" value="Add study">
 
     {# Display non-field errors (e.g., errors related to the form as a whole) #}
