@@ -72,6 +72,15 @@ class Study(models.Model):
         return " ".join(parts)
     
     @property
+    def short_authors(self):
+        authors = self.authors.split(';')
+        first_author_last_name = authors[0].split(',')[0].strip()
+        if len(authors) > 1:
+            return first_author_last_name + ' et al.'
+        else:
+            return first_author_last_name
+    
+    @property
     def first_journal_title(self):
         """Returns the first journal title from the semi-colon separated list."""
         if not self.journal_titles:
