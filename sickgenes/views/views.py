@@ -97,7 +97,7 @@ def gene_list(request):
     """
     Displays a paginated and filterable table of genes.
     """
-    base_queryset = HgncGene.objects.exclude(genefinding__study_cohort__study__not_finished=True)
+    base_queryset = HgncGene.objects.all()
 
     gene_symbols_to_filter = request.GET.getlist('symbol')
     if gene_symbols_to_filter:
@@ -112,10 +112,14 @@ def gene_list(request):
         
         base_queryset = base_queryset.filter(
             genefinding__study_cohort__disease_tags=disease
-        ).distinct() 
+        ).exclude(genefinding__study_cohort__study__not_finished=True).distinct() 
 
     genes = base_queryset.annotate(
-        study_count=Count('genefinding__study_cohort__study', distinct=True)
+        study_count=Count(
+            'genefinding__study_cohort__study',
+            filter=Q(genefinding__study_cohort__study__not_finished=False),
+            distinct=True,
+        )
     )
 
     genes_table = GeneTable(genes)
@@ -145,7 +149,9 @@ def gene_detail(request, hgnc_symbol):
     )
     gene = get_object_or_404(gene_queryset, symbol=hgnc_symbol)
 
-    gene_findings = GeneFinding.objects.filter(hgnc_gene=gene).select_related(
+    gene_findings = GeneFinding.objects.filter(hgnc_gene=gene).exclude(
+        study_cohort__study__not_finished=True
+    ).select_related(
         'study_cohort__study'
     ).prefetch_related(
         'study_cohort__disease_tags'

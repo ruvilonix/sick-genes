@@ -85,7 +85,7 @@ class GeneListTests(TestCase):
         genes_in_context = {gene.symbol: gene for gene in response.context['genes_table'].data}
 
         # Check that all genes are present
-        self.assertEqual(len(genes_in_context), 3)
+        self.assertEqual(len(genes_in_context), 4)
 
         # Verify the study count for each gene
         self.assertEqual(genes_in_context['TTN'].study_count, 2)    # Associated with study1 and study3
