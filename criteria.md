@@ -41,9 +41,6 @@ Example where IFNG and TNF would be saved for both ME/CFS and long COVID cohorts
 *   **Complex protein assemblies:** Constituent genes of protein complexes with 4 or more components
 
 *   **Machine learning identified:** A gene predicted to be of interest based on machine learning algorithms, including genes that were not individually significant but were part of a gene panel that significantly discriminated between groups in ML analysis
-
-*   **Does not replicate with different statistical tests:**: Example where only the latter 1,184 should be included [2]:
-> Across the seven cell types, we identified 3,431 DEGs from MAST and 2,989 from Wilcoxon. Of those, 1,376 DEGs overlapped in the same direction and included 1,184 unique genes (PTSD snDEGs; Fig. 1f and Supplementary Table 7).
     
 
 ---
@@ -63,5 +60,3 @@ Example where IFNG and TNF would be saved for both ME/CFS and long COVID cohorts
 ### References
 
 [1] Gil, Anna, et al. “Identification of CD8 T-Cell Dysfunction Associated with Symptoms in Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS) and Long COVID and Treatment with a Nebulized Antioxidant/Anti-Pathogen Agent in a Retrospective Case Series.” Brain, Behavior, & Immunity. Health, 1 Dec. 2023, pp. 100720–100720, https://doi.org/10.1016/j.bbih.2023.100720.
-
-[2] Hwang, Ahyeon, et al. “Single-Cell Transcriptomic and Chromatin Dynamics of the Human Brain in PTSD.” Nature, 18 June 2025, https://doi.org/10.1038/s41586-025-09083-y.
