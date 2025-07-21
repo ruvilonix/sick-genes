@@ -16,6 +16,9 @@ The purpose of this database is to identify genes of interest in disease phenoty
 
 Example where IFNG and TNF would be saved for both ME/CFS and long COVID cohorts (1):
 > "We designed a classic ICS assay to provide a direct measure of the functional capabilities of magnet-enriched fresh CD8 T-cells in a format that would be easy to adapt to clinical testing. These functional ICS assays showed that CD8 T-cells of ME/CFS and Long COVID patients had a significantly diminished capacity to produce both cytokines, **IFNγ** or **TNFα**, after PMA stimulation when compared to HC as seen in representative FACS plots (Fig. S1) and following statistical analysis of multiple individuals from each group (Fig. 1)."
+
+*   **Gene product shape or activity different:** Example [2]:
+> Recordings of TRPM3 ion channel currents were obtained from freshly isolated NK cells from HC, post-COVID-19 condition patients, and ME/CFS patients using the whole-cell patch-clamp electrophysiological technique. Endogenous TRPM3 function was rapidly and reversibly activated by application of 100 μM PregS. We found a significant difference among three groups of ionic current amplitude after PregS stimulation (p < 0.0001).
         
 *   **Severity associations:** Any of the above but associated with the severity/amount of the phenotype instead of with another group
     
@@ -60,3 +63,5 @@ Example where IFNG and TNF would be saved for both ME/CFS and long COVID cohorts
 ### References
 
 [1] Gil, Anna, et al. “Identification of CD8 T-Cell Dysfunction Associated with Symptoms in Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS) and Long COVID and Treatment with a Nebulized Antioxidant/Anti-Pathogen Agent in a Retrospective Case Series.” Brain, Behavior, & Immunity. Health, 1 Dec. 2023, pp. 100720–100720, https://doi.org/10.1016/j.bbih.2023.100720.
+
+[2] Sasso, E. M., Muraki, K., Eaton-Fitch, N., Smith, P., Jeremijenko, A., Griffin, P., & Marshall-Gradisnik, S. (2024). Investigation into the restoration of TRPM3 ion channel activity in post-COVID-19 condition: a potential pharmacotherapeutic target. Frontiers in Immunology, 15. https://doi.org/10.3389/fimmu.2024.1264702
