@@ -16,6 +16,7 @@ from django.template import Context, Template
 from django.utils.safestring import SafeString
 from unittest.mock import patch
 import markdown
+from urllib.parse import parse_qs
 
 class GeneListTests(TestCase):
     """
@@ -984,6 +985,10 @@ class StudyView(TestCase):
         disease = Disease.objects.create(name="ME/CFS")
         study_cohort = StudyCohort.objects.create(study=study)
         study_cohort.disease_tags.add(disease)
+        cls.gene1 = HgncGene.objects.create(hgnc_id="HGNC:1", symbol="ABC1")
+        cls.gene2 = HgncGene.objects.create(hgnc_id="HGNC:2", symbol="ABC2")
+        GeneFinding.objects.create(study_cohort=study_cohort, hgnc_gene=cls.gene1)
+        GeneFinding.objects.create(study_cohort=study_cohort, hgnc_gene=cls.gene2)
         cls.study_id = study.id
 
     def test_url_valid_response(self):
@@ -998,6 +1003,26 @@ class StudyView(TestCase):
         self.assertTemplateUsed(response, 'sickgenes/study.html')
         self.assertContains(response, "Example study")
         self.assertContains(response, "ME/CFS")
+
+    def test_context_contains_gene_query_string(self):
+        """
+        Tests that the cohort in the context has a correctly formatted gene_query_string.
+        """
+        response = self.client.get(reverse('sickgenes:study', args=(self.study_id,)))
+
+        cohorts_in_context = list(response.context['study'].study_cohorts.all())
+
+        self.assertTrue(cohorts_in_context, "No cohorts found in the response context.")
+
+        cohort = cohorts_in_context[0]
+
+        self.assertTrue(hasattr(cohort, 'gene_query_string'))
+
+        parsed_query = parse_qs(cohort.gene_query_string)
+        expected_symbols = ['ABC1', 'ABC2']
+
+        self.assertIn('symbol', parsed_query)
+        self.assertCountEqual(parsed_query['symbol'], expected_symbols)
 
 class AddStudyCohortView(TestCase):
     @classmethod
