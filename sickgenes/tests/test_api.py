@@ -59,9 +59,11 @@ class DatabaseDumpJsonTest(TestCase):
             "journal_titles": "Journal of Science",
             "note": "A study note.",
             "s4me_url": "http://example.com/study",
-            "publication_year": 2025,
-            "publication_month": 7,
-            "publication_day": 25,
+            "publication_date": {
+                "year": 2025,
+                "month": 7,
+                "day": 25,
+            },
             "study_cohorts": [
                 {
                     "note": "Cohort note.",
@@ -103,8 +105,10 @@ class DatabaseDumpJsonTest(TestCase):
 
         expected_study = {
             "title": "Minimal Study",
-            "publication_year": 2025,
-            "publication_month": 1,
+            "publication_date": {
+                "year": 2025,
+                "month": 1,
+            },
         }
         self.assertDictEqual(data["studies"][0], expected_study)
 
