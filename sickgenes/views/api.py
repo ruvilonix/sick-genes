@@ -63,4 +63,7 @@ def database_dump_json(request):
 
     response_data = {"studies": studies_list}
 
-    return JsonResponse(response_data, json_dumps_params={'indent': 2})
+    response = JsonResponse(response_data, json_dumps_params={'indent': 2})
+    response['Content-Disposition'] = 'attachment; filename=sickgenes-full-database.json'
+
+    return response
