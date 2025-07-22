@@ -60,6 +60,7 @@
                         <a href="{{ finding.hgnc_gene.get_absolute_url }}">{{ finding.hgnc_gene }}</a>{% if not forloop.last %}, {% endif %}
                     {% endfor %}
                     </p>
+                    <p><a href="{% url 'sickgenes:gene_list' %}?{{ study_cohort.gene_query_string }}">Search for these genes</a></p>
                 {% endif %}
             {% endwith %}
 

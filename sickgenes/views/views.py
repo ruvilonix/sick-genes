@@ -13,6 +13,7 @@ from django_tables2.config import RequestConfig
 from django.conf import settings
 import markdown
 import os
+from urllib.parse import urlencode
 
 def home(request):
     return render(request, 'sickgenes/home.html')
@@ -48,6 +49,13 @@ def study(request, study_id):
         ),
         pk=study_id
     )
+
+    for cohort in study.study_cohorts.all():
+        params = [
+            ('symbol', finding.hgnc_gene.symbol) 
+            for finding in cohort.gene_findings.all()
+        ]
+        cohort.gene_query_string = urlencode(params)
 
     context = {
         'opts': Study._meta,
