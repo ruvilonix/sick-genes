@@ -29,11 +29,11 @@ def database_dump_json(request):
         if study.s4me_url:
             study_data["s4me_url"] = study.s4me_url
         if study.publication_year:
-            study_data["publication_year"] = study.publication_year
-        if study.publication_month:
-            study_data["publication_month"] = study.publication_month
-        if study.publication_day:
-            study_data["publication_day"] = study.publication_day
+            study_data["publication_date"] = {'year': study.publication_year}
+            if study.publication_month:
+                study_data["publication_date"]['month'] = study.publication_month
+            if study.publication_day:
+                study_data["publication_date"]['day'] = study.publication_day
 
         cohorts_list = []
         for cohort in study.study_cohorts.all():
