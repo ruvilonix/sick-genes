@@ -76,7 +76,7 @@ class Study(models.Model):
         authors = self.authors.split(';')
         first_author_last_name = authors[0].split(',')[0].strip()
         if len(authors) > 1:
-            return first_author_last_name + ' et al.'
+            return first_author_last_name + ' et al'
         else:
             return first_author_last_name
     
