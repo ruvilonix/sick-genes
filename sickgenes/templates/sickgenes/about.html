@@ -15,16 +15,8 @@
         <h4 class="text-center">Details</h4>
         <p>The basic idea of the website is that I find a study that looked at genes, whether in terms of DNA mutations, mRNA expression, or differences in levels of the encoded protein, and I add the study to the website. I then create a study cohort for each separate group that was studied (excluding healthy controls). Each group/study cohort gets tags that describe the participants' disease/phenotype, such as "Migraine", "Irritable bowel syndrome", or "Colon cancer". Study cohorts can get multiple tags if all people in the group can be described by multiple phenotypes. Tags can also include criteria for a disease, such as the "Canadian Consensus Criteria" for ME/CFS.</p>
         <p>Once there is a study cohort for a study, I add gene findings to the study cohort. I look for any genes in the study's published paper that the authors describe as significant.</p>
-        <p>Though genes that are added are mostly limited to those that pass a p-value threshold defined in the paper, or 0.05 if none is specified, this is not a hard rule. If the authors mention a finding because it is approaching a significance cut-off (e.g. p=.053) and thus they believe it may still be important, it can be added.</p>
-        <p>If the authors performed multiple test correction, the adjusted p-value should be used to determine significance. If not, the nominal p-value should be used.</p>
         <p>Specific criteria can be seen on the <a href="{% url 'sickgenes:criteria' %}">criteria page</a>. (Work in progress.)</p>
         <hr>
-
-        <h5>Genes to skip</h5>
-        <ul>
-            <li>A gene predicted to be of interest based on externally curated gene-gene or protein-protein interaction data, such as GSEA or STRING.</li>
-            <li>Rare mutations in a gene in a study cohort, but without a control group to determine significance. (The exception is if the mutation that was found has a clear biological link to the condition in question.)</li>
-        </ul>
 
         <hr>
 
