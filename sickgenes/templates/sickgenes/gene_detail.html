@@ -10,71 +10,106 @@
     </header>
 </section>
 
-<section class="card p-3">
+<section class="card p-3" style="line-height: 2">
     <h3>Details</h3>
     
-    <dl class="identifier-list">
-        {# --- Primary & External Identifiers --- #}
-        <dt>HGNC</dt>
-        <dd><a href="https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/{{ gene.hgnc_id }}" target="_blank" rel="noopener noreferrer">{{ gene.hgnc_id }}</a></dd>
+    {# --- Primary & External Identifiers --- #}
+    <div>
+        <strong>HGNC:</strong>
+        <a href="https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/{{ gene.hgnc_id }}" target="_blank" rel="noopener noreferrer">{{ gene.hgnc_id }}</a>
+    </div>
 
-        <dt>GeneCards</dt>
-        <dd><a href="https://www.genecards.org/cgi-bin/carddisp.pl?gene={{ gene.symbol }}" target="_blank" rel="noopener noreferrer">{{ gene.symbol }}</a>
-        <dt>NCBI</dt>
-        <dd>{% if gene.entrez_id %}<a href="https://www.ncbi.nlm.nih.gov/gene/{{ gene.entrez_id }}" target="_blank" rel="noopener noreferrer">{{ gene.entrez_id }}</a>{% else %}None{% endif %}</dd>
-        
-        <dt>Ensembl</dt>
-        <dd>{% if gene.ensembl_gene_id %}<a href="https://ensembl.org/id/{{ gene.ensembl_gene_id }}" target="_blank" rel="noopener noreferrer">{{ gene.ensembl_gene_id }}</a>{% else %}None{% endif %}</dd>
+    <div>
+        <strong>GeneCards:</strong>
+        <a href="https://www.genecards.org/cgi-bin/carddisp.pl?gene={{ gene.symbol }}" target="_blank" rel="noopener noreferrer">{{ gene.symbol }}</a>
+    </div>
 
-        <dt>UniProt</dt>
-        <dd>
-            {% for item in gene.uniprotid_set.all %}
-                <a href="https://www.uniprot.org/uniprot/{{ item.value }}" target="_blank" rel="noopener noreferrer">{{ item.value }}</a>{% if not forloop.last %}, {% endif %}
-            {% empty %}
-                None
-            {% endfor %}
-        </dd>
+    <div>
+        <strong>NCBI:</strong>
+        {% if gene.entrez_id %}
+            <a href="https://www.ncbi.nlm.nih.gov/gene/{{ gene.entrez_id }}" target="_blank" rel="noopener noreferrer">{{ gene.entrez_id }}</a>
+        {% else %}
+            <span>None</span>
+        {% endif %}
+    </div>
 
-        <dt>OMIM</dt>
-        <dd>
-            {% for item in gene.omimid_set.all %}
-                <a href="https://www.omim.org/entry/{{ item.value }}" target="_blank" rel="noopener noreferrer">{{ item.value }}</a>{% if not forloop.last %}, {% endif %}
-            {% empty %}
-                None
-            {% endfor %}
-        </dd>
+    <div>
+        <strong>Ensembl:</strong>
+        {% if gene.ensembl_gene_id %}
+            <a href="https://ensembl.org/id/{{ gene.ensembl_gene_id }}" target="_blank" rel="noopener noreferrer">{{ gene.ensembl_gene_id }}</a>
+        {% else %}
+            <span>None</span>
+        {% endif %}
+    </div>
 
-        {# --- Other Identifiers --- #}
-        <dt>UCSC</dt>
-        <dd>{% if gene.ucsc_id %}<a href="http://genome.ucsc.edu/cgi-bin/hgGene?db=hg38&hgg_gene={{ gene.ucsc_id }}" target="_blank" rel="noopener noreferrer">{{ gene.ucsc_id }}</a>{% else %}None{% endif %}</dd>
-        
-        <dt>VEGA</dt>
-        <dd>{% if gene.vega_id %}<a href="http://vega.archive.ensembl.org/id/{{ gene.vega_id }}" target="_blank" rel="noopener noreferrer">{{ gene.vega_id }}</a>{% else %}None{% endif %}</dd>
+    <div>
+        <strong>UniProt:</strong>
+        {% for item in gene.uniprotid_set.all %}
+            <a href="https://www.uniprot.org/uniprot/{{ item.value }}" target="_blank" rel="noopener noreferrer">{{ item.value }}</a>{% if not forloop.last %}, {% endif %}
+        {% empty %}
+            <span>None</span>
+        {% endfor %}
+    </div>
 
-        <dt>ENA</dt>
-        <dd>
-            {% for item in gene.ena_set.all %}
-                <a href="https://www.ebi.ac.uk/ena/browser/view/{{ item.value }}" target="_blank" rel="noopener noreferrer">{{ item.value }}</a>{% if not forloop.last %}, {% endif %}
-            {% empty %}
-                None
-            {% endfor %}
-        </dd>
-        
-        <hr style="margin: 1rem 0;">
+    <div>
+        <strong>OMIM:</strong>
+        {% for item in gene.omimid_set.all %}
+            <a href="https://www.omim.org/entry/{{ item.value }}" target="_blank" rel="noopener noreferrer">{{ item.value }}</a>{% if not forloop.last %}, {% endif %}
+        {% empty %}
+            <span>None</span>
+        {% endfor %}
+    </div>
 
-        {# --- Aliases and Previous Names --- #}
-        <dt>Alias Symbols</dt>
-        <dd>{% for item in gene.aliassymbol_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</dd>
-        
-        <dt>Previous Symbols</dt>
-        <dd>{% for item in gene.prevsymbol_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</dd>
+    {# --- Other Identifiers --- #}
+    <div>
+        <strong>UCSC:</strong>
+        {% if gene.ucsc_id %}
+            <a href="http://genome.ucsc.edu/cgi-bin/hgGene?db=hg38&hgg_gene={{ gene.ucsc_id }}" target="_blank" rel="noopener noreferrer">{{ gene.ucsc_id }}</a>
+        {% else %}
+            <span>None</span>
+        {% endif %}
+    </div>
 
-        <dt>Alias Names</dt>
-        <dd>{% for item in gene.aliasname_set.all %}"{{ item.value }}"{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</dd>
-        
-        <dt>Previous Names</dt>
-        <dd>{% for item in gene.prevname_set.all %}"{{ item.value }}"{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</dd>
-    </dl>
+    <div>
+        <strong>VEGA:</strong>
+        {% if gene.vega_id %}
+            <a href="http://vega.archive.ensembl.org/id/{{ gene.vega_id }}" target="_blank" rel="noopener noreferrer">{{ gene.vega_id }}</a>
+        {% else %}
+            <span>None</span>
+        {% endif %}
+    </div>
+
+    <div>
+        <strong>ENA:</strong>
+        {% for item in gene.ena_set.all %}
+            <a href="https://www.ebi.ac.uk/ena/browser/view/{{ item.value }}" target="_blank" rel="noopener noreferrer">{{ item.value }}</a>{% if not forloop.last %}, {% endif %}
+        {% empty %}
+            <span>None</span>
+        {% endfor %}
+    </div>
+
+    <hr style="margin: 1rem 0;">
+
+    {# --- Aliases and Previous Names --- #}
+    <div>
+        <strong>Alias Symbols:</strong>
+        <span>{% for item in gene.aliassymbol_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</span>
+    </div>
+
+    <div>
+        <strong>Previous Symbols:</strong>
+        <span>{% for item in gene.prevsymbol_set.all %}{{ item.value }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</span>
+    </div>
+
+    <div>
+        <strong>Alias Names:</strong>
+        <span>{% for item in gene.aliasname_set.all %}"{{ item.value }}"{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</span>
+    </div>
+
+    <div>
+        <strong>Previous Names:</strong>
+        <span>{% for item in gene.prevname_set.all %}"{{ item.value }}"{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</span>
+    </div>
 </section>
 
 <section class="card p-3">
