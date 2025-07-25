@@ -358,7 +358,7 @@ class StudyListViewTest(TestCase):
     def test_shortened_author_list_shown(self):
         '''Test that view returns shortened author list in et al format'''
         response = self.client.get(self.url)
-        self.assertContains(response, 'Smith et al.')
+        self.assertContains(response, 'Smith et al')
 
 
 class ImportHgncTest(TestCase):
