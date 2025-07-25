@@ -10,7 +10,7 @@ The purpose of this database is to identify genes of interest in disease phenoty
     
 *   **Regulatory mutations:** Gene where a mutation near the coding region is significantly associated with the phenotype, and the paper suggests or mentions the nearby gene as potentially interesting for this reason
     
-*   **Cell type markers:** A gene that identifies a cell type, where the cell type is significantly increased or decreased (e.g., CD8+ T cells), even if the gene itself wasn't directly measured
+*   **Cell type markers:** A gene that identifies a cell type, where the cell type is significantly increased or decreased (e.g., CD4+ T cells), even if the gene itself wasn't directly measured
 
 *   **Genes altered after in vitro stimulation:** A gene that has a significantly different change after in vitro stimulation than in healthy controls. 
 
