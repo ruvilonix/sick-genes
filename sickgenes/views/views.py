@@ -118,9 +118,7 @@ def gene_list(request):
     if form.is_valid() and form.cleaned_data.get('disease'):
         disease = form.cleaned_data['disease']
         
-        base_queryset = base_queryset.filter(
-            genefinding__study_cohort__disease_tags=disease
-        ).distinct() 
+        base_queryset = base_queryset.distinct() 
 
     genes = base_queryset.annotate(
         study_count=Count(
