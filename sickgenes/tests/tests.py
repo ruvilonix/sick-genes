@@ -89,8 +89,8 @@ class GeneListTests(TestCase):
         response = self.client.get(reverse('sickgenes:gene_list'))
         genes_in_context = {gene.symbol: gene for gene in response.context['genes_table'].data}
 
-        # Check that all genes from finished studies are present
-        self.assertEqual(len(genes_in_context), 4)
+        # Check that all genes are present
+        self.assertEqual(len(genes_in_context), 5)
 
         # Verify the study count for each gene
         self.assertEqual(genes_in_context['TTN'].study_count, 2)    # Associated with study1 and study3
@@ -110,7 +110,7 @@ class GeneListTests(TestCase):
         gene_symbols = {gene.symbol for gene in genes_in_context}
 
         # TTN (via cohort1) and SCN1A/BRCA1 (via cohort3) are linked to disease1
-        self.assertEqual(len(genes_in_context), 4)
+        self.assertEqual(len(genes_in_context), 5)
         self.assertIn('TTN', gene_symbols)
         self.assertIn('SCN1A', gene_symbols)
         self.assertIn('BRCA1', gene_symbols)
@@ -124,7 +124,7 @@ class GeneListTests(TestCase):
         gene_symbols = {gene.symbol for gene in genes_in_context}
 
         # SCN1A (via cohort2) and TTN/BRCA1 (via cohort3) are linked to disease2
-        self.assertEqual(len(genes_in_context), 4)
+        self.assertEqual(len(genes_in_context), 5)
         self.assertIn('TTN', gene_symbols)
         self.assertIn('SCN1A', gene_symbols)
         self.assertIn('BRCA1', gene_symbols)
@@ -142,8 +142,8 @@ class GeneListTests(TestCase):
         # Convert the context data to a dictionary for easy lookups
         genes_in_context = {gene.symbol: gene for gene in response.context['genes_table'].data}
 
-        # The view returns all genes, so we expect 4 (TTN, SCN1A, BRCA1, DEF)
-        self.assertEqual(len(genes_in_context), 4)
+        # The view returns all genes, so we expect 4 (TTN, SCN1A, BRCA1, ABC, DEF)
+        self.assertEqual(len(genes_in_context), 5)
 
         # --- Verify the annotated study_count for each gene ---
 
