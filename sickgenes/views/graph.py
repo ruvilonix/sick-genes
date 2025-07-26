@@ -96,7 +96,11 @@ def gene_network_data(request):
 
     # 5. Combine and return as JSON
     graph_data = {'nodes': nodes, 'edges': edges}
-    return JsonResponse(graph_data)
+    
+    response = JsonResponse(graph_data)
+    response['Content-Disposition'] = 'attachment; filename=sickgenes-network.json'
+
+    return response
 
 def graph_display(request):
     return render(request, 'sickgenes/network_display.html')
