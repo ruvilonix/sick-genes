@@ -34,6 +34,7 @@ class GeneListTests(TestCase):
         cls.gene_scn1a = HgncGene.objects.create(symbol='SCN1A')
         cls.gene_ttn = HgncGene.objects.create(symbol='TTN')
         cls.gene_abc = HgncGene.objects.create(symbol="ABC")
+        cls.gene_def = HgncGene.objects.create(symbol="DEF")
 
         # Create Studies
         cls.study1 = Study.objects.create(title='Cardio Study A', publication_year=2020)
@@ -63,6 +64,9 @@ class GeneListTests(TestCase):
         GeneFinding.objects.create(hgnc_gene=cls.gene_scn1a, study_cohort=cls.cohort2)
         GeneFinding.objects.create(hgnc_gene=cls.gene_scn1a, study_cohort=cls.cohort3)
 
+        # Gene DEF only in Epilepsy study
+        GeneFinding.objects.create(hgnc_gene=cls.gene_def, study_cohort=cls.cohort2)
+
         # Gene BRCA1 is only in one study (Study3)
         GeneFinding.objects.create(hgnc_gene=cls.gene_brca1, study_cohort=cls.cohort3)
 
@@ -86,7 +90,7 @@ class GeneListTests(TestCase):
         genes_in_context = {gene.symbol: gene for gene in response.context['genes_table'].data}
 
         # Check that all genes from finished studies are present
-        self.assertEqual(len(genes_in_context), 3)
+        self.assertEqual(len(genes_in_context), 4)
 
         # Verify the study count for each gene
         self.assertEqual(genes_in_context['TTN'].study_count, 2)    # Associated with study1 and study3
@@ -106,7 +110,7 @@ class GeneListTests(TestCase):
         gene_symbols = {gene.symbol for gene in genes_in_context}
 
         # TTN (via cohort1) and SCN1A/BRCA1 (via cohort3) are linked to disease1
-        self.assertEqual(len(genes_in_context), 3)
+        self.assertEqual(len(genes_in_context), 4)
         self.assertIn('TTN', gene_symbols)
         self.assertIn('SCN1A', gene_symbols)
         self.assertIn('BRCA1', gene_symbols)
@@ -120,10 +124,40 @@ class GeneListTests(TestCase):
         gene_symbols = {gene.symbol for gene in genes_in_context}
 
         # SCN1A (via cohort2) and TTN/BRCA1 (via cohort3) are linked to disease2
-        self.assertEqual(len(genes_in_context), 3)
+        self.assertEqual(len(genes_in_context), 4)
         self.assertIn('TTN', gene_symbols)
         self.assertIn('SCN1A', gene_symbols)
         self.assertIn('BRCA1', gene_symbols)
+
+    def test_gene_list_disease_filter_annotated_counts(self):
+        """
+        Tests that when filtering by disease, the list still includes all genes,
+        but the study_count is correctly annotated based on the filter.
+        """
+        # Filter by Cardiomyopathy (disease1)
+        url = f"{reverse('sickgenes:gene_list')}?disease={self.disease1.pk}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # Convert the context data to a dictionary for easy lookups
+        genes_in_context = {gene.symbol: gene for gene in response.context['genes_table'].data}
+
+        # The view returns all genes, so we expect 4 (TTN, SCN1A, BRCA1, DEF)
+        self.assertEqual(len(genes_in_context), 4)
+
+        # --- Verify the annotated study_count for each gene ---
+
+        # TTN is in Study1 (Cardio) and Study3 (Cardio), so count = 2
+        self.assertEqual(genes_in_context['TTN'].study_count, 2)
+        
+        # SCN1A is in Study3 (Cardio), so count = 1
+        self.assertEqual(genes_in_context['SCN1A'].study_count, 1)
+
+        # BRCA1 is in Study3 (Cardio), so count = 1
+        self.assertEqual(genes_in_context['BRCA1'].study_count, 1)
+
+        # DEF is only in an Epilepsy study, so its count for Cardiomyopathy is 0
+        self.assertEqual(genes_in_context['DEF'].study_count, 0)
 
 class GeneDetailTests(TestCase):
     """
