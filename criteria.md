@@ -25,17 +25,14 @@ Example where IFNG and TNF would be saved for both ME/CFS and long COVID cohorts
 *   **Severity associations:** Any of the above but associated with the severity/amount of the phenotype instead of with another group
     
 *   **Longitudinal studies:** If a gene is significant at any timepoint in a longitudinal study, include it
-    
-
-#### Protein Complexes and Heterodimers
-
-*   **Simple complexes (≤3 components):** Include all constituent genes when the complex is significantly associated with the phenotype (e.g., TSH → include TSHB and CGA)
-    
+        
 *   **Ambiguous cases:** When authors cannot discriminate between similar genes (e.g., IGHV3-23/30), include all mentioned genes
         
 ---
 
 ## Genes to NOT Include
+
+*   **Protein complexes:** Do not include constituent genes when a protein complex is significantly associated with the phenotype (e.g., TSH)
 
 *   **External database predictions:** Genes predicted to be of interest based on predictions made using external protein-protein or gene-gene interaction databases (e.g., GSEA or STRING network analysis)
     
