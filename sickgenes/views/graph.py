@@ -66,7 +66,7 @@ def gene_network_data(request):
             'label': gene.symbol,
             'x': random.random(), # Assign random coordinates for initial layout
             'y': random.random(),
-            'size': gene.study_count*2, # Size node by study count
+            'size': gene.study_count, # Size node by study count
             'type': 'circle'
         })
         common_gene_pks.append(gene.pk)
@@ -91,7 +91,7 @@ def gene_network_data(request):
                     'key': f'e{interaction.id}',
                     'source': source_gene_symbol,
                     'target': target_gene_symbol,
-                    'size': interaction.combined_score / 300, # Scale score for better visualization
+                    'size': interaction.combined_score,
                     'type': 'line',
                     'color': '#ccc'
                 })
