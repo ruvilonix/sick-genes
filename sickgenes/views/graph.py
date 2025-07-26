@@ -4,7 +4,6 @@ from django.shortcuts import render
 from django.db.models import Count, Q
 from sickgenes.models import HgncGene, StringInteraction
 
-CONFIDENCE_THRESHOLD = 999
 
 def gene_network_data(request):
     """
@@ -34,6 +33,8 @@ def gene_network_data(request):
             
     except ValueError:
         return JsonResponse({'error': 'Invalid disease ID provided.'}, status=400)
+    
+    confidence_threshold = request.GET.get('confidence_threshold', 700)
 
     # 2. Find genes associated with ALL specified diseases
     # We annotate each gene with two counts:
@@ -76,7 +77,7 @@ def gene_network_data(request):
         interactions = StringInteraction.objects.filter(
             protein1__hgnc_gene_id__in=common_gene_pks,
             protein2__hgnc_gene_id__in=common_gene_pks,
-            combined_score__gte=CONFIDENCE_THRESHOLD,
+            combined_score__gte=confidence_threshold,
         ).select_related('protein1__hgnc_gene', 'protein2__hgnc_gene')
 
         for interaction in interactions:
