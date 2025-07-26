@@ -118,15 +118,25 @@ def gene_list(request):
     if form.is_valid() and form.cleaned_data.get('disease'):
         disease = form.cleaned_data['disease']
         
-        base_queryset = base_queryset.distinct() 
+        genes = base_queryset.annotate(
+            study_count=Count(
+                'genefinding__study_cohort__study',
+                filter=Q(
+                    genefinding__study_cohort__study__not_finished=False,
+                    genefinding__study_cohort__disease_tags=disease
+                ),
+                distinct=True,
+            )
+        ).distinct()
 
-    genes = base_queryset.annotate(
-        study_count=Count(
-            'genefinding__study_cohort__study',
-            filter=Q(genefinding__study_cohort__study__not_finished=False),
-            distinct=True,
+    else:
+        genes = base_queryset.annotate(
+            study_count=Count(
+                'genefinding__study_cohort__study',
+                filter=Q(genefinding__study_cohort__study__not_finished=False),
+                distinct=True,
+            )
         )
-    )
 
     genes_table = GeneTable(genes)
     RequestConfig(request, paginate={"per_page": 25}).configure(genes_table)
