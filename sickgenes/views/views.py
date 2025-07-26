@@ -105,7 +105,7 @@ def gene_list(request):
     """
     Displays a paginated and filterable table of genes.
     """
-    base_queryset = HgncGene.objects.exclude(genefinding__study_cohort__study__not_finished=True)
+    base_queryset = HgncGene.objects.all()
 
     gene_symbols_to_filter = request.GET.getlist('symbol')
     if gene_symbols_to_filter:
