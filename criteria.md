@@ -23,6 +23,8 @@ Example where IFNG and TNF would be saved for both ME/CFS and long COVID cohorts
 *   **Antibodies to a specific gene product:** If a case group has significantly increased or decreased levels of autoantibodies to a gene product, the gene in question should be added.
         
 *   **Severity associations:** Any of the above but associated with the severity/amount of the phenotype instead of with another group
+
+*   **Symptom change associations:** If a clinical trial finds a correlation between a gene product and the amount that symptoms improved, the gene can be added.
     
 *   **Longitudinal studies:** If a gene is significant at any timepoint in a longitudinal study, include it
         
