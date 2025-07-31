@@ -29,6 +29,8 @@ Example where IFNG and TNF would be saved for both ME/CFS and long COVID cohorts
 *   **Longitudinal studies:** If a gene is significant at any timepoint in a longitudinal study, include it
         
 *   **Ambiguous cases:** When authors cannot discriminate between similar genes (e.g., IGHV3-23/30), include all mentioned genes
+
+*   **Two non-healthy groups where they only differ by a phenotype**: If two non-healthy groups are compared with the only difference being the addition of one or more phenotypes in one group, the finding can be saved for that phenotype difference. For example, if a study finds that those with fibromyalgia have higher IL-10 than those with fibromyalgia+ME/CFS, then IL-10 can be saved for ME/CFS because that is the only way the groups differ. (As the next section says, if the groups were fibromyalgia versus ME/CFS, then they each have one phenotype the other group does not have and thus the findings should not be saved.)
         
 ---
 
