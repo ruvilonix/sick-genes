@@ -10,6 +10,7 @@ import re
 
 class SiteConfiguration(SingletonModel):
     site_name = models.CharField(max_length=255, default='Site Name')
+    about = models.TextField(blank=True, null=True, default='')
 
     def __str__(self):
         return "Site Configuration"
