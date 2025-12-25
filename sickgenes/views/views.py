@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.http import JsonResponse, Http404
 from sickgenes.forms import prepare_identifiers
-from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding
+from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding, SiteConfiguration
 from sickgenes.forms import StudyForm, StudyCohortForm, GeneFilterForm
 from django.db import transaction
 from django.db.models import Prefetch, Count, Q
@@ -21,6 +21,7 @@ def home(request):
 def about(request):
     context = {
         'contact_email_address': settings.CONTACT_EMAIL_ADDRESS,
+        'about_text': markdown.markdown(SiteConfiguration.get_solo().about)
     }
     return render(request, 'sickgenes/about.html', context)
 

@@ -5,24 +5,7 @@
 {% block content %}
 
 <div class="p-3 mb-4 bg-light container rounded-3 mt-4">
-        <h1 class="display-5 fw-bold text-center">About</h1>
-        <p>Sick Genes is a database for logging which genes were found to be significant in genetic, transcriptomic, and proteomic studies, with studies tagged by the health condition they are studying. </p>
-
-        <p>Currently, I am in the process of storing genes that were significant in all relevant studies of <a href="https://en.wikipedia.org/wiki/Myalgic_encephalomyelitis/chronic_fatigue_syndrome" target="_blank">ME/CFS</a>, in the hopes that this data could be useful for finding the underlying causes of this condition. </p>
-
-        <hr>
-
-        <h4 class="text-center">Details</h4>
-        <p>The basic idea of the website is that I find a study that looked at genes, whether in terms of DNA mutations, mRNA expression, or differences in levels of the encoded protein, and I add the study to the website. I then create a study cohort for each separate group that was studied (excluding healthy controls). Each group/study cohort gets tags that describe the participants' disease/phenotype, such as "Migraine", "Irritable bowel syndrome", or "Colon cancer". Study cohorts can get multiple tags if all people in the group can be described by multiple phenotypes. Tags can also include criteria for a disease, such as the "Canadian Consensus Criteria" for ME/CFS.</p>
-        <p>Once there is a study cohort for a study, I add gene findings to the study cohort. I look for any genes in the study's published paper that the authors describe as significant.</p>
-        <p>Specific criteria can be seen on the <a href="{% url 'sickgenes:criteria' %}">criteria page</a>. (Work in progress.)</p>
-        <hr>
-
-        <hr>
-
-        <h4 class="text-center">Final Notes</h4>
-        <p>If you're interested in looking at the source code of the website, the repository is on Github at <a href="https://github.com/ruvilonix/sick-genes/" target="_blank">ruvilonix/sick-genes</a>.</p>
-        <p>If you want to get in touch, send an email to <a href="mailto:{{ contact_email_address }}" target="_blank">{{ contact_email_address }}</a>.</p>
+        {{ about_text|safe }}
 </div>
 
 {% endblock %}
