@@ -5,7 +5,17 @@ from django.urls import reverse
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from datetime import date
+from solo.models import SingletonModel
 import re
+
+class SiteConfiguration(SingletonModel):
+    site_name = models.CharField(max_length=255, default='Site Name')
+
+    def __str__(self):
+        return "Site Configuration"
+
+    class Meta:
+        verbose_name = "Site Configuration"
 
 class Study(models.Model):
     title = models.CharField(max_length=500, verbose_name="Title")

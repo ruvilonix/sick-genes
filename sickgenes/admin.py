@@ -4,8 +4,12 @@ from .models import (
     Study, GeneFinding, StudyCohort, Disease, HgncGene, 
     HmdbMetabolite, Ena, UniprotId, OmimId, AliasSymbol, 
     AliasName, PrevSymbol, PrevName, MetaboliteSynonym, SecondaryAccession,
-    MetaboliteFinding, StringProtein, StringInteraction
+    MetaboliteFinding, StringProtein, StringInteraction, SiteConfiguration
 )
+
+from solo.admin import SingletonModelAdmin
+
+admin.site.register(SiteConfiguration, SingletonModelAdmin)
 
 class ReadOnlyAdminMixin:
     def has_add_permission(self, request, obj=None):
