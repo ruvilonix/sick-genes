@@ -20,6 +20,8 @@ Example where IFNG and TNF would be saved for both ME/CFS and long COVID cohorts
 *   **Gene product shape or activity different:** Example [2]:
 > Recordings of TRPM3 ion channel currents were obtained from freshly isolated NK cells from HC, post-COVID-19 condition patients, and ME/CFS patients using the whole-cell patch-clamp electrophysiological technique. Endogenous TRPM3 function was rapidly and reversibly activated by application of 100 μM PregS. We found a significant difference among three groups of ionic current amplitude after PregS stimulation (p < 0.0001).
 
+*   **Methylation differences**: If methylation that relates to a specific gene is significantly different, the gene can be added.
+
 *   **Antibodies to a specific gene product:** If a case group has significantly increased or decreased levels of autoantibodies to a gene product, the gene in question should be added.
         
 *   **Severity associations:** Any of the above but associated with the severity/amount of the phenotype instead of with another group
