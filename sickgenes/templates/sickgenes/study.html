@@ -23,8 +23,13 @@
     {% if study.doi %}
         <a href="https://doi.org/{{ study.doi }}" target="_blank">View article</a>
     {% endif %}
+    {% if study.pmid %}
+        {% if study.doi %}|{% endif %}
+        <a href="https://pubmed.ncbi.nlm.nih.gov/{{ study.pmid }}" target="_blank">PubMed</a>
+    {% endif %}
     {% if study.s4me_url %}
-        {% if study.doi %}|{% endif %} <a href="{{ study.s4me_url }}" target="_blank">Discussion on S4ME</a>
+        {% if study.doi or study.pmid %}|{% endif %}
+        <a href="{{ study.s4me_url }}" target="_blank">Discussion on S4ME</a>
     {% endif %}
 </p>
 
