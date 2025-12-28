@@ -20,6 +20,18 @@
     </p>
 
     <p>
+        {{ form.pmid.label_tag }}
+        {{ form.pmid }}
+        {% if form.pmid.errors %}
+            <ul class="errorlist">
+                {% for error in form.pmid.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </p>
+
+    <p>
         {{ form.title.label_tag }}
         {{ form.title }}
         {% if form.title.errors %}
