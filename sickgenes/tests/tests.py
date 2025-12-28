@@ -7,7 +7,7 @@ from django.urls import reverse
 from sickgenes.forms import StudyForm
 from sickgenes.models import (
     HgncGene, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName,
-    HmdbMetabolite, MetaboliteSynonym, SecondaryAccession, GeneFinding
+    HmdbMetabolite, MetaboliteSynonym, SecondaryAccession, GeneFinding, SiteConfiguration
 )
 from unittest.mock import patch, Mock, mock_open
 import requests
@@ -166,6 +166,9 @@ class GeneDetailTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         """Set up non-modified objects used by all test methods."""
+        # Create SiteConfiguration to prevent it from being created during the test
+        SiteConfiguration.objects.create(id=1, site_name='Test Site', about='')
+
         # Create a single gene to test in detail
         cls.gene = HgncGene.objects.create(pk=1, symbol='TTN')
 
@@ -245,15 +248,16 @@ class GeneDetailTests(TestCase):
         The number of queries should be small and constant, regardless of the
         number of related findings, cohorts, etc.
         """
-        # We expect 10 queries, and this test ensures that number doesn't increase.
-        # - 1 query for the main HgncGene object.
-        # - 7 queries for each of the prefetched related sets on HgncGene (ena_set, uniprotid_set, etc.).
-        # - 1 query for GeneFinding (with StudyCohort and Study joined via select_related).
-        # - 1 query for the prefetched study_cohort__disease_tags.
-        # Total = 1 + 7 + 1 + 1 = 10 queries.
-        with self.assertNumQueries(10):
+        # We expect 11 queries:
+        # - 1 query for SiteConfiguration (from context processor)
+        # - 1 query for the main HgncGene object
+        # - 7 queries for each of the prefetched related sets on HgncGene
+        # - 1 query for GeneFinding (with StudyCohort and Study joined)
+        # - 1 query for the prefetched study_cohort__disease_tags
+        # Total = 1 + 1 + 7 + 1 + 1 = 11 queries
+        with self.assertNumQueries(11):
             response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': self.gene.symbol}))
-            # Accessing the context data forces the querysets to be evaluated.
+            # Accessing the context data forces the querysets to be evaluated
             self.assertIsNotNone(response.context['gene'])
             self.assertGreater(len(response.context['studies_data']), 0)
 
