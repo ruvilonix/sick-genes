@@ -895,6 +895,20 @@ class AddStudyView(TestCase):
         self.assertTemplateUsed(response, 'sickgenes/add_study.html')
         self.assertTrue(response.context['form'].errors)
 
+    def test_add_study_creates_correct_slug(self):
+        self.client.login(username=self.my_admin.username, password='testpassword')
+        form_data = {
+            'doi': '10.1000/xyz123',
+            'title': 'A Valid Study',
+            'authors': 'Test, Author',
+            'publication_year': 2023,
+        }
+        self.client.post(reverse('sickgenes:add_study'), data=form_data)
+        
+        study = Study.objects.get(title='A Valid Study')
+
+        self.assertEqual('a-valid-study-2023', study.slug)
+
 class StudyFormTest(TestCase):
 
     def test_form_is_valid_with_all_data(self):
@@ -1031,6 +1045,11 @@ class StudyView(TestCase):
 
     def test_url_valid_response(self):
         response = self.client.get(f'/study/{self.study_id}/')
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_random_slug_url_valid_response(self):
+        response = self.client.get(f'/study/abc.{self.study_id}/')
 
         self.assertEqual(response.status_code, 200)
 
