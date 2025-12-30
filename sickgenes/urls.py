@@ -9,6 +9,7 @@ urlpatterns = [
     
     path('studies/', views.study_list, name='study_list'),
     path('study/<int:study_id>/', views.study, name="study"),
+    path('study/<slug:slug>.<int:study_id>/', views.study, name="study"),
 
     path('genes/', views.gene_list, name='gene_list'),
     path('gene/<str:hgnc_symbol>/', views.gene_detail, name='gene_detail'),

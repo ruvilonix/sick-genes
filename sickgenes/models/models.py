@@ -6,6 +6,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from datetime import date
 from solo.models import SingletonModel
+from django.utils.text import slugify
 import re
 
 class SiteConfiguration(SingletonModel):
@@ -39,6 +40,16 @@ class Study(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    slug = models.SlugField(
+        max_length=250,
+        null=True,
+        blank=True,
+    )
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(f'{self.title}-{self.publication_year}')
+        super(Study, self).save(*args, **kwargs)
 
     def clean(self):
         super().clean()
@@ -103,7 +114,7 @@ class Study(models.Model):
         verbose_name_plural = 'studies'
 
     def get_absolute_url(self):
-        return reverse('sickgenes:study', kwargs={'study_id': self.pk})
+        return reverse('sickgenes:study', kwargs={'study_id': self.pk, 'slug': self.slug})
     
     def __str__(self):
         return self.title if self.title else self.doi

@@ -39,7 +39,7 @@ def criteria(request):
     
     return render(request, 'sickgenes/criteria.html', {'criteria_html': criteria_html})
 
-def study(request, study_id):
+def study(request, study_id, slug=None):
     study = get_object_or_404(
         Study.objects.prefetch_related(
             'study_cohorts',
