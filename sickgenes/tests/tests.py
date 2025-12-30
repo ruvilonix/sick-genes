@@ -1033,7 +1033,7 @@ class FetchPaperInfoViewTest(TestCase):
 class StudyView(TestCase):
     @classmethod
     def setUpTestData(cls):
-        study = Study.objects.create(title="Example study", doi="https://doi.org/fdfdsa")
+        study = Study.objects.create(title="Example study", doi="https://doi.org/fdfdsa", note="Note with *markdown*")
         disease = Disease.objects.create(name="ME/CFS")
         study_cohort = StudyCohort.objects.create(study=study)
         study_cohort.disease_tags.add(disease)
@@ -1080,6 +1080,10 @@ class StudyView(TestCase):
 
         self.assertIn('symbol', parsed_query)
         self.assertCountEqual(parsed_query['symbol'], expected_symbols)
+
+    def test_study_view_shows_markdown_note(self):
+        response = self.client.get(reverse('sickgenes:study', args=(self.study_id,)))
+        self.assertContains(response, "Note with <em>markdown</em>")
 
 class AddStudyCohortView(TestCase):
     @classmethod

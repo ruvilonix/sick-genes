@@ -58,9 +58,12 @@ def study(request, study_id, slug=None):
         ]
         cohort.gene_query_string = urlencode(params)
 
+    study_note = markdown.markdown(study.note)
+
     context = {
         'opts': Study._meta,
         'study': study,
+        'study_note': study_note,
     }
 
     return render(request, 'sickgenes/study.html', context)

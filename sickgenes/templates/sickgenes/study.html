@@ -84,7 +84,7 @@
 
 <h3>Notes</h3>
 {% if study.note %}
-{{ study.note|linebreaks }}
+{{ study_note|safe }}
 {% else %}
 No notes yet.
 {% endif %}
