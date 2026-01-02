@@ -11,6 +11,7 @@ import re
 
 class SiteConfiguration(SingletonModel):
     site_name = models.CharField(max_length=255, default='Site Name')
+    home_page_description = models.TextField(blank=True, null=True, default='')
     about = models.TextField(blank=True, null=True, default='')
 
     def __str__(self):
