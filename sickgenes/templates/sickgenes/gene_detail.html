@@ -119,13 +119,12 @@
         {% for study, cohorts in studies_data %}
             <div style="border: 1px solid #ccc; margin: 1em 0; padding: 1em;">
                 <header>
-                    <h4>
+                    <h5>
                         <a href="{{ study.get_absolute_url }}">{{ study.title }}</a>
-                    </h4>
-                    <p><small>{{ study.publication_year }} | {{ study.authors }}</small></p>
+                    </h5>
+                    <p><small>{{ study.publication_year }} | {{ study.short_authors }}</small></p>
                 </header>
                 <div>
-                    <h5>Associated cohorts</h5>
                     {% for cohort in cohorts %}
                         <div style="padding-left: 1em; margin-bottom: 0.5em;">
                             <strong>Phenotype:</strong>
