@@ -16,7 +16,13 @@ import os
 from urllib.parse import urlencode
 
 def home(request):
-    return render(request, 'sickgenes/home.html')
+    study_count = Study.objects.filter(not_finished=False).count()
+
+    context = {
+        'home_page_description': markdown.markdown(SiteConfiguration.get_solo().home_page_description),
+        'study_count': study_count,
+    }
+    return render(request, 'sickgenes/home.html', context)
 
 def about(request):
     context = {

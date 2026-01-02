@@ -7,9 +7,13 @@
 <div class="p-5 mb-4 bg-light container rounded-3 mt-4">
     <div class="container-fluid py-5 text-center">
         <h1 class="display-5 fw-bold">{{ site_config.site_name }}</h1>
-        <p class="fs-4">A resource for comparing significant gene findings from different studies.</p>
-        <a class="btn btn-primary btn-lg" href="{% url "sickgenes:identify_molecules" 'gene' %}" role="button">Search for genes</a>
-
+        <p class="fs-5 mt-5">{{ home_page_description|safe }}</p>
+        
+        <p class="mt-5">
+            <a class="btn btn-primary btn-lg" href="{% url "sickgenes:identify_molecules" 'gene' %}" role="button">Search for genes</a>
+        </p>
+        
+        <p class="mt-5">{{ study_count }} <a href="{% url 'sickgenes:study_list' %}">studies</a> saved and counting...</p>
         <p class="mt-3"><small>
             <a href="/api/v1/dump" class="text-muted">Download full database (JSON)</a>
         </small></p>
