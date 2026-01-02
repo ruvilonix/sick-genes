@@ -48,7 +48,7 @@ class Study(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        self.slug = slugify(f'{self.title}-{self.publication_year}')
+        self.slug = slugify(f'{self.title[:80]}-{self.publication_year}')
         super(Study, self).save(*args, **kwargs)
 
     def clean(self):
