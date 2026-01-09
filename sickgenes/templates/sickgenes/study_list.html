@@ -1,5 +1,6 @@
 {% extends 'sickgenes/base.html' %}
-{% load render_table from django_tables2 %}
+{% load static %}
+{% load responsive_table %}
 
 {% block title %}Browse Studies{% endblock %}
 
@@ -13,6 +14,7 @@
     <button type="submit" class="btn btn-primary btn-sm">Filter</button>
 </form>
 
-{% render_table study_table %}
+{% responsive_table "studyTable" 'sickgenes:TableStudy' %}
 
+<script src="{% static 'django_tables2_ajax/tables.js' %}" type="application/javascript"></script>
 {% endblock %}

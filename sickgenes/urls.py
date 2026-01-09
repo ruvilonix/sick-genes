@@ -8,6 +8,8 @@ urlpatterns = [
     path('about/criteria/', views.criteria, name='criteria'),
     
     path('studies/', views.study_list, name='study_list'),
+    path('table-study/', views.table_study, name="TableStudy"),
+
     path('study/<int:study_id>/', views.study, name="study"),
     path('study/<slug:slug>.<int:study_id>/', views.study, name="study"),
 

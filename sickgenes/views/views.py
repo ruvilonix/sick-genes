@@ -75,38 +75,17 @@ def study(request, study_id, slug=None):
     return render(request, 'sickgenes/study.html', context)
 
 def study_list(request):
-    """
-    Displays a paginated and filterable table of genes.
-    """
-    base_queryset = Study.objects.exclude(not_finished=True)
     form = GeneFilterForm(request.GET)
-
-    count_filter = Q()
-
-    if form.is_valid() and form.cleaned_data.get('disease'):
-        disease = form.cleaned_data['disease']
-        
-        base_queryset = base_queryset.filter(
-            study_cohorts__disease_tags=disease
-        ).distinct()
-        
-        count_filter = Q(study_cohorts__disease_tags=disease)
-
-    studies = base_queryset.annotate(
-        gene_count=Count(
-            'study_cohorts__gene_findings__hgnc_gene',
-            filter=count_filter,
-            distinct=True
-        )
-    ).filter(gene_count__gt=0)
+    disease = request.GET.get('disease', '')
     
-
-    study_table = StudyTable(studies)
-    RequestConfig(request, paginate={"per_page": 25}).configure(study_table)
-
+    # Store disease filter in session
+    if 'disease' in request.GET:
+        request.session['study_disease_filter'] = request.GET.get('disease')
+    elif request.GET.get('clear_filter'):
+        request.session.pop('study_disease_filter', None)
+        
     context = {
         'form': form,
-        'study_table': study_table,
     }
     
     return render(request, 'sickgenes/study_list.html', context)
