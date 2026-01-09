@@ -3,9 +3,11 @@ certifi==2025.7.9
 charset-normalizer==3.4.2
 dj-database-url==3.0.1
 Django==5.2.4
+django-ajax-datatable==4.5.0
 django-debug-toolbar==5.2.0
 django-solo==2.4.0
 django-tables2==2.7.5
+django_tables2_ajax==1.0
 gunicorn==23.0.0
 idna==3.10
 Markdown==3.8.2

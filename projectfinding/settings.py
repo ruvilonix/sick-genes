@@ -44,7 +44,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'sickgenes.apps.SickgenesConfig',
     'django_tables2',
+    'django_tables2_ajax',
     'solo',
+
 ]
 
 MIDDLEWARE = [
