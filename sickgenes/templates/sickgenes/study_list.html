@@ -17,4 +17,9 @@
 {% responsive_table "studyTable" 'sickgenes:TableStudy' %}
 
 <script src="{% static 'django_tables2_ajax/tables.js' %}" type="application/javascript"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById("studyTable_search").placeholder = "Search by title or author...";
+    });
+</script>
 {% endblock %}
