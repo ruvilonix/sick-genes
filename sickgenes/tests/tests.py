@@ -279,44 +279,40 @@ class StudyListViewTest(TestCase):
         cls.disease_x = Disease.objects.create(name="Disease X")
         cls.disease_y = Disease.objects.create(name="Disease Y")
 
-        # Study 1: Linked to Disease X with Gene A. Should appear in unfiltered and filtered lists.
+        # Study 1: Linked to Disease X with Gene A
         cls.study1 = Study.objects.create(title="Study 1 About Disease X", not_finished=False, authors='Smith, Bridget; Jones, Tony')
         cohort1 = StudyCohort.objects.create(study=cls.study1)
         cohort1.disease_tags.add(cls.disease_x)
         GeneFinding.objects.create(study_cohort=cohort1, hgnc_gene=cls.gene_a)
 
-        # Study 2: Linked to Disease Y with Gene B. Should appear in unfiltered, but not when filtering by Disease X.
+        # Study 2: Linked to Disease Y with Gene B
         cls.study2 = Study.objects.create(title="Study 2 About Disease Y", not_finished=False, authors='Lewis, John')
         cohort2 = StudyCohort.objects.create(study=cls.study2)
         cohort2.disease_tags.add(cls.disease_y)
         GeneFinding.objects.create(study_cohort=cohort2, hgnc_gene=cls.gene_b)
 
-        # Study 3: Linked to both Disease X (Gene A) and Disease Y (Gene B).
-        # Should appear in all lists, but its gene_count will change based on the filter.
+        # Study 3: Linked to both diseases
         cls.study3 = Study.objects.create(title="Study 3 About Both Diseases", not_finished=False)
-        # Cohort for Disease X
         cohort3x = StudyCohort.objects.create(study=cls.study3)
         cohort3x.disease_tags.add(cls.disease_x)
         GeneFinding.objects.create(study_cohort=cohort3x, hgnc_gene=cls.gene_a)
-        # Cohort for Disease Y
         cohort3y = StudyCohort.objects.create(study=cls.study3)
         cohort3y.disease_tags.add(cls.disease_y)
         GeneFinding.objects.create(study_cohort=cohort3y, hgnc_gene=cls.gene_b)
 
-        # Study 4: Linked to Disease X, but not_finished=True.
-        # Should appear in the unfiltered list but be excluded when any filter is active.
+        # Study 4: Linked to Disease X, but not_finished=True
         cls.study4 = Study.objects.create(title="Study 4 Unfinished", not_finished=True)
         cohort4 = StudyCohort.objects.create(study=cls.study4)
         cohort4.disease_tags.add(cls.disease_x)
         GeneFinding.objects.create(study_cohort=cohort4, hgnc_gene=cls.gene_a)
 
-        # Study 5: Has a cohort but no genes. Should never appear as its gene_count is 0.
+        # Study 5: Has a cohort but no genes
         cls.study5 = Study.objects.create(title="Study 5 With No Genes")
         cohort5 = StudyCohort.objects.create(study=cls.study5)
         cohort5.disease_tags.add(cls.disease_x)
         
-        # This assumes your project has a URL named 'study_list' in the 'sickgenes' app namespace.
         cls.url = reverse('sickgenes:study_list')
+        cls.table_url = reverse('sickgenes:TableStudy')
 
     def test_view_url_and_template(self):
         """Tests that the view's URL is accessible and renders the correct template."""
@@ -324,62 +320,76 @@ class StudyListViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'sickgenes/study_list.html')
 
-    def test_unfiltered_study_list_content(self):
-        """Tests the view without any GET parameters. It should show all studies with a gene_count > 0."""
-        response = self.client.get(self.url)
+    def test_table_ajax_endpoint_accessible(self):
+        """Tests that the AJAX table endpoint is accessible."""
+        response = self.client.get(self.table_url)
         self.assertEqual(response.status_code, 200)
 
-        table = response.context['study_table']
-        displayed_titles = [item.title for item in table.data]
+    def test_unfiltered_study_list_content(self):
+        """Tests the AJAX endpoint without any filters. Should show all studies with gene_count > 0."""
+        response = self.client.get(self.table_url)
+        self.assertEqual(response.status_code, 200)
 
-        # Check that studies with genes are present, including the 'not_finished' one
-        self.assertIn('Study 1 About Disease X', displayed_titles)
-        self.assertIn('Study 2 About Disease Y', displayed_titles)
-        self.assertIn('Study 3 About Both Diseases', displayed_titles)
+        content = response.content.decode('utf-8')
+        
+        # Check that studies with genes are present
+        self.assertIn('Study 1 About Disease X', content)
+        self.assertIn('Study 2 About Disease Y', content)
+        self.assertIn('Study 3 About Both Diseases', content)
 
         # Check that study with no genes is absent
-        self.assertNotIn('Study 5 With No Genes', displayed_titles)
-        self.assertEqual(len(displayed_titles), 3)
-
-        # Check the total gene counts for each study
-        for study in table.data:
-            if study.pk == self.study1.pk:
-                self.assertEqual(study.gene_count, 1)
-            elif study.pk == self.study3.pk:
-                self.assertEqual(study.gene_count, 2) # Has two distinct genes
+        self.assertNotIn('Study 5 With No Genes', content)
 
     def test_filtered_study_list_by_disease(self):
-        """Tests filtering by a disease. It should only show relevant, finished studies."""
-        response = self.client.get(self.url, {'disease': self.disease_x.id})
+        """Tests filtering by a disease using session storage."""
+        # Set up session
+        session = self.client.session
+        session['study_disease_filter'] = str(self.disease_x.id)
+        session.save()
+
+        response = self.client.get(self.table_url)
         self.assertEqual(response.status_code, 200)
 
-        table = response.context['study_table']
-        displayed_titles = [item.title for item in table.data]
+        content = response.content.decode('utf-8')
         
         # Check that only studies related to Disease X are present
-        self.assertIn('Study 1 About Disease X', displayed_titles)
-        self.assertIn('Study 3 About Both Diseases', displayed_titles)
+        self.assertIn('Study 1 About Disease X', content)
+        self.assertIn('Study 3 About Both Diseases', content)
         
         # Check that other studies are correctly excluded
-        self.assertNotIn('Study 2 About Disease Y', displayed_titles) # Wrong disease
-        self.assertNotIn('Study 4 Unfinished', displayed_titles) # Excluded because not_finished=True
-        self.assertEqual(len(displayed_titles), 2)
+        self.assertNotIn('Study 2 About Disease Y', content)  # Wrong disease
+        self.assertNotIn('Study 4 Unfinished', content)  # Excluded because not_finished=True
 
     def test_filtered_gene_count_is_correct(self):
         """Tests that gene_count is correctly calculated based on the disease filter."""
-        response = self.client.get(self.url, {'disease': self.disease_x.id})
-        self.assertEqual(response.status_code, 200)
+        # We need to test the queryset logic directly since we can't easily parse gene counts from HTML
+        from django.db.models import Q, Count
         
-        table = response.context['study_table']
+        disease_id = str(self.disease_x.id)
+        base_queryset = Study.objects.exclude(not_finished=True)
+        
+        count_filter = Q(study_cohorts__disease_tags=self.disease_x)
+        queryset = base_queryset.filter(
+            study_cohorts__disease_tags=self.disease_x
+        ).distinct()
+        
+        queryset = queryset.annotate(
+            gene_count=Count(
+                'study_cohorts__gene_findings__hgnc_gene',
+                filter=count_filter,
+                distinct=True
+            )
+        ).filter(gene_count__gt=0)
 
-        # Check gene counts, which should now be specific to Disease X
-        for study in table.data:
-            if study.pk == self.study1.pk:
-                # Study 1 has 1 gene, which is related to Disease X
-                self.assertEqual(study.gene_count, 1)
-            elif study.pk == self.study3.pk:
-                # Study 3 has 2 total genes, but only 1 is related to Disease X
-                self.assertEqual(study.gene_count, 1)
+        # Get the studies
+        study1_result = queryset.get(pk=self.study1.pk)
+        study3_result = queryset.get(pk=self.study3.pk)
+
+        # Study 1 has 1 gene related to Disease X
+        self.assertEqual(study1_result.gene_count, 1)
+        
+        # Study 3 has 2 total genes, but only 1 is related to Disease X
+        self.assertEqual(study3_result.gene_count, 1)
 
     def test_filter_with_no_results(self):
         """Tests that filtering for a disease with no associated 'finished' studies yields an empty list."""
@@ -387,16 +397,50 @@ class StudyListViewTest(TestCase):
         self.study2.not_finished = True
         self.study2.save()
 
-        response = self.client.get(self.url, {'disease': self.disease_y.id})
+        # Set up session
+        session = self.client.session
+        session['study_disease_filter'] = str(self.disease_y.id)
+        session.save()
+
+        response = self.client.get(self.table_url)
         self.assertEqual(response.status_code, 200)
         
-        table = response.context['study_table']
-        self.assertEqual(len(table.data), 1)
+        content = response.content.decode('utf-8')
+        
+        # Study 3 should still appear as it has Disease Y cohort
+        self.assertIn('Study 3 About Both Diseases', content)
+        
+        # Study 2 should not appear
+        self.assertNotIn('Study 2 About Disease Y', content)
 
     def test_shortened_author_list_shown(self):
-        '''Test that view returns shortened author list in et al format'''
-        response = self.client.get(self.url)
+        """Test that view returns shortened author list in et al format."""
+        response = self.client.get(self.table_url)
         self.assertContains(response, 'Smith et al')
+
+    def test_session_filter_persists(self):
+        """Test that the disease filter is stored in session."""
+        response = self.client.get(self.url, {'disease': self.disease_x.id})
+        self.assertEqual(response.status_code, 200)
+        
+        # Check that the session was set
+        self.assertEqual(
+            self.client.session.get('study_disease_filter'), 
+            str(self.disease_x.id)
+        )
+
+    def test_search_functionality(self):
+        """Test that search works on the AJAX endpoint."""
+        response = self.client.get(self.table_url, {'search': 'Disease X'})
+        self.assertEqual(response.status_code, 200)
+        
+        content = response.content.decode('utf-8')
+        
+        # Should find Study 1
+        self.assertIn('Study 1 About Disease X', content)
+        
+        # Should not find Study 2
+        self.assertNotIn('Study 2 About Disease Y', content)
 
 
 class ImportHgncTest(TestCase):

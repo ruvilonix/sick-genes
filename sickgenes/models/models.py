@@ -97,6 +97,8 @@ class Study(models.Model):
     
     @property
     def short_authors(self):
+        if not self.authors:
+            return ''
         authors = self.authors.split(';')
         first_author_last_name = authors[0].split(',')[0].strip()
         if len(authors) > 1:
