@@ -414,9 +414,9 @@ class StudyListViewTest(TestCase):
         self.assertNotIn('Study 2 About Disease Y', content)
 
     def test_shortened_author_list_shown(self):
-        """Test that view returns shortened author list in et al format."""
+        """Test that view returns shortened author list in et al. format."""
         response = self.client.get(self.table_url)
-        self.assertContains(response, 'Smith et al')
+        self.assertContains(response, 'Smith et al.')
 
     def test_session_filter_persists(self):
         """Test that the disease filter is stored in session."""

@@ -20,6 +20,6 @@ class StudyTest(TestCase):
         short_authors2 = self.study2.short_authors
         short_authors3 = self.study3.short_authors
 
-        self.assertEqual(short_authors1, 'Lewis et al')
+        self.assertEqual(short_authors1, 'Lewis et al.')
         self.assertEqual(short_authors2, 'Allen')
         self.assertEqual(short_authors3, '')
