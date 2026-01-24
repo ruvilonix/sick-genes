@@ -8,7 +8,7 @@ class HgncGene(models.Model):
     hgnc_id = models.IntegerField(unique=True, null=True, default=None)
     symbol = models.CharField(max_length=30, null=True)
     name = models.CharField(max_length=255, default=None, null=True)
-    entrez_id = models.CharField(max_length=15, null=True)
+    entrez_id = models.BigIntegerField(null=True)
     ensembl_gene_id = models.CharField(max_length=20, null=True)
     vega_id = models.CharField(max_length=25, null=True)
     ucsc_id = models.CharField(max_length=15, null=True)
@@ -23,7 +23,7 @@ class HgncGene(models.Model):
         indexes = [
             models.Index(Upper('symbol'), name='hgncgene_symbol_iexact_idx'),
             models.Index(Upper('name'), name='hgncgene_name_iexact_idx'),
-            models.Index(Upper('entrez_id'), name='hgncgene_entrez_id_iexact_idx'),
+            models.Index('entrez_id', name='hgncgene_entrez_id_idx'),
             models.Index(Upper('ensembl_gene_id'), name='hgncgene_ensembl_iexact_idx'),
             models.Index(Upper('vega_id'), name='hgncgene_vega_id_iexact_idx'),
             models.Index(Upper('ucsc_id'), name='hgncgene_ucsc_id_iexact_idx'),
