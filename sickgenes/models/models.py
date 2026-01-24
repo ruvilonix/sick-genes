@@ -123,6 +123,7 @@ class Study(models.Model):
         return self.title if self.title else self.doi
     
 class Disease(models.Model):
+    code = models.CharField(max_length=100, null=True, default=None, unique=True)
     name = models.CharField(max_length=100)
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
