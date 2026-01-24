@@ -1,5 +1,7 @@
-from django.http import JsonResponse
+from django.http import HttpResponse
 from sickgenes.models import Study
+import json
+import gzip
 
 
 def database_dump_json_v2(request):
@@ -77,8 +79,10 @@ def database_dump_json_v2(request):
         studies_list.append(study_data)
 
     response_data = {"studies": studies_list}
+    json_content = json.dumps(response_data, indent=2)
+    gzipped_content = gzip.compress(json_content.encode(encoding='utf-8'))
 
-    response = JsonResponse(response_data, json_dumps_params={'indent': 2})
-    response['Content-Disposition'] = 'attachment; filename=sickgenes-full-database.json'
+    response = HttpResponse(gzipped_content, content_type="application/gzip")
+    response['Content-Disposition'] = 'attachment; filename=sickgenes-full-database.json.gz'
 
     return response

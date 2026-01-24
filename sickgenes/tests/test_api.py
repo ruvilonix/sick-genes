@@ -1,6 +1,9 @@
 from django.test import TestCase
 from django.urls import reverse
 from sickgenes.models import Study, StudyCohort, Disease, GeneFinding, HgncGene
+import gzip
+import json
+
 
 class DatabaseDumpJsonTestV1(TestCase):
     """
@@ -207,6 +210,9 @@ class DatabaseDumpJsonTestV2(TestCase):
     """
     maxDiff = None
 
+    def _get_json_from_response(self, response):
+        return json.loads(gzip.decompress(response.content).decode('utf-8'))
+
     @classmethod
     def setUpTestData(cls):
         """Set up non-modified objects used by all test methods."""
@@ -216,13 +222,20 @@ class DatabaseDumpJsonTestV2(TestCase):
         cls.disease2 = Disease.objects.create(name="Disease B")
         cls.url = reverse('sickgenes:database_dump_json_v2')
 
+    def test_correct_content_type(self):
+        """
+        Tests that the view returns a gzipped file
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response['Content-Type'], 'application/gzip')
+
     def test_empty_database(self):
         """
         Tests that the view returns an empty list when no studies are in the DB.
         """
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"studies": []})
+        self.assertEqual(self._get_json_from_response(response), {"studies": []})
 
     def test_full_study_and_cohort(self):
         """
@@ -247,7 +260,7 @@ class DatabaseDumpJsonTestV2(TestCase):
 
         # 2. Action
         response = self.client.get(self.url)
-        data = response.json()
+        data = self._get_json_from_response(response)
 
         # 3. Assert
         self.assertEqual(response.status_code, 200)
@@ -317,7 +330,7 @@ class DatabaseDumpJsonTestV2(TestCase):
         )
         
         response = self.client.get(self.url)
-        data = response.json()
+        data = self._get_json_from_response(response)
         actual_study = data["studies"][0]
 
         actual_study.pop('sickgenes_url')
@@ -341,7 +354,7 @@ class DatabaseDumpJsonTestV2(TestCase):
         Study.objects.create(title="NA Date Study")
         
         response = self.client.get(self.url)
-        data = response.json()
+        data = self._get_json_from_response(response)
         actual_study = data["studies"][0]
 
         sickgenes_url = actual_study.pop('sickgenes_url')
@@ -362,7 +375,7 @@ class DatabaseDumpJsonTestV2(TestCase):
         StudyCohort.objects.create(study=study, note=None)
 
         response = self.client.get(self.url)
-        data = response.json()
+        data = self._get_json_from_response(response)
         study_data = data["studies"][0]
         
         self.assertIn("study_cohorts", study_data)
@@ -379,7 +392,7 @@ class DatabaseDumpJsonTestV2(TestCase):
         StudyCohort.objects.create(study=study, note=None)
 
         response = self.client.get(self.url)
-        data = response.json()
+        data = self._get_json_from_response(response)
         
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('study_cohorts', data['studies'][0])
@@ -392,7 +405,7 @@ class DatabaseDumpJsonTestV2(TestCase):
         Study.objects.create(title="Second Study", doi="10.1000/abc")
 
         response = self.client.get(self.url)
-        data = response.json()
+        data = self._get_json_from_response(response)
         
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(data["studies"]), 2)
@@ -420,7 +433,7 @@ class DatabaseDumpJsonTestV2(TestCase):
 
         # 2. Action
         response = self.client.get(self.url)
-        data = response.json()
+        data = self._get_json_from_response(response)
 
         # 3. Assert
         self.assertEqual(response.status_code, 200)
