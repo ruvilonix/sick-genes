@@ -216,7 +216,7 @@ class DatabaseDumpJsonTestV2(TestCase):
     @classmethod
     def setUpTestData(cls):
         """Set up non-modified objects used by all test methods."""
-        cls.gene1 = HgncGene.objects.create(hgnc_id=1, symbol="GENE1")
+        cls.gene1 = HgncGene.objects.create(hgnc_id=1, symbol="GENE1", entrez_id=123, ensembl_gene_id='ENSG1234')
         cls.gene2 = HgncGene.objects.create(hgnc_id=2, symbol="GENE2")
         cls.disease1 = Disease.objects.create(name="Disease A", code="A")
         cls.disease2 = Disease.objects.create(name="Disease B")
@@ -235,7 +235,7 @@ class DatabaseDumpJsonTestV2(TestCase):
         """
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self._get_json_from_response(response), {"studies": []})
+        self.assertEqual(self._get_json_from_response(response), {"genes": [], "studies": []})
 
     def test_full_study_and_cohort(self):
         """
@@ -286,20 +286,8 @@ class DatabaseDumpJsonTestV2(TestCase):
                         {'code': 'A', 'description': 'Disease A'},
                     ],
                     "gene_findings": [
-                        {
-                            'ensembl_gene_id': None,
-                            'entrez_id': None,
-                            'hgnc_id': 1,
-                            'hgnc_name': None,
-                            'hgnc_symbol': 'GENE1'
-                        },
-                        {
-                            'ensembl_gene_id': None,
-                            'entrez_id': None,
-                            'hgnc_id': 2,
-                            'hgnc_name': None,
-                            'hgnc_symbol': 'GENE2'
-                        }
+                        {'hgnc_id': 1, 'hgnc_symbol': 'GENE1'},
+                        {'hgnc_id': 2, 'hgnc_symbol': 'GENE2'}
                     ]
                 }
             ]
@@ -314,6 +302,14 @@ class DatabaseDumpJsonTestV2(TestCase):
         self.assertRegex(sickgenes_url, r'http://testserver/study/full-study-title-2025\.\d+/$')
 
         self.assertDictEqual(actual_study, expected_study)
+
+        self.assertEqual(len(data["genes"]), 2)
+        expected_genes = [
+            {'hgnc_id': 1, 'hgnc_symbol': 'GENE1', 'hgnc_name': None, 'entrez_id': 123, 'ensembl_gene_id': 'ENSG1234'},
+            {'hgnc_id': 2, 'hgnc_symbol': 'GENE2', 'hgnc_name': None, 'entrez_id': None, 'ensembl_gene_id': None}
+        ]
+        actual_genes = sorted(data["genes"], key=lambda x: x['hgnc_id'])
+        self.assertListEqual(actual_genes, expected_genes)
 
     def test_omits_none_and_empty_fields(self):
         """
@@ -438,3 +434,4 @@ class DatabaseDumpJsonTestV2(TestCase):
         # 3. Assert
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(data["studies"]), 0)
+        self.assertEqual(len(data["genes"]), 0)

@@ -3,22 +3,24 @@ from sickgenes.models import Study
 import json
 import gzip
 
-
 def database_dump_json_v2(request):
     """
     A view that returns the Study database as a nested JSON object,
     omitting any fields that are None or empty.
+    Genes are deduplicated into a separate list with full metadata.
     """
+    
     studies_query = Study.objects.prefetch_related(
         'study_cohorts__disease_tags',
         'study_cohorts__gene_findings__hgnc_gene',
         'study_cohorts__metabolite_findings__hmdb_metabolite',
     ).exclude(not_finished=True)
-
+    
     studies_list = []
+    unique_genes = {}
+    
     for study in studies_query:
         study_data = {}
-
         if study.title:
             study_data["title"] = study.title
         if study.doi:
@@ -45,44 +47,50 @@ def database_dump_json_v2(request):
                 study_data["publication_date"]['month'] = study.publication_month
             if study.publication_day:
                 study_data["publication_date"]['day'] = study.publication_day
-
+        
         cohorts_list = []
         for cohort in study.study_cohorts.all():
             cohort_data = {}
-
             if cohort.note:
                 cohort_data["note"] = cohort.note
-
+            
             phenotypes = [{"code": disease.code, "description": disease.name} for disease in cohort.disease_tags.all()]
-            gene_findings_list = [
-                {
-                    "hgnc_id": f.hgnc_gene.hgnc_id, 
-                    "hgnc_symbol": f.hgnc_gene.symbol,
-                    "hgnc_name": f.hgnc_gene.name,
-                    "entrez_id": f.hgnc_gene.entrez_id,
-                    "ensembl_gene_id": f.hgnc_gene.ensembl_gene_id,
-                }
-                for f in cohort.gene_findings.all() if f.hgnc_gene
-            ]
-
+            
+            gene_findings_list = []
+            for f in cohort.gene_findings.all():
+                if f.hgnc_gene:
+                    if f.hgnc_gene.hgnc_id not in unique_genes:
+                        unique_genes[f.hgnc_gene.hgnc_id] = {
+                            "hgnc_id": f.hgnc_gene.hgnc_id,
+                            "hgnc_symbol": f.hgnc_gene.symbol,
+                            "hgnc_name": f.hgnc_gene.name,
+                            "entrez_id": f.hgnc_gene.entrez_id,
+                            "ensembl_gene_id": f.hgnc_gene.ensembl_gene_id,
+                        }
+                    
+                    gene_findings_list.append({
+                        "hgnc_id": f.hgnc_gene.hgnc_id,
+                        "hgnc_symbol": f.hgnc_gene.symbol,
+                    })
+            
             if phenotypes:
                 cohort_data["phenotypes"] = phenotypes
             if gene_findings_list:
                 cohort_data["gene_findings"] = gene_findings_list
-            
             if cohort_data:
                 cohorts_list.append(cohort_data)
-
+        
         if cohorts_list:
             study_data["study_cohorts"] = cohorts_list
-        
         studies_list.append(study_data)
-
-    response_data = {"studies": studies_list}
+    
+    response_data = {
+        "genes": list(unique_genes.values()),
+        "studies": studies_list
+    }
+    
     json_content = json.dumps(response_data, indent=2)
     gzipped_content = gzip.compress(json_content.encode(encoding='utf-8'))
-
     response = HttpResponse(gzipped_content, content_type="application/gzip")
     response['Content-Disposition'] = 'attachment; filename=sickgenes-full-database.json.gz'
-
     return response
