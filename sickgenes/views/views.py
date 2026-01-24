@@ -76,12 +76,11 @@ def study(request, study_id, slug=None):
 
 def study_list(request):
     form = GeneFilterForm(request.GET)
-    disease = request.GET.get('disease', '')
     
     # Store disease filter in session
-    if 'disease' in request.GET:
+    if 'disease' in request.GET and request.GET.get('disease'):
         request.session['study_disease_filter'] = request.GET.get('disease')
-    elif request.GET.get('clear_filter'):
+    else:
         request.session.pop('study_disease_filter', None)
         
     context = {
