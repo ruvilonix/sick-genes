@@ -5,7 +5,7 @@ from django.urls import reverse
 
 
 class HgncGene(models.Model):
-    hgnc_id = models.CharField(max_length=15, unique=True, null=True, default=None)
+    hgnc_id = models.IntegerField(unique=True, null=True, default=None)
     symbol = models.CharField(max_length=30, null=True)
     name = models.CharField(max_length=255, default=None, null=True)
     entrez_id = models.CharField(max_length=15, null=True)
@@ -21,7 +21,6 @@ class HgncGene(models.Model):
         ordering = ['symbol']
 
         indexes = [
-            models.Index(Upper('hgnc_id'), name='hgncgene_hgncid_iexact_idx'),
             models.Index(Upper('symbol'), name='hgncgene_symbol_iexact_idx'),
             models.Index(Upper('name'), name='hgncgene_name_iexact_idx'),
             models.Index(Upper('entrez_id'), name='hgncgene_entrez_id_iexact_idx'),

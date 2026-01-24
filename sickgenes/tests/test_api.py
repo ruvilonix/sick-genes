@@ -9,8 +9,8 @@ class DatabaseDumpJsonTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         """Set up non-modified objects used by all test methods."""
-        cls.gene1 = HgncGene.objects.create(hgnc_id="HGNC:1", symbol="GENE1")
-        cls.gene2 = HgncGene.objects.create(hgnc_id="HGNC:2", symbol="GENE2")
+        cls.gene1 = HgncGene.objects.create(hgnc_id=1, symbol="GENE1")
+        cls.gene2 = HgncGene.objects.create(hgnc_id=2, symbol="GENE2")
         cls.disease1 = Disease.objects.create(name="Disease A")
         cls.disease2 = Disease.objects.create(name="Disease B")
         cls.url = reverse('sickgenes:database_dump_json')
@@ -69,8 +69,8 @@ class DatabaseDumpJsonTest(TestCase):
                     "note": "Cohort note.",
                     "phenotypes": ["Disease A", "Disease B"],
                     "gene_findings": [
-                        {"hgnc_id": "HGNC:1", "symbol": "GENE1"},
-                        {"hgnc_id": "HGNC:2", "symbol": "GENE2"},
+                        {"hgnc_id": 1, "symbol": "GENE1"},
+                        {"hgnc_id": 2, "symbol": "GENE2"},
                     ]
                 }
             ]

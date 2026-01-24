@@ -272,8 +272,8 @@ class StudyListViewTest(TestCase):
         This is more efficient than setUp() for data that doesn't change.
         """
         # Create Genes
-        cls.gene_a = HgncGene.objects.create(hgnc_id="HGNC:1", symbol="GENA")
-        cls.gene_b = HgncGene.objects.create(hgnc_id="HGNC:2", symbol="GENB")
+        cls.gene_a = HgncGene.objects.create(hgnc_id=1, symbol="GENA")
+        cls.gene_b = HgncGene.objects.create(hgnc_id=2, symbol="GENB")
 
         # Create Diseases
         cls.disease_x = Disease.objects.create(name="Disease X")
@@ -459,7 +459,7 @@ class ImportHgncTest(TestCase):
         self.assertEqual(genes.count(), 3)
 
     def test_all_hgnc_fields_are_saved(self):
-        gene = HgncGene.objects.get(hgnc_id='HGNC:5')
+        gene = HgncGene.objects.get(hgnc_id=5)
 
         self.assertEqual(gene.symbol, 'A1BG')
         self.assertEqual(gene.name, 'alpha-1-B glycoprotein')
@@ -476,7 +476,7 @@ class ImportHgncTest(TestCase):
         self.assertCountEqual([prev_symbol.value for prev_symbol in gene.prevsymbol_set.all()], ['fake_prev_symbol', 'string, including comma'])
 
     def test_datetime_field_is_recent(self):
-        gene = HgncGene.objects.get(hgnc_id='HGNC:5')
+        gene = HgncGene.objects.get(hgnc_id=5)
 
         self.assertGreaterEqual(gene.created_at, self.start_time)
         self.assertLessEqual(gene.created_at, self.end_time)
@@ -566,7 +566,7 @@ class FindMatchingHgncGenesTests(TestCase):
     def setUpTestData(cls):
         # Gene 1 with various associated fields
         cls.gene1 = HgncGene.objects.create(
-            hgnc_id='HGNC:1',
+            hgnc_id=1,
             symbol="G1",
             name="gene one",
             entrez_id="101",
@@ -586,7 +586,7 @@ class FindMatchingHgncGenesTests(TestCase):
 
         # Gene 2 with some shared and unique fields
         cls.gene2 = HgncGene.objects.create(
-            hgnc_id='HGNC:2',
+            hgnc_id=2,
             symbol="G2",
             name="gene two",
             entrez_id="102",
@@ -600,7 +600,7 @@ class FindMatchingHgncGenesTests(TestCase):
 
         # Gene 3 for specific field tests
         cls.gene3 = HgncGene.objects.create(
-            hgnc_id='HGNC:3',
+            hgnc_id=3,
             symbol="G3",
             name="gene three",
             entrez_id="103",
@@ -618,10 +618,10 @@ class FindMatchingHgncGenesTests(TestCase):
 
     # Test individual plain string fields
     def test_search_by_hgnc_id(self):
-        results = self.search_genes(['HGNC:1'])
+        results = self.search_genes(['1'])
         self.assertEqual(len(results['one_match']), 1)
         self.assertEqual(results['one_match'][0]['item'], self.gene1)
-        results_case_insensitive = self.search_genes(['hgnc:1'])
+        results_case_insensitive = self.search_genes(['1'])
         self.assertEqual(results_case_insensitive['one_match'][0]['item'], self.gene1)
 
     def test_search_by_symbol(self):
@@ -1081,8 +1081,8 @@ class StudyView(TestCase):
         disease = Disease.objects.create(name="ME/CFS")
         study_cohort = StudyCohort.objects.create(study=study)
         study_cohort.disease_tags.add(disease)
-        cls.gene1 = HgncGene.objects.create(hgnc_id="HGNC:1", symbol="ABC1")
-        cls.gene2 = HgncGene.objects.create(hgnc_id="HGNC:2", symbol="ABC2")
+        cls.gene1 = HgncGene.objects.create(hgnc_id=1, symbol="ABC1")
+        cls.gene2 = HgncGene.objects.create(hgnc_id=2, symbol="ABC2")
         GeneFinding.objects.create(study_cohort=study_cohort, hgnc_gene=cls.gene1)
         GeneFinding.objects.create(study_cohort=study_cohort, hgnc_gene=cls.gene2)
         cls.study_id = study.id

@@ -12,10 +12,10 @@ class GeneGraphAPITestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         """Set up non-modified objects used by all test methods."""
-        cls.gene1 = HgncGene.objects.create(symbol='TP53', hgnc_id='HGNC:11998')
-        cls.gene2 = HgncGene.objects.create(symbol='BRCA1', hgnc_id='HGNC:1100')
-        cls.gene3 = HgncGene.objects.create(symbol='EGFR', hgnc_id='HGNC:3236')
-        cls.gene4 = HgncGene.objects.create(symbol='UNRELATED', hgnc_id='HGNC:99999')
+        cls.gene1 = HgncGene.objects.create(symbol='TP53', hgnc_id=11998)
+        cls.gene2 = HgncGene.objects.create(symbol='BRCA1', hgnc_id=1100)
+        cls.gene3 = HgncGene.objects.create(symbol='EGFR', hgnc_id=3236)
+        cls.gene4 = HgncGene.objects.create(symbol='UNRELATED', hgnc_id=99999)
 
         cls.disease1 = Disease.objects.create(name='Cancer')
         cls.disease2 = Disease.objects.create(name='Neurodegeneration')
@@ -108,7 +108,7 @@ class GeneGraphAPITestCase(TestCase):
         (We'll cheat by just deleting the interaction for this test)
         """
         # Create a new gene that is common but has no interactions
-        new_gene = HgncGene.objects.create(symbol='NEWGENE', hgnc_id='HGNC:12345')
+        new_gene = HgncGene.objects.create(symbol='NEWGENE', hgnc_id=12345)
         # Find it in both cohorts
         GeneFinding.objects.create(study_cohort=StudyCohort.objects.get(study=self.study1), hgnc_gene=new_gene)
         GeneFinding.objects.create(study_cohort=StudyCohort.objects.get(study=self.study2), hgnc_gene=new_gene)

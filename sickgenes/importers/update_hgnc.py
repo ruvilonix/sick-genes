@@ -29,7 +29,7 @@ def update_hgnc_data(hgnc_data_paths, stdout=None):
         processed_count = 0
 
         for gene_data in hgnc_genes:
-            hgnc_id = gene_data.get('hgnc_id')
+            hgnc_id = int(gene_data.get('hgnc_id').split(':')[1])
             if not hgnc_id:
                 continue
 

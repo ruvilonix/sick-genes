@@ -79,9 +79,9 @@ class StringDataImportTests(TestCase):
 
     def setUp(self):
         """Set up initial data and mocks for all tests."""
-        self.hgnc_5 = HgncGene.objects.create(hgnc_id="HGNC:5", symbol="A1BG")
-        self.hgnc_13 = HgncGene.objects.create(hgnc_id="HGNC:13", symbol="A2M")
-        self.hgnc_14 = HgncGene.objects.create(hgnc_id="HGNC:14", symbol="NAT1")
+        self.hgnc_5 = HgncGene.objects.create(hgnc_id=5, symbol="A1BG")
+        self.hgnc_13 = HgncGene.objects.create(hgnc_id=13, symbol="A2M")
+        self.hgnc_14 = HgncGene.objects.create(hgnc_id=14, symbol="NAT1")
         
         self.stdout = io.StringIO()
 
@@ -103,7 +103,7 @@ class StringDataImportTests(TestCase):
         mock_gzip_open.return_value.__enter__.return_value = mock_file
 
         # Pre-populate to test if data is cleared
-        StringProtein.objects.create(protein_id="OLD_PROTEIN", hgnc_id="HGNC:5", hgnc_gene=self.hgnc_5)
+        StringProtein.objects.create(protein_id="OLD_PROTEIN", hgnc_id=5, hgnc_gene=self.hgnc_5)
         self.assertEqual(StringProtein.objects.count(), 1)
 
         result = process_string_aliases('dummy_path.gz', self.stdout)
@@ -124,7 +124,7 @@ class StringDataImportTests(TestCase):
         output = self.stdout.getvalue()
         self.assertIn("String alias import completed", output)
         self.assertIn("Records created: 3", output)
-        self.assertIn("Warning: HgncGene with ID HGNC:99999 not found", output)
+        self.assertIn("Warning: HgncGene with ID 99999 not found", output)
         self.assertIn("Errors: 1", output)
 
     @patch('sickgenes.importers.update_string.os.path.exists', return_value=False)
@@ -150,9 +150,9 @@ class StringDataImportTests(TestCase):
         ]
 
         # Setup: Create the necessary StringProtein objects.
-        p1 = StringProtein.objects.create(protein_id="ENSP00000269305", hgnc_id="HGNC:5", hgnc_gene=self.hgnc_5)
-        p2 = StringProtein.objects.create(protein_id="ENSP00000371583", hgnc_id="HGNC:13", hgnc_gene=self.hgnc_13)
-        p3 = StringProtein.objects.create(protein_id="ENSP00000216171", hgnc_id="HGNC:14", hgnc_gene=self.hgnc_14)
+        p1 = StringProtein.objects.create(protein_id="ENSP00000269305", hgnc_id=5, hgnc_gene=self.hgnc_5)
+        p2 = StringProtein.objects.create(protein_id="ENSP00000371583", hgnc_id=13, hgnc_gene=self.hgnc_13)
+        p3 = StringProtein.objects.create(protein_id="ENSP00000216171", hgnc_id=14, hgnc_gene=self.hgnc_14)
         
         # Ensure the table is empty before running the function
         StringInteraction.objects.all().delete()

@@ -44,7 +44,7 @@ def database_dump_json(request):
 
             phenotypes = [disease.name for disease in cohort.disease_tags.all()]
             gene_findings_list = [
-                {"hgnc_id": f.hgnc_gene.hgnc_id, "symbol": f.hgnc_gene.symbol}
+                {"hgnc_id": f"HGNC:{f.hgnc_gene.hgnc_id}", "symbol": f.hgnc_gene.symbol}
                 for f in cohort.gene_findings.all() if f.hgnc_gene
             ]
 

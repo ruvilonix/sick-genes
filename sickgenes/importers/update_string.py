@@ -49,7 +49,7 @@ def process_string_aliases(file_path, stdout):
                         else:
                             protein_id = string_protein_id
                         
-                        hgnc_id = alias
+                        hgnc_id = int(alias.split(':')[1])
                         
                         try:
                             hgnc_gene = HgncGene.objects.get(hgnc_id=hgnc_id)
