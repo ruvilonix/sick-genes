@@ -31,7 +31,7 @@ def about(request):
     }
     return render(request, 'sickgenes/about.html', context)
 
-def criteria(request):
+def criteria(request): # TODO criteria page not needed anymore
     criteria_file = os.path.join(settings.BASE_DIR, 'criteria.md')
 
     try:
