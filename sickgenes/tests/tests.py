@@ -276,8 +276,8 @@ class StudyListViewTest(TestCase):
         cls.gene_b = HgncGene.objects.create(hgnc_id=2, symbol="GENB")
 
         # Create Diseases
-        cls.disease_x = Disease.objects.create(name="Disease X")
-        cls.disease_y = Disease.objects.create(name="Disease Y")
+        cls.disease_x = Disease.objects.create(name="Disease X", code="X")
+        cls.disease_y = Disease.objects.create(name="Disease Y", code="Y")
 
         # Study 1: Linked to Disease X with Gene A
         cls.study1 = Study.objects.create(title="Study 1 About Disease X", not_finished=False, authors='Smith, Bridget; Jones, Tony')
@@ -463,7 +463,7 @@ class ImportHgncTest(TestCase):
 
         self.assertEqual(gene.symbol, 'A1BG')
         self.assertEqual(gene.name, 'alpha-1-B glycoprotein')
-        self.assertEqual(gene.entrez_id, "1")
+        self.assertEqual(gene.entrez_id, 1)
         self.assertEqual(gene.ensembl_gene_id, "ENSG00000121410")
         self.assertEqual(gene.vega_id, "OTTHUMG00000183507")
         self.assertEqual(gene.ucsc_id, "uc002qsd.5")
@@ -1078,7 +1078,7 @@ class StudyView(TestCase):
     @classmethod
     def setUpTestData(cls):
         study = Study.objects.create(title="Example study", doi="https://doi.org/fdfdsa", note="Note with *markdown*")
-        disease = Disease.objects.create(name="ME/CFS")
+        disease = Disease.objects.create(name="ME/CFS", code="MECFS")
         study_cohort = StudyCohort.objects.create(study=study)
         study_cohort.disease_tags.add(disease)
         cls.gene1 = HgncGene.objects.create(hgnc_id=1, symbol="ABC1")
@@ -1135,9 +1135,9 @@ class AddStudyCohortView(TestCase):
         cls.my_admin = User.objects.create_superuser('tesuser', 'myemail@test.com', 'testpassword')
 
         cls.study = Study.objects.create(title="Example study", doi="https://doi.org/fdfdsa")
-        cls.disease_mecfs = Disease.objects.create(name="ME/CFS")
-        cls.disease_healthy = Disease.objects.create(name="Healthy")
-        cls.disease_diabetes = Disease.objects.create(name="Diabetes")
+        cls.disease_mecfs = Disease.objects.create(name="ME/CFS", code="MECFS")
+        cls.disease_healthy = Disease.objects.create(name="Healthy", code="HEALTHY")
+        cls.disease_diabetes = Disease.objects.create(name="Diabetes", code=None)
 
     def test_url_valid_response(self):
         self.client.login(username=self.my_admin.username, password='testpassword')
