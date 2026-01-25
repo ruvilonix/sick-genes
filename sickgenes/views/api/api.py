@@ -92,5 +92,4 @@ def database_dump_json_v2(request):
     json_content = json.dumps(response_data, indent=2)
     gzipped_content = gzip.compress(json_content.encode(encoding='utf-8'))
     response = HttpResponse(gzipped_content, content_type="application/gzip")
-    response['Content-Disposition'] = 'attachment; filename=sickgenes-full-database.json.gz'
     return response
