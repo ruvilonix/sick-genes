@@ -78,8 +78,8 @@ def study_list(request):
     form = GeneFilterForm(request.GET)
     
     # Store disease filter in session
-    if 'disease' in request.GET and request.GET.get('disease'):
-        request.session['study_disease_filter'] = request.GET.get('disease')
+    if 'phenotype' in request.GET and request.GET.get('phenotype'):
+        request.session['study_disease_filter'] = request.GET.get('phenotype')
     else:
         request.session.pop('study_disease_filter', None)
         
@@ -103,8 +103,8 @@ def gene_list(request):
     
     form = GeneFilterForm(request.GET)
     
-    if form.is_valid() and form.cleaned_data.get('disease'):
-        disease = form.cleaned_data['disease']
+    if form.is_valid() and form.cleaned_data.get('phenotype'):
+        disease = form.cleaned_data['phenotype']
         
         genes = base_queryset.annotate(
             study_count=Count(

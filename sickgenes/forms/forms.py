@@ -65,7 +65,7 @@ class StudyCohortForm(forms.ModelForm):
 
     
 class GeneFilterForm(forms.Form):
-    disease = forms.ModelChoiceField(   
+    phenotype = forms.ModelChoiceField(   
         queryset = Disease.objects.annotate(gene_findings_count=Count('study_cohorts__gene_findings')).filter(gene_findings_count__gte=1).order_by('name'),
         required=False,
         empty_label="All Phenotypes",

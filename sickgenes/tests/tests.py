@@ -135,7 +135,7 @@ class GeneListTests(TestCase):
         but the study_count is correctly annotated based on the filter.
         """
         # Filter by Cardiomyopathy (disease1)
-        url = f"{reverse('sickgenes:gene_list')}?disease={self.disease1.pk}"
+        url = f"{reverse('sickgenes:gene_list')}?phenotype={self.disease1.pk}"
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
@@ -420,7 +420,7 @@ class StudyListViewTest(TestCase):
 
     def test_session_filter_persists(self):
         """Test that the disease filter is stored in session."""
-        response = self.client.get(self.url, {'disease': self.disease_x.id})
+        response = self.client.get(self.url, {'phenotype': self.disease_x.id})
         self.assertEqual(response.status_code, 200)
         
         # Check that the session was set
