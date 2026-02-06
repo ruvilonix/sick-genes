@@ -3,7 +3,13 @@ from django.forms import formset_factory
 
 class SearchInitialForm(forms.Form):
     search_terms = forms.CharField(
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 6}),
+        widget=forms.Textarea(
+            attrs={
+                'class': 'form-control', 
+                'rows': 8,
+                'placeholder': 'TRH\nthyrotropin releasing hormone\n12298\nENSG00000170893\n7200\nP20396',
+            }
+        ),
         required=False,
     )
 
