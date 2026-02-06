@@ -13,7 +13,10 @@ class GeneTable(tables.Table):
 class StudyTable(tables.Table):
     gene_count = tables.Column(verbose_name="# of Genes")
     title = tables.Column(linkify=True)
-    short_authors = tables.Column(verbose_name='Authors', orderable=False)
+    short_authors = tables.Column(
+        verbose_name='Authors', 
+        order_by='authors',
+    )
 
     publication_date = tables.Column(
         verbose_name="Published", 
