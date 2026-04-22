@@ -28,7 +28,7 @@ def table_study(request):
     disease = request.session.get('study_disease_filter')    
 
     
-    base_queryset = Study.objects.exclude(not_finished=True)
+    base_queryset = Study.objects.exclude(not_finished=True).exclude(newest_version__isnull=False)
     
     # Apply disease filter
     count_filter = Q()

@@ -14,7 +14,7 @@ def database_dump_json_v2(request):
         'study_cohorts__disease_tags',
         'study_cohorts__gene_findings__hgnc_gene',
         'study_cohorts__metabolite_findings__hmdb_metabolite',
-    ).exclude(not_finished=True)
+    ).exclude(not_finished=True).exclude(newest_version__isnull=False)
     
     studies_list = []
     unique_genes = {}

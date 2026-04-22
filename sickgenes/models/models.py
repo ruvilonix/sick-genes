@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from datetime import date
 from solo.models import SingletonModel
 from django.utils.text import slugify
+from django.db import transaction
 import re
 
 class SiteConfiguration(SingletonModel):
@@ -35,6 +36,8 @@ class Study(models.Model):
     s4me_url = models.CharField(max_length=300, verbose_name="S4ME URL", null=True, blank=True)
     preprint = models.BooleanField(default=False, verbose_name="Preprint")
 
+    newest_version = models.ForeignKey('self', null=True, default=None, related_name="old_versions", blank=True, on_delete=models.SET_NULL)
+
     not_finished = models.BooleanField(default=False)
 
     note = models.TextField(null=True, blank=True, default='')
@@ -59,6 +62,14 @@ class Study(models.Model):
             if not normalized_doi:
                 raise ValidationError({'doi': 'Invalid DOI format.'})
             self.doi = normalized_doi
+
+    def set_newest_version(self, newest_study):
+        with transaction.atomic():
+            Study.objects.filter(newest_version=self).update(newest_version=newest_study)
+            self.newest_version = newest_study
+            self.save(update_fields=["newest_version"])
+            Study.objects.filter(newest_version=models.F('pk')).update(newest_version=None)
+
 
     @staticmethod
     def normalize_doi(doi_string):

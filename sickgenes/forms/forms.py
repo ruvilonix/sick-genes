@@ -71,3 +71,16 @@ class GeneFilterForm(forms.Form):
         empty_label="All Phenotypes",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+
+class SetNewestStudyVersionForm(forms.Form):
+    newest_version = forms.ModelChoiceField(
+        queryset=Study.objects.none(),
+        label="Newest version",
+    )
+
+    def __init__(self, *args, study=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if study:
+            self.fields['newest_version'].queryset = Study.objects.exclude(pk=study.pk).exclude(
+                newest_version__isnull=False,
+                ).order_by('title')

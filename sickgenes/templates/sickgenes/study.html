@@ -5,6 +5,20 @@
 
 {% block content %}
 
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if study.newest_version %}
+    <div>
+        A newer version of this study exists: <a href="{{ study.newest_version.get_absolute_url }}">{{ study.newest_version.title }}</a>
+    </div>
+{% endif %}
+
 {# Study Metadata Section #}
 <h3>{{ study.title }}</h3>
 {% if study.authors %}
@@ -87,6 +101,16 @@
 {{ study_note|safe }}
 {% else %}
 No notes yet.
+{% endif %}
+
+{% if request.user.is_staff %}
+    <form method="POST" action="{% url 'sickgenes:set_newest_study_version' study_id=study.pk %}">
+        {% csrf_token %}
+        {{ set_newest_version_form.newest_version.label_tag }}
+        {{ set_newest_version_form.newest_version }}
+        {{ set_newest_version_form.newest_version.errors }}
+        <button type="submit">Set newest version</button>
+    </form>
 {% endif %}
 
 {% endblock %}
