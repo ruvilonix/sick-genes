@@ -13,6 +13,8 @@ urlpatterns = [
     path('study/<int:study_id>/', views.study, name="study"),
     path('study/<slug:slug>.<int:study_id>/', views.study, name="study"),
 
+    path('study/<int:study_id>/set-newest-version/', views.set_newest_study_version, name='set_newest_study_version'),
+
     path('genes/', views.gene_list, name='gene_list'),
     path('gene/<str:hgnc_symbol>/', views.gene_detail, name='gene_detail'),
     path('search/identify/<str:model_type>/', views.identify_molecules, name='identify_molecules'),

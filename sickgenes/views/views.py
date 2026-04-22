@@ -3,10 +3,11 @@ from django.urls import reverse
 from django.http import JsonResponse, Http404
 from sickgenes.forms import prepare_identifiers
 from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding, SiteConfiguration
-from sickgenes.forms import StudyForm, StudyCohortForm, GeneFilterForm
+from sickgenes.forms import StudyForm, StudyCohortForm, GeneFilterForm, SetNewestStudyVersionForm
 from django.db import transaction
 from django.db.models import Prefetch, Count, Q
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import messages
 from sickgenes.tables import GeneTable, StudyTable
 from collections import defaultdict
 from django_tables2.config import RequestConfig
@@ -16,7 +17,7 @@ import os
 from urllib.parse import urlencode
 
 def home(request):
-    study_count = Study.objects.filter(not_finished=False).count()
+    study_count = Study.objects.filter(not_finished=False, newest_version__isnull=True).count()
 
     context = {
         'home_page_description': markdown.markdown(SiteConfiguration.get_solo().home_page_description),
@@ -57,6 +58,12 @@ def study(request, study_id, slug=None):
         pk=study_id
     )
 
+    if study.newest_version:
+        messages.info(request, "You have been redirected to the newest version of this study.")
+        return redirect(study.newest_version)
+
+    set_newest_version_form = SetNewestStudyVersionForm(study=study)
+
     for cohort in study.study_cohorts.all():
         params = [
             ('symbol', finding.hgnc_gene.symbol) 
@@ -70,9 +77,23 @@ def study(request, study_id, slug=None):
         'opts': Study._meta,
         'study': study,
         'study_note': study_note,
+        'set_newest_version_form': set_newest_version_form,
     }
 
     return render(request, 'sickgenes/study.html', context)
+
+@staff_member_required
+def set_newest_study_version(request, study_id):
+    
+    study = get_object_or_404(Study, pk=study_id)
+    
+    if request.method == 'POST':
+        form = SetNewestStudyVersionForm(request.POST, study=study)
+        if form.is_valid():
+            newest_study = form.cleaned_data['newest_version']
+            study.set_newest_version(newest_study)
+    
+    return redirect(study)
 
 def study_list(request):
     form = GeneFilterForm(request.GET)
@@ -111,6 +132,7 @@ def gene_list(request):
                 'genefinding__study_cohort__study',
                 filter=Q(
                     genefinding__study_cohort__study__not_finished=False,
+                    genefinding__study_cohort__study__newest_version__isnull=True,
                     genefinding__study_cohort__disease_tags=disease
                 ),
                 distinct=True,
@@ -121,7 +143,10 @@ def gene_list(request):
         genes = base_queryset.annotate(
             study_count=Count(
                 'genefinding__study_cohort__study',
-                filter=Q(genefinding__study_cohort__study__not_finished=False),
+                filter=Q(
+                    genefinding__study_cohort__study__not_finished=False,
+                    genefinding__study_cohort__study__newest_version__isnull=True,
+                    ),
                 distinct=True,
             )
         )
@@ -155,6 +180,8 @@ def gene_detail(request, hgnc_symbol):
 
     gene_findings = GeneFinding.objects.filter(hgnc_gene=gene).exclude(
         study_cohort__study__not_finished=True
+    ).exclude(
+        study_cohort__study__newest_version__isnull=False
     ).select_related(
         'study_cohort__study'
     ).prefetch_related(
