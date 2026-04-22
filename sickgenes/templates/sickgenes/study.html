@@ -13,6 +13,12 @@
 </ul>
 {% endif %}
 
+{% if study.newest_version %}
+    <div>
+        A newer version of this study exists: <a href="{{ study.newest_version.get_absolute_url }}">{{ study.newest_version.title }}</a>
+    </div>
+{% endif %}
+
 {# Study Metadata Section #}
 <h3>{{ study.title }}</h3>
 {% if study.authors %}

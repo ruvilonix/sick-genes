@@ -12,6 +12,8 @@ from sickgenes.tables import GeneTable, StudyTable
 from collections import defaultdict
 from django_tables2.config import RequestConfig
 from django.conf import settings
+from django.utils.safestring import mark_safe
+from django.utils.html import escape
 import markdown
 import os
 from urllib.parse import urlencode
@@ -58,9 +60,13 @@ def study(request, study_id, slug=None):
         pk=study_id
     )
 
-    if study.newest_version:
-        messages.info(request, "You have been redirected to the newest version of this study.")
+    if study.newest_version and not request.GET.get('no_redirect'):
+        messages.info(
+            request,
+            mark_safe(f'You were redirected from an older version: <a href="{study.get_absolute_url()}?no_redirect=1">{escape(study.title)}</a>')
+        )
         return redirect(study.newest_version)
+    
 
     set_newest_version_form = SetNewestStudyVersionForm(study=study)
 
