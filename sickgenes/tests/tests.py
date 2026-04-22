@@ -4,13 +4,14 @@ from sickgenes.models import HgncGene, Study, Disease, StudyCohort, HmdbMetaboli
 from io import StringIO
 from django.utils import timezone
 from django.urls import reverse
-from sickgenes.forms import StudyForm
+from sickgenes.forms import StudyForm, SetNewestStudyVersionForm
 from sickgenes.models import (
     HgncGene, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName,
     HmdbMetabolite, MetaboliteSynonym, SecondaryAccession, GeneFinding, SiteConfiguration
 )
 from unittest.mock import patch, Mock, mock_open
 import requests
+from django.contrib.messages import get_messages
 from django.contrib.auth.models import User
 from django.template import Context, Template
 from django.utils.safestring import SafeString
@@ -1212,3 +1213,156 @@ class CriteriaViewTest(TestCase):
         
         # 6. Assert the context variable is correct
         self.assertEqual(response.context['criteria_html'], expected_html)
+
+
+class SetNewestVersionModelTest(TestCase):
+
+    def setUp(self):
+        self.v1 = Study.objects.create(title="Study V1", publication_year=2020)
+        self.v2 = Study.objects.create(title="Study V2", publication_year=2021)
+        self.v3 = Study.objects.create(title="Study V3", publication_year=2022)
+
+    def test_set_newest_version_updates_direct_predecessor(self):
+        self.v2.set_newest_version(self.v3)
+        self.v2.refresh_from_db()
+        self.assertEqual(self.v2.newest_version, self.v3)
+
+    def test_set_newest_version_updates_ancestors(self):
+        """When B->C is set, A (which pointed to B) should now point to C."""
+        self.v1.newest_version = self.v2
+        self.v1.save()
+        self.v2.set_newest_version(self.v3)
+        self.v1.refresh_from_db()
+        self.assertEqual(self.v1.newest_version, self.v3)
+
+    def test_set_newest_version_does_not_affect_unrelated_studies(self):
+        unrelated = Study.objects.create(title="Unrelated", publication_year=2020)
+        self.v2.set_newest_version(self.v3)
+        unrelated.refresh_from_db()
+        self.assertIsNone(unrelated.newest_version)
+
+    def test_set_newest_version_self_is_none(self):
+        self.v1.set_newest_version(self.v1)
+        self.v1.refresh_from_db()
+        self.assertEqual(self.v1.newest_version, None)
+
+
+class SetNewestVersionFormTest(TestCase):
+
+    def setUp(self):
+        self.study = Study.objects.create(title="Study A", publication_year=2020)
+        self.other = Study.objects.create(title="Study B", publication_year=2021)
+
+    def test_form_excludes_current_study(self):
+        form = SetNewestStudyVersionForm(study=self.study)
+        self.assertNotIn(self.study, form.fields['newest_version'].queryset)
+
+    def test_form_includes_other_studies(self):
+        form = SetNewestStudyVersionForm(study=self.study)
+        self.assertIn(self.other, form.fields['newest_version'].queryset)
+
+    def test_form_valid_with_other_study(self):
+        form = SetNewestStudyVersionForm(
+            {'newest_version': self.other.pk},
+            study=self.study
+        )
+        self.assertTrue(form.is_valid())
+
+
+class StudyViewRedirectTest(TestCase):
+
+    def setUp(self):
+        self.v1 = Study.objects.create(title="Study V1", publication_year=2020)
+        self.v2 = Study.objects.create(title="Study V2", publication_year=2021)
+        self.v1.newest_version = self.v2
+        self.v1.save()
+        self.staff = User.objects.create_user(
+            username='staff', password='pass', is_staff=True
+        )
+        self.user = User.objects.create_user(username='user', password='pass')
+
+    def test_redirects_to_newest_version(self):
+        url = reverse('sickgenes:study', kwargs={'study_id': self.v1.pk})
+        response = self.client.get(url)
+        self.assertRedirects(response, self.v2.get_absolute_url(), fetch_redirect_response=False)
+
+    def test_redirect_includes_message_with_link(self):
+        url = reverse('sickgenes:study', kwargs={'study_id': self.v1.pk})
+        response = self.client.get(url, follow=True)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertIn(self.v1.title, str(messages[0]))
+        self.assertIn('no_redirect=1', str(messages[0]))
+
+    def test_no_redirect_with_query_param(self):
+        url = reverse('sickgenes:study', kwargs={'study_id': self.v1.pk})
+        response = self.client.get(url + '?no_redirect=1')
+        self.assertEqual(response.status_code, 200)
+
+    def test_no_redirect_if_no_newest_version(self):
+        url = reverse('sickgenes:study', kwargs={'study_id': self.v2.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+
+class SetNewestVersionViewTest(TestCase):
+
+    def setUp(self):
+        self.v1 = Study.objects.create(title="Study V1", publication_year=2020)
+        self.v2 = Study.objects.create(title="Study V2", publication_year=2021)
+        self.staff = User.objects.create_user(
+            username='staff', password='pass', is_staff=True
+        )
+        self.user = User.objects.create_user(username='user', password='pass')
+
+    def _post(self, study_id, newest_version_id):
+        url = reverse('sickgenes:set_newest_study_version', kwargs={'study_id': study_id})
+        return self.client.post(url, {'newest_version': newest_version_id})
+
+    def test_staff_can_set_newest_version(self):
+        self.client.login(username='staff', password='pass')
+        self._post(self.v1.pk, self.v2.pk)
+        self.v1.refresh_from_db()
+        self.assertEqual(self.v1.newest_version, self.v2)
+
+    def test_non_staff_cannot_set_newest_version(self):
+        self.client.login(username='user', password='pass')
+        self._post(self.v1.pk, self.v2.pk)
+        self.v1.refresh_from_db()
+        self.assertIsNone(self.v1.newest_version)
+
+    def test_anonymous_cannot_set_newest_version(self):
+        self._post(self.v1.pk, self.v2.pk)
+        self.v1.refresh_from_db()
+        self.assertIsNone(self.v1.newest_version)
+
+    def test_redirects_to_study_after_post(self):
+        self.client.login(username='staff', password='pass')
+        response = self._post(self.v1.pk, self.v2.pk)
+        self.assertRedirects(response, self.v1.get_absolute_url(), fetch_redirect_response=False)
+
+    def test_get_request_redirects(self):
+        self.client.login(username='staff', password='pass')
+        url = reverse('sickgenes:set_newest_study_version', kwargs={'study_id': self.v1.pk})
+        response = self.client.get(url)
+        self.assertRedirects(response, self.v1.get_absolute_url(), fetch_redirect_response=False)
+
+
+class OldVersionQuerysetExclusionTest(TestCase):
+
+    def setUp(self):
+        self.v1 = Study.objects.create(title="Old Study", publication_year=2020)
+        self.v2 = Study.objects.create(title="New Study", publication_year=2021)
+        self.v1.newest_version = self.v2
+        self.v1.save()
+
+    def test_study_table_excludes_old_versions(self):
+        from sickgenes.views.tables_ajax import table_study
+        # Old version should not appear in filtered queryset
+        qs = Study.objects.exclude(not_finished=True).exclude(newest_version__isnull=False)
+        self.assertNotIn(self.v1, qs)
+        self.assertIn(self.v2, qs)
+
+    def test_home_count_excludes_old_versions(self):
+        count = Study.objects.filter(not_finished=False, newest_version__isnull=True).count()
+        self.assertEqual(count, 1)
