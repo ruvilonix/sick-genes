@@ -160,6 +160,28 @@ class GeneListTests(TestCase):
         # DEF is only in an Epilepsy study, so its count for Cardiomyopathy is 0
         self.assertEqual(genes_in_context['DEF'].study_count, 0)
 
+    def test_gene_list_post_filters_by_symbol(self):
+        """
+        Tests that POSTing gene symbols filters the gene list correctly.
+        """
+        response = self.client.post(
+            reverse('sickgenes:gene_list'),
+            data={'symbol': ['BRCA1', 'SCN1A']},
+        )
+        self.assertEqual(response.status_code, 200)
+        genes_table = response.context['genes_table']
+        returned_symbols = {row.record.symbol for row in genes_table.rows}
+        self.assertCountEqual(returned_symbols, ['BRCA1', 'SCN1A'])
+
+    def test_gene_list_post_excludes_other_symbols(self):
+        response = self.client.post(
+            reverse('sickgenes:gene_list'),
+            data={'symbol': ['BRCA1']},
+        )
+        returned_symbols = {row.record.symbol for row in response.context['genes_table'].rows}
+        self.assertIn('BRCA1', returned_symbols)
+        self.assertNotIn('SCN1A', returned_symbols)
+
 class GeneDetailTests(TestCase):
     """
     Tests for the gene_detail view.
@@ -1106,25 +1128,17 @@ class StudyView(TestCase):
         self.assertContains(response, "Example study")
         self.assertContains(response, "ME/CFS")
 
-    def test_context_contains_gene_query_string(self):
+    def test_context_contains_gene_symbols_list(self):
         """
-        Tests that the cohort in the context has a correctly formatted gene_query_string.
+        Tests that the cohort in the context has a correctly formatted gene_symbols_list.
         """
         response = self.client.get(reverse('sickgenes:study', args=(self.study_id,)))
-
         cohorts_in_context = list(response.context['study'].study_cohorts.all())
-
         self.assertTrue(cohorts_in_context, "No cohorts found in the response context.")
-
         cohort = cohorts_in_context[0]
-
-        self.assertTrue(hasattr(cohort, 'gene_query_string'))
-
-        parsed_query = parse_qs(cohort.gene_query_string)
+        self.assertTrue(hasattr(cohort, 'gene_symbols_list'))
         expected_symbols = ['ABC1', 'ABC2']
-
-        self.assertIn('symbol', parsed_query)
-        self.assertCountEqual(parsed_query['symbol'], expected_symbols)
+        self.assertCountEqual(cohort.gene_symbols_list, expected_symbols)
 
     def test_study_view_shows_markdown_note(self):
         response = self.client.get(reverse('sickgenes:study', args=(self.study_id,)))
