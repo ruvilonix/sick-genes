@@ -71,7 +71,11 @@ def study(request, study_id, slug=None):
     set_newest_version_form = SetNewestStudyVersionForm(study=study)
 
     for cohort in study.study_cohorts.all():
-        cohort.gene_symbols_list = [f.hgnc_gene.symbol for f in cohort.gene_findings.all()]
+        params = [
+            ('symbol', finding.hgnc_gene.symbol) 
+            for finding in cohort.gene_findings.all()
+        ]
+        cohort.gene_query_string = urlencode(params)
 
     study_note = markdown.markdown(study.note)
 
@@ -118,11 +122,7 @@ def gene_list(request):
     """
     base_queryset = HgncGene.objects.all()
 
-    if request.method == 'POST':
-        gene_symbols_to_filter = request.POST.getlist('symbol')
-    else:
-        gene_symbols_to_filter = request.GET.getlist('symbol')
-        
+    gene_symbols_to_filter = request.GET.getlist('symbol')
     if gene_symbols_to_filter:
         base_queryset = base_queryset.filter(symbol__in=gene_symbols_to_filter)
     else:
