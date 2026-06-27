@@ -11,6 +11,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunSQL(
+            "ALTER TABLE sickgenes_genefinding DROP CONSTRAINT IF EXISTS sickgenes_finding_hgnc_gene_id_341de43e_fk_sickgenes;",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
         migrations.CreateModel(
             name='AliasName',
             fields=[

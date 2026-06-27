@@ -10,6 +10,17 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunSQL("""
+            ALTER TABLE sickgenes_aliasname DROP CONSTRAINT IF EXISTS sickgenes_aliasname_gene_id_99b820ba_fk_sickgenes;
+            ALTER TABLE sickgenes_aliassymbol DROP CONSTRAINT IF EXISTS sickgenes_aliassymbo_gene_id_106ad342_fk_sickgenes;
+            ALTER TABLE sickgenes_ena DROP CONSTRAINT IF EXISTS sickgenes_ena_gene_id_bfaa4de4_fk_sickgenes_hgncgene_hgnc_id;
+            ALTER TABLE sickgenes_omimid DROP CONSTRAINT IF EXISTS sickgenes_omimid_gene_id_5d915393_fk_sickgenes_hgncgene_hgnc_id;
+            ALTER TABLE sickgenes_prevname DROP CONSTRAINT IF EXISTS sickgenes_prevname_gene_id_ec5994c8_fk_sickgenes;
+            ALTER TABLE sickgenes_prevsymbol DROP CONSTRAINT IF EXISTS sickgenes_prevsymbol_gene_id_35174c59_fk_sickgenes;
+            ALTER TABLE sickgenes_uniprotid DROP CONSTRAINT IF EXISTS sickgenes_uniprotid_gene_id_a629db7f_fk_sickgenes;
+            """, 
+            reverse_sql=migrations.RunSQL.noop
+        ),
         migrations.RemoveField(
             model_name='hgncgene',
             name='hgnc_id',
