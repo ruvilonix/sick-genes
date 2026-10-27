@@ -18,6 +18,7 @@ from django.utils.safestring import SafeString
 from unittest.mock import patch
 import markdown
 from urllib.parse import parse_qs
+from django.contrib.auth import get_user_model
 
 class GeneListTests(TestCase):
     """
@@ -1078,6 +1079,10 @@ class FetchPaperInfoViewTest(TestCase):
 class StudyView(TestCase):
     @classmethod
     def setUpTestData(cls):
+        User = get_user_model()
+        cls.staff_user = User.objects.create_user(username="staff", password="pw", is_staff=True)
+        cls.normal_user = User.objects.create_user(username="normal", password="pw")
+
         study = Study.objects.create(title="Example study", doi="https://doi.org/fdfdsa", note="Note with *markdown*")
         disease = Disease.objects.create(name="ME/CFS", code="MECFS")
         study_cohort = StudyCohort.objects.create(study=study)
@@ -1087,6 +1092,13 @@ class StudyView(TestCase):
         GeneFinding.objects.create(study_cohort=study_cohort, hgnc_gene=cls.gene1)
         GeneFinding.objects.create(study_cohort=study_cohort, hgnc_gene=cls.gene2)
         cls.study_id = study.id
+
+        cls.unfinished_study = Study.objects.create(
+            title="Unfinished study",
+            doi="https://doi.org/unfinished",
+            not_finished=True,
+        )
+        cls.unfinished_study_id = cls.unfinished_study.id
 
     def test_url_valid_response(self):
         response = self.client.get(f'/study/{self.study_id}/')
@@ -1129,6 +1141,25 @@ class StudyView(TestCase):
     def test_study_view_shows_markdown_note(self):
         response = self.client.get(reverse('sickgenes:study', args=(self.study_id,)))
         self.assertContains(response, "Note with <em>markdown</em>")
+
+    def test_unfinished_study_404_for_anonymous(self):
+        response = self.client.get(reverse('sickgenes:study', args=(self.unfinished_study_id,)))
+        self.assertEqual(response.status_code, 404)
+
+    def test_unfinished_study_404_for_non_staff_user(self):
+        self.client.force_login(self.normal_user)
+        response = self.client.get(reverse('sickgenes:study', args=(self.unfinished_study_id,)))
+        self.assertEqual(response.status_code, 404)
+
+    def test_unfinished_study_visible_to_staff(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.get(reverse('sickgenes:study', args=(self.unfinished_study_id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Unfinished study")
+
+    def test_finished_study_still_visible_to_anonymous(self):
+        response = self.client.get(reverse('sickgenes:study', args=(self.study_id,)))
+        self.assertEqual(response.status_code, 200)
 
 class AddStudyCohortView(TestCase):
     @classmethod

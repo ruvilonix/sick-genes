@@ -60,6 +60,9 @@ def study(request, study_id, slug=None):
         pk=study_id
     )
 
+    if study.not_finished and not request.user.is_staff:
+        raise Http404
+
     if study.newest_version and not request.GET.get('no_redirect'):
         messages.info(
             request,
