@@ -305,20 +305,65 @@ class GeneDetailTests(TestCase):
         response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': 'TTN'}))
         self.assertContains(response, 'Found in 2 studies')
 
+    def test_literature_links_search_gene_only_by_default(self):
+        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': 'TTN'}))
+        self.assertEqual(response.context['pubmed_url'], 'https://pubmed.ncbi.nlm.nih.gov/?term=%22TTN%22')
+        self.assertEqual(response.context['scholar_url'], 'https://scholar.google.com/scholar?q=%22TTN%22')
+        self.assertContains(response, 'Search for TTN</a>')
+
+    def test_literature_links_add_disease_from_site_configuration(self):
+        config = SiteConfiguration.get_solo()
+        config.literature_search_label = 'ME/CFS'
+        config.literature_search_terms = 'ME/CFS, myalgic encephalomyelitis , '
+        config.save()
+        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': 'TTN'}))
+        self.assertEqual(response.context['literature_query'], '"TTN" AND ("ME/CFS" OR "myalgic encephalomyelitis")')
+        self.assertContains(response, 'Search for TTN and ME/CFS')
+
+    def test_literature_label_ignored_without_terms(self):
+        config = SiteConfiguration.get_solo()
+        config.literature_search_label = 'ME/CFS'
+        config.save()
+        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': 'TTN'}))
+        self.assertEqual(response.context['literature_query'], '"TTN"')
+        self.assertNotContains(response, 'and ME/CFS')
+
+    def test_literature_search_uses_name_and_previous_symbols(self):
+        from sickgenes.views.views import literature_search_terms
+        gene = HgncGene.objects.create(hgnc_id=6018, symbol='IL6', name='interleukin 6')
+        PrevSymbol.objects.create(gene=gene, value='IFNB2')
+        # A previous symbol that is now another gene's symbol is left out
+        PrevSymbol.objects.create(gene=gene, value='OTHER')
+        AliasSymbol.objects.create(gene=gene, value='HGF')
+        # A previous symbol shared with another gene is left out too
+        PrevSymbol.objects.create(gene=gene, value='SHARED')
+        PrevSymbol.objects.create(gene=HgncGene.objects.get(symbol='OTHER'), value='SHARED')
+        self.assertEqual(literature_search_terms(gene), '("IL6" OR "interleukin 6" OR "IFNB2")')
+
+    def test_literature_search_skips_names_with_comma_separated_parts(self):
+        from sickgenes.views.views import literature_search_terms
+        gene = HgncGene.objects.create(hgnc_id=4948, symbol='HLA-DRB1', name='major histocompatibility complex, class II, DR beta 1')
+        self.assertEqual(literature_search_terms(gene), '"HLA-DRB1"')
+        # Commas inside chemical names are fine
+        # ...and a trailing note in brackets is dropped, as are very short previous symbols
+        gene = HgncGene.objects.create(hgnc_id=30, symbol='A4GALT', name='alpha 1,4-galactosyltransferase (P1PK blood group)')
+        PrevSymbol.objects.create(gene=gene, value='P1')
+        self.assertEqual(literature_search_terms(gene), '("A4GALT" OR "alpha 1,4-galactosyltransferase")')
+
     def test_database_query_efficiency(self):
         """
         Verifies that prefetching prevents N+1 query problems.
         The number of queries should be small and constant, regardless of the
         number of related findings, cohorts, etc.
         """
-        # We expect 11 queries:
-        # - 1 query for SiteConfiguration (from context processor)
+        # We expect 12 queries:
+        # - 2 queries for SiteConfiguration (literature search terms, and the context processor)
         # - 1 query for the main HgncGene object
         # - 7 queries for each of the prefetched related sets on HgncGene
         # - 1 query for GeneFinding (with StudyCohort and Study joined)
         # - 1 query for the prefetched study_cohort__disease_tags
-        # Total = 1 + 1 + 7 + 1 + 1 = 11 queries
-        with self.assertNumQueries(11):
+        # Total = 2 + 1 + 7 + 1 + 1 = 12 queries
+        with self.assertNumQueries(12):
             response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': self.gene.symbol}))
             # Accessing the context data forces the querysets to be evaluated
             self.assertIsNotNone(response.context['gene'])

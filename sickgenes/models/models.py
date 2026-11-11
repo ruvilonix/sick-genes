@@ -15,6 +15,34 @@ class SiteConfiguration(SingletonModel):
     home_page_description = models.TextField(blank=True, null=True, default='')
     about = models.TextField(blank=True, null=True, default='')
 
+    # Optional disease for the PubMed and Google Scholar links on gene pages
+    literature_search_label = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='Shown in the gene page search links, e.g. "Search for IL6 and ME/CFS". Used only when search terms are set.',
+    )
+    literature_search_terms = models.CharField(
+        max_length=500,
+        blank=True,
+        default='',
+        help_text=(
+            'Comma-separated terms searched together with the gene, e.g. '
+            'ME/CFS, myalgic encephalomyelitis, chronic fatigue syndrome. '
+            'Leave blank to search for the gene alone.'
+        ),
+    )
+
+    @property
+    def literature_search_query(self):
+        """The search terms as a query, e.g. ("ME/CFS" OR "myalgic encephalomyelitis")."""
+        terms = [term.strip().replace('"', '') for term in self.literature_search_terms.split(',')]
+        terms = [term for term in terms if term]
+        if not terms:
+            return ''
+        quoted = ' OR '.join(f'"{term}"' for term in terms)
+        return f'({quoted})' if len(terms) > 1 else quoted
+
     def __str__(self):
         return "Site Configuration"
 

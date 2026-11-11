@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.http import JsonResponse, Http404
 from sickgenes.forms import prepare_identifiers
-from sickgenes.models import HgncGene, GeneFinding, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding, SiteConfiguration
+from sickgenes.models import HgncGene, GeneFinding, PrevSymbol, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding, SiteConfiguration
 from sickgenes.forms import StudyForm, StudyCohortForm, GeneFilterForm, SetNewestStudyVersionForm
 from django.db import transaction
 from django.db.models import Prefetch, Count, Q
@@ -15,6 +15,7 @@ from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.utils.html import escape
 import markdown
+import re
 from urllib.parse import urlencode
 
 def home(request):
@@ -191,17 +192,65 @@ def gene_detail(request, hgnc_symbol):
             studies_data[study].append(cohort)
 
     sorted_studies = sorted(
-        studies_data.items(), 
-        key=lambda item: (item[0].publication_year or 0, item[0].title), 
+        studies_data.items(),
+        key=lambda item: (item[0].publication_year or 0, item[0].title),
         reverse=True
     )
 
+    # Literature searches for the gene, plus any disease terms set in the site configuration
+    site_config = SiteConfiguration.get_solo()
+    gene_terms = literature_search_terms(gene)
+    disease_terms = site_config.literature_search_query
+    pubmed_query = f'{gene_terms} AND {disease_terms}' if disease_terms else gene_terms
+    scholar_query = f'{gene_terms} {disease_terms}' if disease_terms else gene_terms
+
     context = {
         'gene': gene,
-        'studies_data': sorted_studies
+        'studies_data': sorted_studies,
+        'pubmed_url': 'https://pubmed.ncbi.nlm.nih.gov/?' + urlencode({'term': pubmed_query}),
+        'scholar_url': 'https://scholar.google.com/scholar?' + urlencode({'q': scholar_query}),
+        'literature_query': pubmed_query,
+        'literature_label': site_config.literature_search_label if disease_terms else '',
     }
     
     return render(request, 'sickgenes/gene_detail.html', context)
+
+
+def literature_search_terms(gene):
+    """
+    The gene's names for a literature search, e.g. ("IL6" OR "interleukin 6" OR "IFNB2").
+
+    Uses the symbol, the full name and previous symbols. Left out: full names
+    made of comma-separated parts (e.g. "major histocompatibility complex,
+    class II, DR beta 1"), which rarely appear verbatim and can't be
+    shortened reliably; alias symbols, which are often ambiguous (e.g. IL6's
+    alias HGF is another gene); and previous symbols that are very short or
+    are another gene's current or previous symbol.
+    """
+    previous_symbols = [item.value for item in gene.prevsymbol_set.all() if len(item.value) > 2]
+    if previous_symbols:
+        other_genes_symbols = set(
+            HgncGene.objects.filter(symbol__in=previous_symbols).exclude(pk=gene.pk)
+            .values_list('symbol', flat=True)
+        ) | set(
+            PrevSymbol.objects.filter(value__in=previous_symbols).exclude(gene=gene)
+            .values_list('value', flat=True)
+        )
+        previous_symbols = [symbol for symbol in previous_symbols if symbol not in other_genes_symbols]
+
+    name = gene.name if gene.name and ', ' not in gene.name else None
+    if name:
+        # Drop a trailing note like "(P1PK blood group)"
+        name = re.sub(r'\s*\([^()]*\)$', '', name)
+
+    terms = []
+    for term in [gene.symbol, name, *previous_symbols]:
+        term = (term or '').replace('"', '').strip()
+        if term and term not in terms:
+            terms.append(term)
+
+    quoted = ' OR '.join(f'"{term}"' for term in terms)
+    return f'({quoted})' if len(terms) > 1 else quoted
 
 
 def redirect_unknown_gene_symbol(request, symbol):
