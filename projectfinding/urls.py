@@ -23,7 +23,7 @@ urlpatterns = [
     path('', include('sickgenes.urls')),
 ]
 
-if not settings.TESTING:
+if settings.DEBUG_TOOLBAR:
     from debug_toolbar.toolbar import debug_toolbar_urls
     urlpatterns = [
         *urlpatterns,
