@@ -17,7 +17,6 @@ from django.template import Context, Template
 from django.utils.safestring import SafeString
 from unittest.mock import patch
 import markdown
-from urllib.parse import parse_qs
 from django.contrib.auth import get_user_model
 
 class GeneListTests(TestCase):
@@ -83,6 +82,42 @@ class GeneListTests(TestCase):
         self.assertTemplateUsed(response, 'sickgenes/gene_list.html')
         self.assertIn('form', response.context)
         self.assertIn('genes_table', response.context)
+
+    def _symbols_in_table(self, response):
+        return {gene.symbol for gene in response.context['genes_table'].data}
+
+    def test_gene_list_filters_by_comma_separated_symbols(self):
+        response = self.client.get(reverse('sickgenes:gene_list') + '?symbol=TTN,BRCA1')
+        self.assertEqual(self._symbols_in_table(response), {'TTN', 'BRCA1'})
+        self.assertContains(response, 'name="symbol" value="TTN,BRCA1"')
+
+    def test_gene_list_filters_by_repeated_symbol_params(self):
+        # Old style links should keep working
+        response = self.client.get(reverse('sickgenes:gene_list') + '?symbol=TTN&symbol=BRCA1')
+        self.assertEqual(self._symbols_in_table(response), {'TTN', 'BRCA1'})
+
+    def test_gene_list_accepts_many_comma_separated_symbols(self):
+        symbols = ['TTN'] + [f'FAKE{i}' for i in range(2000)]
+        response = self.client.get(reverse('sickgenes:gene_list') + '?symbol=' + ','.join(symbols))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._symbols_in_table(response), {'TTN'})
+
+    def test_gene_list_filters_by_cohort(self):
+        response = self.client.get(reverse('sickgenes:gene_list') + f'?cohort={self.cohort3.id}')
+        genes = {gene.symbol: gene for gene in response.context['genes_table'].data}
+        self.assertEqual(set(genes), {'TTN', 'SCN1A', 'BRCA1'})
+        # Study counts still cover all studies, not just this cohort
+        self.assertEqual(genes['TTN'].study_count, 2)
+        self.assertContains(response, f'name="cohort" value="{self.cohort3.id}"')
+
+    def test_gene_list_cohort_of_unfinished_study_hidden_from_public(self):
+        response = self.client.get(reverse('sickgenes:gene_list') + f'?cohort={self.cohort4.id}')
+        self.assertEqual(self._symbols_in_table(response), set())
+
+    def test_gene_list_invalid_cohort_ignored(self):
+        response = self.client.get(reverse('sickgenes:gene_list') + '?cohort=abc')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(self._symbols_in_table(response)), 5)
 
     def test_gene_list_unfiltered_study_counts(self):
         """
@@ -1118,25 +1153,10 @@ class StudyView(TestCase):
         self.assertContains(response, "Example study")
         self.assertContains(response, "ME/CFS")
 
-    def test_context_contains_gene_query_string(self):
-        """
-        Tests that the cohort in the context has a correctly formatted gene_query_string.
-        """
+    def test_gene_search_link_uses_cohort_id(self):
         response = self.client.get(reverse('sickgenes:study', args=(self.study_id,)))
-
-        cohorts_in_context = list(response.context['study'].study_cohorts.all())
-
-        self.assertTrue(cohorts_in_context, "No cohorts found in the response context.")
-
-        cohort = cohorts_in_context[0]
-
-        self.assertTrue(hasattr(cohort, 'gene_query_string'))
-
-        parsed_query = parse_qs(cohort.gene_query_string)
-        expected_symbols = ['ABC1', 'ABC2']
-
-        self.assertIn('symbol', parsed_query)
-        self.assertCountEqual(parsed_query['symbol'], expected_symbols)
+        cohort = response.context['study'].study_cohorts.first()
+        self.assertContains(response, f"{reverse('sickgenes:gene_list')}?cohort={cohort.id}")
 
     def test_study_view_shows_markdown_note(self):
         response = self.client.get(reverse('sickgenes:study', args=(self.study_id,)))
