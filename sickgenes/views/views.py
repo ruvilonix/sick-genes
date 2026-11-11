@@ -175,7 +175,9 @@ def gene_detail(request, hgnc_symbol):
         'prevsymbol_set',
         'prevname_set'
     )
-    gene = get_object_or_404(gene_queryset, symbol=hgnc_symbol)
+    gene = gene_queryset.filter(symbol=hgnc_symbol).first()
+    if gene is None:
+        return redirect_unknown_gene_symbol(request, hgnc_symbol)
 
     gene_findings = GeneFinding.objects.filter(hgnc_gene=gene).exclude(
         study_cohort__study__not_finished=True
@@ -207,6 +209,27 @@ def gene_detail(request, hgnc_symbol):
     }
     
     return render(request, 'sickgenes/gene_detail.html', context)
+
+
+def redirect_unknown_gene_symbol(request, symbol):
+    """
+    Handles gene URLs whose symbol isn't a current HGNC symbol: a different
+    case (/gene/ttn/), or a symbol HGNC has since renamed (/gene/MLLT4/).
+    Redirects are temporary, since an old symbol can later be given to a
+    different gene.
+    """
+    gene = HgncGene.objects.filter(symbol__iexact=symbol).first()
+    if gene:
+        return redirect(gene)
+
+    renamed_to = list(HgncGene.objects.filter(prevsymbol__value__iexact=symbol).distinct())
+    if len(renamed_to) == 1:
+        return redirect(renamed_to[0])
+    if renamed_to:
+        context = {'symbol': symbol, 'genes': renamed_to}
+        return render(request, 'sickgenes/gene_previous_symbol.html', context)
+
+    raise Http404
 
 
 @staff_member_required
