@@ -139,7 +139,10 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 # Django debug toolbar
 TESTING = "test" in sys.argv or "PYTEST_VERSION" in os.environ
 
-if not TESTING:
+# The debug toolbar is only loaded for local development
+DEBUG_TOOLBAR = DEBUG and not TESTING
+
+if DEBUG_TOOLBAR:
     INSTALLED_APPS = [
         *INSTALLED_APPS,
         "debug_toolbar",
@@ -155,3 +158,8 @@ DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5.html"
 
 # For about page
 CONTACT_EMAIL_ADDRESS = os.getenv('CONTACT_EMAIL_ADDRESS', '<Email not set>')
+
+if not DEBUG:
+    # Only send the session and CSRF cookies over HTTPS
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
