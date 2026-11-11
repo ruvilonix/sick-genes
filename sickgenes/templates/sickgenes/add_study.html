@@ -18,6 +18,9 @@
                 {% for error in form.doi.errors %}
                     <li>{{ error }}</li>
                 {% endfor %}
+                {% if existing_study %}
+                    <li>See <a href="{{ existing_study.get_absolute_url }}">{{ existing_study }}</a>{% if existing_study.not_finished %} (hidden){% endif %}</li>
+                {% endif %}
             </ul>
         {% endif %}
     </p>

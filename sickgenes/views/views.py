@@ -8,6 +8,7 @@ from django.db import transaction
 from django.db.models import Prefetch, Count, Q
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 from sickgenes.tables import GeneTable, StudyTable
 from collections import defaultdict
 from django_tables2.config import RequestConfig
@@ -297,15 +298,41 @@ def redirect_unknown_gene_symbol(request, symbol):
 
 @staff_member_required
 def add_study(request):
+    existing_study = None
     if request.method == 'POST':
         form = StudyForm(request.POST)
         if form.is_valid():
             study = form.save()
             return redirect(study)
+        # Link to the study if this DOI was added before
+        if form.instance.doi:
+            existing_study = Study.objects.filter(doi=form.instance.doi).first()
     else:
         form = StudyForm()
 
-    return render(request, 'sickgenes/add_study.html', context={'form': form})
+    context = {'form': form, 'existing_study': existing_study}
+    return render(request, 'sickgenes/add_study.html', context)
+
+@staff_member_required
+def hidden_studies(request):
+    """
+    Lists studies marked "not finished", which are hidden from the public.
+    """
+    studies = (
+        Study.objects.filter(not_finished=True)
+        .annotate(gene_count=Count('study_cohorts__gene_findings'))
+        .order_by('-created_at')
+    )
+    return render(request, 'sickgenes/hidden_studies.html', {'studies': studies})
+
+@staff_member_required
+@require_POST
+def publish_study(request, study_id):
+    study = get_object_or_404(Study, pk=study_id)
+    study.not_finished = False
+    study.save(update_fields=['not_finished', 'updated_at'])
+    messages.success(request, 'Published: this study is now public.')
+    return redirect(study)
 
 @staff_member_required
 def add_study_cohort(request, study_id):

@@ -1075,6 +1075,57 @@ class RemoveGenesView(TestCase):
         self.assertContains(response, self.url)
 
 
+class HiddenStudies(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.staff_user = User.objects.create_user('staff', password='pw', is_staff=True)
+        cls.hidden = Study.objects.create(
+            title="Hidden study", doi='10.1000/hidden', not_finished=True, note='No usable genes.'
+        )
+        cls.public = Study.objects.create(title="Public study")
+        cls.publish_url = reverse('sickgenes:publish_study', args=(cls.hidden.pk,))
+
+    def test_list_shows_only_hidden_studies(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.get(reverse('sickgenes:hidden_studies'))
+        self.assertContains(response, 'Hidden study')
+        self.assertContains(response, 'No usable genes.')
+        self.assertNotContains(response, 'Public study')
+
+    def test_list_requires_staff(self):
+        response = self.client.get(reverse('sickgenes:hidden_studies'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_study_page_shows_publish_button(self):
+        self.client.force_login(self.staff_user)
+        self.assertContains(self.client.get(self.hidden.get_absolute_url()), self.publish_url)
+        public_url = reverse('sickgenes:publish_study', args=(self.public.pk,))
+        self.assertNotContains(self.client.get(self.public.get_absolute_url()), public_url)
+
+    def test_publish(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.post(self.publish_url)
+        self.assertRedirects(response, self.hidden.get_absolute_url(), fetch_redirect_response=False)
+        self.hidden.refresh_from_db()
+        self.assertFalse(self.hidden.not_finished)
+
+    def test_publish_requires_staff_and_post(self):
+        self.client.post(self.publish_url)
+        self.client.force_login(self.staff_user)
+        self.assertEqual(self.client.get(self.publish_url).status_code, 405)
+        self.hidden.refresh_from_db()
+        self.assertTrue(self.hidden.not_finished)
+
+    def test_add_study_links_to_existing_doi(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.post(reverse('sickgenes:add_study'), {
+            'doi': 'https://doi.org/10.1000/hidden', 'title': 'Again',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.hidden.get_absolute_url())
+        self.assertContains(response, '(hidden)')
+
+
 class AddStudyView(TestCase):
     @classmethod
     def setUpTestData(cls):

@@ -9,6 +9,16 @@
     <div class="alert alert-info">{{ message }}</div>
 {% endfor %}
 
+{% if study.not_finished %}
+    <div class="alert alert-warning d-flex flex-wrap align-items-center gap-2">
+        <span class="me-auto">Hidden from the public.</span>
+        <form method="post" action="{% url 'sickgenes:publish_study' study.pk %}" class="m-0" onsubmit="return confirm('Publish this study? It will be visible to everyone.')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-success">Publish</button>
+        </form>
+    </div>
+{% endif %}
+
 {% if study.newest_version %}
     <div class="alert alert-warning">
         A newer version of this study exists: <a href="{{ study.newest_version.get_absolute_url }}">{{ study.newest_version.title }}</a>
