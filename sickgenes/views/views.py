@@ -73,13 +73,6 @@ def study(request, study_id, slug=None):
 
     set_newest_version_form = SetNewestStudyVersionForm(study=study)
 
-    for cohort in study.study_cohorts.all():
-        params = [
-            ('symbol', finding.hgnc_gene.symbol) 
-            for finding in cohort.gene_findings.all()
-        ]
-        cohort.gene_query_string = urlencode(params)
-
     study_note = markdown.markdown(study.note)
 
     context = {
@@ -125,11 +118,26 @@ def gene_list(request):
     """
     base_queryset = HgncGene.objects.all()
 
-    gene_symbols_to_filter = request.GET.getlist('symbol')
+    # Symbols come as one comma-separated parameter (?symbol=A,B,C). Repeated
+    # parameters (?symbol=A&symbol=B) are still accepted for old links.
+    gene_symbols_to_filter = [
+        symbol.strip()
+        for value in request.GET.getlist('symbol')
+        for symbol in value.split(',')
+        if symbol.strip()
+    ]
     if gene_symbols_to_filter:
         base_queryset = base_queryset.filter(symbol__in=gene_symbols_to_filter)
+
+    # ?cohort=<id> shows the genes found in that study cohort
+    cohort_id = request.GET.get('cohort', '')
+    if cohort_id.isdigit():
+        cohort_findings = GeneFinding.objects.filter(study_cohort_id=cohort_id)
+        if not request.user.is_staff:
+            cohort_findings = cohort_findings.filter(study_cohort__study__not_finished=False)
+        base_queryset = base_queryset.filter(id__in=cohort_findings.values('hgnc_gene_id'))
     else:
-        gene_symbols_to_filter = []
+        cohort_id = ''
     
     form = GeneFilterForm(request.GET)
     
@@ -166,7 +174,8 @@ def gene_list(request):
     context = {
         'form': form,
         'genes_table': genes_table,
-        'filtered_genes': gene_symbols_to_filter,
+        'filtered_genes': ','.join(gene_symbols_to_filter),
+        'cohort_id': cohort_id,
         'title': 'Gene List',
     }
     
@@ -281,8 +290,9 @@ def identify_molecules(request, model_type):
         items_to_search = list(HgncGene.objects.filter(id__in=item_ids_to_search).values_list('symbol', flat=True))
 
         if items_to_search:
-            query_params = '&'.join([f'symbol={symbol}' for symbol in items_to_search])
-            redirect_url = f"{reverse('sickgenes:gene_list')}?{query_params}"
+            # One comma-separated parameter keeps the URL short
+            query_string = urlencode({'symbol': ','.join(items_to_search)}, safe=',')
+            redirect_url = f"{reverse('sickgenes:gene_list')}?{query_string}"
             return redirect(redirect_url)
 
     return render(request, 'sickgenes/molecule_match.html', context)
