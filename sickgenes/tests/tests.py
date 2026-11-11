@@ -11,14 +11,12 @@ from sickgenes.models import (
     HgncGene, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName,
     HmdbMetabolite, MetaboliteSynonym, SecondaryAccession, GeneFinding, SiteConfiguration
 )
-from unittest.mock import patch, Mock, mock_open
+from unittest.mock import patch, Mock
 import requests
 from django.contrib.messages import get_messages
 from django.contrib.auth.models import User
 from django.template import Context, Template
 from django.utils.safestring import SafeString
-from unittest.mock import patch
-import markdown
 from django.contrib.auth import get_user_model
 
 class GeneListTests(TestCase):
@@ -1226,46 +1224,10 @@ class AddStudyCohortView(TestCase):
 
 
 
-class CriteriaViewTest(TestCase):
-    """Tests for the criteria view"""
-    
-    def test_criteria_view_status_code(self):
-        """Test that criteria view returns 200 status"""
-        response = self.client.get('/about/criteria/') 
-        self.assertEqual(response.status_code, 200)
-    
-    def test_criteria_view_uses_correct_template(self):
-        """Test that criteria view uses correct template"""
+class CriteriaRedirectTest(TestCase):
+    def test_old_criteria_url_redirects_to_about(self):
         response = self.client.get('/about/criteria/')
-        self.assertTemplateUsed(response, 'sickgenes/criteria.html')
-
-    @patch('sickgenes.views.views.open', side_effect=FileNotFoundError)
-    def test_criteria_view_file_not_found(self, mock_file):
-        """Test behavior when criteria.md file is not found"""
-        response = self.client.get('/about/criteria/')
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '<p>Criteria file not found</p>')
-
-    def test_criteria_view_context_is_correct(self):
-        """Test the view passes the correct HTML to the render context."""
-        # 1. Define mock markdown and the expected HTML output
-        mock_md_content = "# Test Title\n\n* List item"
-        expected_html = markdown.markdown(mock_md_content)
-
-        # 2. Patch 'open' to simulate reading the file
-        mock_file = mock_open(read_data=mock_md_content)
-        
-        with patch('sickgenes.views.views.open', mock_file):
-            # 3. Make the request to the view
-            response = self.client.get('/about/criteria/')
-
-        # 4. Check that render was called correctly
-        self.assertEqual(response.status_code, 200)
-    
-        
-        # 6. Assert the context variable is correct
-        self.assertEqual(response.context['criteria_html'], expected_html)
+        self.assertRedirects(response, reverse('sickgenes:about'), status_code=301)
 
 
 class SetNewestVersionModelTest(TestCase):

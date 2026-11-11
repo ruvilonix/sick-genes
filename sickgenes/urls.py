@@ -1,11 +1,13 @@
 from django.urls import path
+from django.views.generic import RedirectView
 from . import views
 
 app_name = 'sickgenes'
 urlpatterns = [
     path('', views.home, name='home'),
     path('about/', views.about, name='about'),
-    path('about/criteria/', views.criteria, name='criteria'),
+    # The criteria page was merged into the about page
+    path('about/criteria/', RedirectView.as_view(pattern_name='sickgenes:about', permanent=True)),
     
     path('studies/', views.study_list, name='study_list'),
     path('table-study/', views.table_study, name="TableStudy"),
