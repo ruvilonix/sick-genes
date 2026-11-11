@@ -15,98 +15,124 @@
     </div>
 {% endif %}
 
-{# Study Metadata Section #}
+{# Study details #}
 <h1 class="page-title">{{ study.title }}</h1>
-{% if study.authors %}
-    <p><strong>Authors:</strong> {{ study.authors }}</p>
+<div class="page-subtitle">
+    {% if study.authors %}<div>{{ study.authors }}</div>{% endif %}
+    <div>
+        {% if study.first_journal_title %}<em>{{ study.first_journal_title }}</em> · {% endif %}{{ study.publication_date }}
+        {% if study.preprint %}<span class="badge text-bg-warning ms-1">Preprint</span>{% endif %}
+    </div>
+</div>
+
+{% if study.doi or study.publisher_url or study.pmid or study.s4me_url %}
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        {% if study.doi %}
+            <a class="btn btn-sm btn-outline-secondary" href="https://doi.org/{{ study.doi }}" target="_blank" rel="noopener noreferrer">Article</a>
+        {% elif study.publisher_url %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ study.publisher_url }}" target="_blank" rel="noopener noreferrer">Article</a>
+        {% endif %}
+        {% if study.pmid %}
+            <a class="btn btn-sm btn-outline-secondary" href="https://pubmed.ncbi.nlm.nih.gov/{{ study.pmid }}" target="_blank" rel="noopener noreferrer">PubMed</a>
+        {% endif %}
+        {% if study.s4me_url %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ study.s4me_url }}" target="_blank" rel="noopener noreferrer">S4ME discussion</a>
+        {% endif %}
+    </div>
 {% endif %}
 
-<p>
-    {% if study.first_journal_title %}
-        <em>{{ study.first_journal_title }}</em>,
-    {% endif %}
-    {{ study.publication_date }}
-    {% if study.preprint %}(Preprint){% endif %}
-</p>
-
-<p>
-    {% if study.doi %}
-        <a href="https://doi.org/{{ study.doi }}" target="_blank">View article</a>
-    {% endif %}
-    {% if study.pmid %}
-        {% if study.doi %}|{% endif %}
-        <a href="https://pubmed.ncbi.nlm.nih.gov/{{ study.pmid }}" target="_blank">PubMed</a>
-    {% endif %}
-    {% if study.s4me_url %}
-        {% if study.doi or study.pmid %}|{% endif %}
-        <a href="{{ study.s4me_url }}" target="_blank">Discussion on S4ME</a>
-    {% endif %}
-</p>
-
-{% if request.user.is_staff %}
-<p>
-    <a href="{% url opts|admin_urlname:'change' study.pk %}" target="_blank">Edit on Admin page</a>
-</p>
+{# Rationale for the recorded genes #}
+{% if study.note %}
+    <h2 class="section-title">Notes</h2>
+    <div class="card">
+        <div class="card-body study-note">
+            {{ study_note|safe }}
+        </div>
+    </div>
 {% endif %}
 
-<hr>
+{# Cohorts and their genes #}
+<h2 class="section-title mb-1">{% if study.study_cohorts.all|length > 1 %}Cohorts{% else %}Genes{% endif %}</h2>
+<p class="small text-secondary mb-3">The small number after each gene is how many studies on this site found it.</p>
 
-{# Cohorts and Findings Section #}
-<h2 class="section-title">Cohorts in this study</h2>
+{% for study_cohort in study.study_cohorts.all %}
+    <div class="card">
+        <div class="card-body">
+            {% if study.study_cohorts.all|length > 1 %}
+                <h3 class="h6 fw-semibold mb-2">Cohort {{ forloop.counter }}</h3>
+            {% endif %}
 
-{% if request.user.is_staff %}
-<p><a href="{% url 'sickgenes:add_study_cohort' study.id %}">Add new cohort</a></p>
-{% endif %}
-
-<div>
-    {% for study_cohort in study.study_cohorts.all %}
-        <div class="mb-4">
-            <h5>
-            Phenotype: 
+            <div class="d-flex flex-wrap gap-1 mb-3">
                 {% for disease_tag in study_cohort.disease_tags.all %}
-                    {{ disease_tag }}{% if not forloop.last %}, {% endif %}
+                    <span class="badge rounded-pill text-bg-light border fw-normal">{{ disease_tag }}</span>
                 {% endfor %}
-            </h5>
+            </div>
 
             {% with gene_findings=study_cohort.gene_findings.all|dictsort:"hgnc_gene.symbol" %}
                 {% if gene_findings %}
-                    <p>
-                    {% for finding in gene_findings %}
-                        <a href="{{ finding.hgnc_gene.get_absolute_url }}">{{ finding.hgnc_gene }}</a>{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                    </p>
-                    <p><a href="{% url 'sickgenes:gene_list' %}?cohort={{ study_cohort.id }}">Search for these genes</a></p>
+                    <ul class="gene-list">
+                        {% for finding in gene_findings %}
+                            <li><a href="{{ finding.hgnc_gene.get_absolute_url }}">{{ finding.hgnc_gene }}</a><sup class="study-count" title="Found in {{ finding.study_count }} stud{{ finding.study_count|pluralize:'y,ies' }}">{{ finding.study_count }}</sup></li>
+                        {% endfor %}
+                    </ul>
+
+                    <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+                        <a class="btn btn-sm btn-outline-primary" href="{% url 'sickgenes:gene_list' %}?cohort={{ study_cohort.id }}">Show in gene list</a>
+                        <button type="button" class="btn btn-sm btn-outline-primary copy-genes"
+                                data-genes="{% for finding in gene_findings %}{{ finding.hgnc_gene.symbol }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">Copy genes</button>
+                    </div>
+                {% else %}
+                    <p class="text-secondary mb-0">No genes recorded for this cohort yet.</p>
                 {% endif %}
             {% endwith %}
 
             {% if request.user.is_staff %}
-            <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}">Add genes to this cohort</a>
+                <div class="mt-3 small">
+                    <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}">Add genes to this cohort</a>
+                </div>
             {% endif %}
-
         </div>
-        {% if not forloop.last %}<hr class="dotted-divider">{% endif %}
-    {% empty %}
-        <p><em>No cohorts have been added to this study yet.</em></p>
-    {% endfor %}
-</div>
+    </div>
+{% empty %}
+    <p class="text-secondary">No cohorts have been added to this study yet.</p>
+{% endfor %}
 
-<hr>
-
-<h2 class="section-title">Notes</h2>
-{% if study.note %}
-{{ study_note|safe }}
-{% else %}
-No notes yet.
-{% endif %}
-
+{# Staff tools #}
 {% if request.user.is_staff %}
-    <form method="POST" action="{% url 'sickgenes:set_newest_study_version' study_id=study.pk %}">
-        {% csrf_token %}
-        {{ set_newest_version_form.newest_version.label_tag }}
-        {{ set_newest_version_form.newest_version }}
-        {{ set_newest_version_form.newest_version.errors }}
-        <button type="submit">Set newest version</button>
-    </form>
+    <h2 class="section-title">Staff tools</h2>
+    <div class="card border-warning-subtle">
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <a class="btn btn-sm btn-outline-secondary" href="{% url opts|admin_urlname:'change' study.pk %}" target="_blank">Edit in admin</a>
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'sickgenes:add_study_cohort' study.id %}">Add cohort</a>
+            </div>
+            <form method="post" action="{% url 'sickgenes:set_newest_study_version' study_id=study.pk %}" class="row g-2 align-items-center">
+                {% csrf_token %}
+                <div class="col-12 col-sm-auto">
+                    <label for="{{ set_newest_version_form.newest_version.id_for_label }}" class="col-form-label">Newest version</label>
+                </div>
+                <div class="col col-sm-auto">
+                    {{ set_newest_version_form.newest_version }}
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-secondary">Set</button>
+                </div>
+                {{ set_newest_version_form.newest_version.errors }}
+            </form>
+        </div>
+    </div>
 {% endif %}
 
+<script>
+    // "Copy genes": copies a cohort's gene symbols, one per line
+    document.querySelectorAll('.copy-genes').forEach(function (button) {
+        button.addEventListener('click', function () {
+            navigator.clipboard.writeText(button.dataset.genes).then(function () {
+                const label = button.textContent;
+                button.textContent = 'Copied';
+                setTimeout(function () { button.textContent = label; }, 1500);
+            });
+        });
+    });
+</script>
 {% endblock %}

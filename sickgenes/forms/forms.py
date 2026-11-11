@@ -81,6 +81,7 @@ class SetNewestStudyVersionForm(forms.Form):
     newest_version = forms.ModelChoiceField(
         queryset=Study.objects.none(),
         label="Newest version",
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'}),
     )
 
     def __init__(self, *args, study=None, **kwargs):
