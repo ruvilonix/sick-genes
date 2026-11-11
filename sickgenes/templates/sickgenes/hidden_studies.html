@@ -1,0 +1,26 @@
+{% extends 'sickgenes/base.html' %}
+
+{% block title %}Hidden studies{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Hidden studies</h1>
+<p class="page-subtitle">Studies marked "not finished". Only staff can see them.</p>
+
+{% if studies %}
+    <ul class="list-group">
+        {% for study in studies %}
+            <li class="list-group-item">
+                <a href="{{ study.get_absolute_url }}">{{ study }}</a>
+                <div class="small text-secondary">
+                    Added {{ study.created_at|date:"j M Y"|default:"(unknown date)" }} · {{ study.gene_count }} gene{{ study.gene_count|pluralize }}
+                </div>
+                {% if study.note %}
+                    <div class="small mt-1">{{ study.note|truncatechars:150 }}</div>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p class="text-secondary">No hidden studies.</p>
+{% endif %}
+{% endblock %}

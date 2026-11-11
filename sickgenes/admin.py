@@ -44,6 +44,7 @@ class StudyCohortInline(admin.TabularInline):
 @admin.register(Study)
 class StudyAdmin(admin.ModelAdmin):
     list_display = ['title', 'not_finished']
+    list_filter = ['not_finished']
     inlines = [
         StudyCohortInline,
     ]
