@@ -275,7 +275,7 @@ def identify_molecules(request, model_type):
 
     context = prepare_identifiers(request, config['source_model'])
     context['view_type'] = 'search'
-    context['title'] = f'Search'
+    context['title'] = 'Gene Search'
 
     if context.get('items_only_exist_in_one_match'):
         search_one_match_formset = context['search_one_match_formset']
@@ -313,7 +313,8 @@ def insert_findings(request, study_cohort_id, model_type):
 
     context = prepare_identifiers(request, source_model)
     context['view_type'] = 'insert'
-    context['title'] = f'Add {model_type}s to study'
+    context['title'] = f'Add {model_type}s'
+    context['study_cohort'] = study_cohort
 
     if ('confirm_insert' in request.POST and context.get('items_only_exist_in_one_match')):
         search_one_match_formset = context['search_one_match_formset']
