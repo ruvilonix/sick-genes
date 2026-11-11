@@ -118,7 +118,7 @@ class GeneListTests(TestCase):
     def test_gene_list_invalid_cohort_ignored(self):
         response = self.client.get(reverse('sickgenes:gene_list') + '?cohort=abc')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(self._symbols_in_table(response)), 5)
+        self.assertEqual(self._symbols_in_table(response), {'TTN', 'SCN1A', 'BRCA1', 'DEF'})
 
     def test_gene_list_unfiltered_study_counts(self):
         """
@@ -127,8 +127,9 @@ class GeneListTests(TestCase):
         response = self.client.get(reverse('sickgenes:gene_list'))
         genes_in_context = {gene.symbol: gene for gene in response.context['genes_table'].data}
 
-        # Check that all genes are present
-        self.assertEqual(len(genes_in_context), 5)
+        # Only genes found in published studies are listed by default.
+        # ABC is only in an unfinished study.
+        self.assertEqual(set(genes_in_context), {'TTN', 'SCN1A', 'BRCA1', 'DEF'})
 
         # Verify the study count for each gene
         self.assertEqual(genes_in_context['TTN'].study_count, 2)    # Associated with study1 and study3
@@ -139,33 +140,24 @@ class GeneListTests(TestCase):
         """
         Tests that the list is correctly filtered when a disease is selected.
         """
-        # Filter by Cardiomyopathy (disease1)
-        url = f"{reverse('sickgenes:gene_list')}?disease={self.disease1.pk}"
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+        # Cardiomyopathy (disease1): TTN via cohort1, and TTN/SCN1A/BRCA1 via cohort3
+        response = self.client.get(reverse('sickgenes:gene_list'), {'phenotype': self.disease1.pk})
+        self.assertEqual(self._symbols_in_table(response), {'TTN', 'SCN1A', 'BRCA1'})
 
-        genes_in_context = response.context['genes_table'].data
-        gene_symbols = {gene.symbol for gene in genes_in_context}
+        # Epilepsy (disease2): SCN1A/DEF via cohort2, and TTN/SCN1A/BRCA1 via cohort3
+        response = self.client.get(reverse('sickgenes:gene_list'), {'phenotype': self.disease2.pk})
+        self.assertEqual(self._symbols_in_table(response), {'TTN', 'SCN1A', 'BRCA1', 'DEF'})
 
-        # TTN (via cohort1) and SCN1A/BRCA1 (via cohort3) are linked to disease1
-        self.assertEqual(len(genes_in_context), 5)
-        self.assertIn('TTN', gene_symbols)
-        self.assertIn('SCN1A', gene_symbols)
-        self.assertIn('BRCA1', gene_symbols)
-        
-        # Filter by Epilepsy (disease2)
-        url = f"{reverse('sickgenes:gene_list')}?disease={self.disease2.pk}"
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+    def test_gene_list_can_include_genes_without_studies(self):
+        response = self.client.get(reverse('sickgenes:gene_list'), {'include_unstudied': 'on'})
+        genes = {gene.symbol: gene for gene in response.context['genes_table'].data}
+        self.assertEqual(len(genes), 5)
+        self.assertEqual(genes['ABC'].study_count, 0)
 
-        genes_in_context = response.context['genes_table'].data
-        gene_symbols = {gene.symbol for gene in genes_in_context}
-
-        # SCN1A (via cohort2) and TTN/BRCA1 (via cohort3) are linked to disease2
-        self.assertEqual(len(genes_in_context), 5)
-        self.assertIn('TTN', gene_symbols)
-        self.assertIn('SCN1A', gene_symbols)
-        self.assertIn('BRCA1', gene_symbols)
+    def test_gene_search_results_include_genes_without_studies(self):
+        response = self.client.get(reverse('sickgenes:gene_list'), {'symbol': 'ABC,TTN'})
+        self.assertEqual(self._symbols_in_table(response), {'ABC', 'TTN'})
+        self.assertNotContains(response, 'include_unstudied')
 
     def test_gene_list_disease_filter_annotated_counts(self):
         """
@@ -173,14 +165,14 @@ class GeneListTests(TestCase):
         but the study_count is correctly annotated based on the filter.
         """
         # Filter by Cardiomyopathy (disease1)
-        url = f"{reverse('sickgenes:gene_list')}?phenotype={self.disease1.pk}"
+        url = f"{reverse('sickgenes:gene_list')}?phenotype={self.disease1.pk}&include_unstudied=on"
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
         # Convert the context data to a dictionary for easy lookups
         genes_in_context = {gene.symbol: gene for gene in response.context['genes_table'].data}
 
-        # The view returns all genes, so we expect 4 (TTN, SCN1A, BRCA1, ABC, DEF)
+        # Including genes without studies lists all 5 (TTN, SCN1A, BRCA1, ABC, DEF)
         self.assertEqual(len(genes_in_context), 5)
 
         # --- Verify the annotated study_count for each gene ---
