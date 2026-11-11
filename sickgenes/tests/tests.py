@@ -1033,6 +1033,48 @@ class AddGenesView(TestCase):
         self.assertTemplateUsed(response, 'sickgenes/molecule_match.html')
         self.assertContains(response, "Search")
 
+class RemoveGenesView(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.staff_user = User.objects.create_user('staff', password='pw', is_staff=True)
+        cls.study = Study.objects.create(title="Example study")
+        cls.study_cohort = StudyCohort.objects.create(study=cls.study)
+        cls.other_cohort = StudyCohort.objects.create(study=cls.study)
+        cls.il6 = HgncGene.objects.create(hgnc_id=1, symbol='IL6')
+        cls.ttn = HgncGene.objects.create(hgnc_id=2, symbol='TTN')
+        cls.il6_finding = GeneFinding.objects.create(study_cohort=cls.study_cohort, hgnc_gene=cls.il6)
+        cls.ttn_finding = GeneFinding.objects.create(study_cohort=cls.study_cohort, hgnc_gene=cls.ttn)
+        cls.other_finding = GeneFinding.objects.create(study_cohort=cls.other_cohort, hgnc_gene=cls.il6)
+        cls.url = reverse('sickgenes:remove_findings', args=(cls.study_cohort.id,))
+
+    def test_requires_staff(self):
+        response = self.client.post(self.url, {'finding': [self.il6_finding.pk]})
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(GeneFinding.objects.filter(pk=self.il6_finding.pk).exists())
+
+    def test_lists_cohort_genes(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.url)
+        self.assertContains(response, f'value="{self.il6_finding.pk}"')
+        self.assertContains(response, f'value="{self.ttn_finding.pk}"')
+        self.assertNotContains(response, f'value="{self.other_finding.pk}"')
+
+    def test_removes_only_selected_genes_in_this_cohort(self):
+        self.client.force_login(self.staff_user)
+        # The other cohort's finding is ignored, even if its ID is sent
+        response = self.client.post(self.url, {'finding': [self.il6_finding.pk, self.other_finding.pk]})
+        self.assertRedirects(response, self.study.get_absolute_url(), fetch_redirect_response=False)
+        self.assertFalse(GeneFinding.objects.filter(pk=self.il6_finding.pk).exists())
+        self.assertTrue(GeneFinding.objects.filter(pk=self.ttn_finding.pk).exists())
+        self.assertTrue(GeneFinding.objects.filter(pk=self.other_finding.pk).exists())
+        self.assertEqual([str(m) for m in get_messages(response.wsgi_request)], ['Removed 1 gene: IL6'])
+
+    def test_study_page_links_to_removal_for_staff(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.study.get_absolute_url())
+        self.assertContains(response, self.url)
+
+
 class AddStudyView(TestCase):
     @classmethod
     def setUpTestData(cls):

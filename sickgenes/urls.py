@@ -29,6 +29,7 @@ urlpatterns = [
     path('manage/add_study_cohort/<int:study_id>/', views.add_study_cohort, name="add_study_cohort"),
 
     path('manage/<int:study_cohort_id>/<str:model_type>/insert/', views.insert_findings, name='insert_findings'),
+    path('manage/<int:study_cohort_id>/gene/remove/', views.remove_findings, name='remove_findings'),
 
 
     path('api/v1/dump/', views.database_dump_json_v1, name="database_dump_json_v1"),

@@ -1,0 +1,79 @@
+{% extends 'sickgenes/base.html' %}
+
+{% block title %}Remove genes{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Remove genes</h1>
+<p class="page-subtitle">
+    From <a href="{{ study_cohort.study.get_absolute_url }}">{{ study_cohort.study.title }}</a>{% for tag in study_cohort.disease_tags.all %}{% if forloop.first %} · {% else %}, {% endif %}{{ tag }}{% endfor %}
+</p>
+
+{% if gene_findings %}
+    <form method="post" id="remove-genes-form">
+        {% csrf_token %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="select-all">
+                    <label class="form-check-label fw-semibold" for="select-all">Select all ({{ gene_findings|length }})</label>
+                </div>
+                <ul class="gene-list">
+                    {% for finding in gene_findings %}
+                        <li class="form-check">
+                            <input class="form-check-input" type="checkbox" name="finding" value="{{ finding.pk }}" id="finding-{{ finding.pk }}" data-symbol="{{ finding.hgnc_gene.symbol }}">
+                            <label class="form-check-label" for="finding-{{ finding.pk }}">{{ finding.hgnc_gene.symbol }}</label>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-danger" id="remove-button" disabled>Remove selected</button>
+            <a class="btn btn-outline-secondary" href="{{ study_cohort.study.get_absolute_url }}">Cancel</a>
+        </div>
+    </form>
+{% else %}
+    <p class="text-secondary">This cohort has no genes.</p>
+{% endif %}
+
+<script>
+    (function () {
+        const form = document.getElementById('remove-genes-form');
+        if (!form) return;
+        const boxes = Array.from(form.querySelectorAll('input[name="finding"]'));
+        const selectAll = document.getElementById('select-all');
+        const button = document.getElementById('remove-button');
+
+        function selected() {
+            return boxes.filter(function (box) { return box.checked; });
+        }
+
+        function update() {
+            const count = selected().length;
+            button.disabled = count === 0;
+            button.textContent = count ? 'Remove ' + count + ' gene' + (count === 1 ? '' : 's') : 'Remove selected';
+            selectAll.checked = count === boxes.length;
+            selectAll.indeterminate = count > 0 && count < boxes.length;
+        }
+
+        boxes.forEach(function (box) { box.addEventListener('change', update); });
+        selectAll.addEventListener('change', function () {
+            boxes.forEach(function (box) { box.checked = selectAll.checked; });
+            update();
+        });
+
+        // Ask before removing, listing the genes (shortened for long selections)
+        form.addEventListener('submit', function (event) {
+            const symbols = selected().map(function (box) { return box.dataset.symbol; });
+            let list = symbols.slice(0, 20).join(', ');
+            if (symbols.length > 20) list += ' and ' + (symbols.length - 20) + ' more';
+            const plural = symbols.length === 1 ? '' : 's';
+            if (!confirm('Remove ' + symbols.length + ' gene' + plural + ' from this cohort?\n\n' + list)) {
+                event.preventDefault();
+            }
+        });
+
+        update();
+    })();
+</script>
+{% endblock %}

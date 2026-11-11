@@ -89,6 +89,9 @@
             {% if request.user.is_staff %}
                 <div class="mt-3 small">
                     <a href="{% url 'sickgenes:insert_findings' study_cohort.id 'gene' %}">Add genes to this cohort</a>
+                    {% if study_cohort.gene_findings.all %}
+                        · <a href="{% url 'sickgenes:remove_findings' study_cohort.id %}">Remove genes</a>
+                    {% endif %}
                 </div>
             {% endif %}
         </div>
