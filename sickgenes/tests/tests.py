@@ -956,6 +956,21 @@ class AddGenesView(TestCase):
 
         self.assertEqual(response.status_code, 200)
 
+    def test_confirm_adds_matched_genes_to_cohort(self):
+        gene = HgncGene.objects.create(hgnc_id=1, symbol='IL6', name='interleukin 6')
+        self.client.login(username=self.my_admin.username, password='testpassword')
+        data = {
+            'search_terms': '',
+            'confirm_insert': '1',
+            'no_matches-TOTAL_FORMS': '0', 'no_matches-INITIAL_FORMS': '0',
+            'multiple_matches-TOTAL_FORMS': '0', 'multiple_matches-INITIAL_FORMS': '0',
+            'one_match-TOTAL_FORMS': '1', 'one_match-INITIAL_FORMS': '0',
+            'one_match-0-search_term': 'IL6', 'one_match-0-item_id': str(gene.id), 'one_match-0-item_string': 'IL6',
+        }
+        response = self.client.post(reverse('sickgenes:insert_findings', args=(self.study_cohort.id, 'gene')), data)
+        self.assertRedirects(response, self.study.get_absolute_url(), fetch_redirect_response=False)
+        self.assertTrue(GeneFinding.objects.filter(study_cohort=self.study_cohort, hgnc_gene=gene).exists())
+
     def test_unknown_cohort_returns_404(self):
         self.client.login(username=self.my_admin.username, password='testpassword')
         response = self.client.get(reverse('sickgenes:insert_findings', args=(999999, "gene")))
@@ -1452,6 +1467,35 @@ class GeneSearchFormTest(TestCase):
     def test_submission_missing_formset_fields_does_not_error(self):
         response = self.client.post(self.url, {'search_terms': 'TTN'})
         self.assertEqual(response.status_code, 200)
+
+    def formset_data(self, prefix, rows):
+        data = {f'{prefix}-TOTAL_FORMS': str(len(rows)), f'{prefix}-INITIAL_FORMS': '0'}
+        for i, row in enumerate(rows):
+            data.update({f'{prefix}-{i}-{key}': value for key, value in row.items()})
+        return data
+
+    def test_choosing_one_of_several_matches_shows_results(self):
+        ttn = HgncGene.objects.create(hgnc_id=1, symbol='TTN', name='titin')
+        qars1 = HgncGene.objects.create(hgnc_id=2, symbol='QARS1', name='glutaminyl-tRNA synthetase 1')
+        eprs1 = HgncGene.objects.create(hgnc_id=3, symbol='EPRS1', name='glutamyl-prolyl-tRNA synthetase 1')
+        PrevSymbol.objects.create(gene=qars1, value='QARS')
+        PrevSymbol.objects.create(gene=eprs1, value='QARS')
+
+        # First search: QARS matches two genes, shown with their names
+        response = self.client.post(self.url, {'search_terms': 'TTN\nQARS\nNOTAGENE', **self.management_data})
+        self.assertContains(response, 'QARS1 – glutaminyl-tRNA synthetase 1')
+        self.assertContains(response, 'Several matches')
+        self.assertContains(response, 'Not found')
+
+        # Choose QARS1 and remove the unknown term: all resolved, so show results
+        data = {
+            'search_terms': '',
+            **self.formset_data('no_matches', [{'search_term': 'NOTAGENE', 'delete': 'on'}]),
+            **self.formset_data('multiple_matches', [{'search_term': 'QARS', 'item_id': str(qars1.id)}]),
+            **self.formset_data('one_match', [{'search_term': 'TTN', 'item_id': str(ttn.id), 'item_string': 'TTN – titin'}]),
+        }
+        response = self.client.post(self.url, data)
+        self.assertRedirects(response, reverse('sickgenes:gene_list') + '?symbol=QARS1,TTN', fetch_redirect_response=False)
 
 
 class RemovedGraphPagesTest(TestCase):

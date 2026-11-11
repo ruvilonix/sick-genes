@@ -4,53 +4,61 @@
 
 {% block content %}
 <h1 class="page-title">{{ title }}</h1>
+{% if study_cohort %}
+    <p class="page-subtitle">
+        Adding to <a href="{{ study_cohort.study.get_absolute_url }}">{{ study_cohort.study.title }}</a>{% for tag in study_cohort.disease_tags.all %}{% if forloop.first %} · {% else %}, {% endif %}{{ tag }}{% endfor %}
+    </p>
+{% else %}
+    <p class="page-subtitle">Paste a list of genes to see how many studies each one appears in.</p>
+{% endif %}
 
-    <form action="" method="POST" novalidate>
-        {% csrf_token %}
-        {# These management forms are required for formsets to work correctly #}
-        {{ search_no_matches_formset.management_form }}
-        {{ search_multiple_matches_formset.management_form }}
-        {{ search_one_match_formset.management_form }}
+{% with not_found=search_no_matches_formset.forms several=search_multiple_matches_formset.forms matched=search_one_match_formset.forms %}
+<form method="post" novalidate>
+    {% csrf_token %}
+    {# Formset bookkeeping fields #}
+    {{ search_no_matches_formset.management_form }}
+    {{ search_multiple_matches_formset.management_form }}
+    {{ search_one_match_formset.management_form }}
 
-        {# --- Initial Search Box and Action Buttons --- #}
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="{{ search_initial_form.search_terms.id_for_label }}" class="form-label fs-5">
-                        <strong>Genes to search</strong> (one per line)
-                    </label>
-                    <div>
-                        <small>Search by HGNC Symbol, HGNC name, HGNC ID, Ensembl ID, NCBI ID, or UniProt ID</small>
-                    </div>
-                    {{ search_initial_form.search_terms }}
-                    {% for error in search_initial_form.search_terms.errors %}
-                        <div class="text-danger mt-1">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                <div class="d-flex justify-content-between align-items-center">
-                    {% if items_only_exist_in_one_match and view_type == 'insert' %}
-                        <button type="submit" name="confirm_insert" value="Insert items into database" class="btn btn-success btn-lg">✅ Confirm and Insert All</button>
-                    {% endif %}
-                </div>
+    {# Search box #}
+    <div class="card mb-4">
+        <div class="card-body">
+            <label for="{{ search_initial_form.search_terms.id_for_label }}" class="form-label fw-semibold">
+                {% if not_found or several or matched %}Add more genes{% else %}Genes{% endif %}
+            </label>
+            {{ search_initial_form.search_terms }}
+            {% for error in search_initial_form.search_terms.errors %}
+                <div class="text-danger mt-1">{{ error }}</div>
+            {% endfor %}
+            <div class="form-text">
+                One per line: symbols, names, previous symbols, aliases, or HGNC, NCBI, Ensembl, UniProt or OMIM IDs.
             </div>
+            <button type="submit" name="find_matches" class="btn btn-primary mt-3">Find matches</button>
         </div>
+    </div>
 
-        {# --- Results Sections --- #}
+    {% if not_found or several or matched %}
+        <p class="mb-0">
+            <span class="badge text-bg-success">{{ matched|length }} matched</span>
+            {% if several %}<span class="badge text-bg-warning">{{ several|length }} with several matches</span>{% endif %}
+            {% if not_found %}<span class="badge text-bg-danger">{{ not_found|length }} not found</span>{% endif %}
+        </p>
+    {% endif %}
 
-        {# No Matches Found #}
-        {% if search_no_matches_formset.forms %}
-            <h2 class="mt-5 border-bottom pb-2 mb-3">⚠️ No Matches Found</h2>
-            <p class="text-muted">You can correct the search terms below or mark them for deletion.</p>
-            <table class="table table-hover align-middle">
+    {# Terms with no match: can be corrected or removed #}
+    {% if not_found %}
+        <h2 class="section-title">Not found</h2>
+        <p class="text-secondary">Correct a term, or tick Remove, then press Update matches.</p>
+        <div class="table-responsive">
+            <table class="table align-middle bg-white border">
                 <thead>
                     <tr>
-                        <th scope="col" class="w-100">Search Term (Editable)</th>
-                        <th scope="col" class="text-center">Delete</th>
+                        <th scope="col">Search term</th>
+                        <th scope="col" class="text-center col-remove">Remove</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for form in search_no_matches_formset %}
-                        {{ form.id }} {# Renders the hidden ID for the form in the formset #}
+                    {% for form in not_found %}
                         <tr>
                             <td>{{ form.search_term }}</td>
                             <td class="text-center">{{ form.delete }}</td>
@@ -58,61 +66,72 @@
                     {% endfor %}
                 </tbody>
             </table>
-        {% endif %}
+        </div>
+    {% endif %}
 
-        {# Multiple Matches Found #}
-        {% if search_multiple_matches_formset.forms %}
-            <h2 class="mt-5 border-bottom pb-2 mb-3">🤔 Multiple Matches Found</h2>
-            <p class="text-muted">Please select the correct item for each search term.</p>
-            <table class="table table-hover align-middle">
+    {# Terms matching several genes: pick one #}
+    {% if several %}
+        <h2 class="section-title">Several matches</h2>
+        <p class="text-secondary">Choose the right gene for each term, then press Update matches.</p>
+        <div class="table-responsive">
+            <table class="table align-middle bg-white border">
                 <thead>
                     <tr>
-                        <th scope="col">Search Term</th>
-                        <th scope="col">Select Correct Item</th>
-                        <th scope="col" class="text-center">Delete</th>
+                        <th scope="col">Search term</th>
+                        <th scope="col">Gene</th>
+                        <th scope="col" class="text-center col-remove">Remove</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for form in search_multiple_matches_formset %}
-                        {{ form.id }}
+                    {% for form in several %}
                         <tr>
-                            <td>{{ form.search_term }}</td>
+                            <td>{{ form.search_term.value }}{{ form.search_term.as_hidden }}</td>
                             <td>{{ form.item_id }}</td>
                             <td class="text-center">{{ form.delete }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
-        {% endif %}
+        </div>
+    {% endif %}
 
-        <button type="submit" name="find_matches" value="Submit" class="btn btn-primary btn-lg">Find Matches</button>
+    {# Actions #}
+    {% if not_found or several or matched %}
+        <div class="d-flex flex-wrap gap-2 my-4">
+            {% if view_type == 'insert' and items_only_exist_in_one_match %}
+                <button type="submit" name="confirm_insert" value="1" class="btn btn-success">
+                    Add {{ matched|length }} gene{{ matched|length|pluralize }} to this cohort
+                </button>
+            {% endif %}
+            <button type="submit" name="find_matches" class="btn {% if view_type == 'insert' and items_only_exist_in_one_match %}btn-outline-primary{% else %}btn-primary{% endif %}">Update matches</button>
+        </div>
+    {% endif %}
 
-
-        {# One Match Found #}
-        {% if search_one_match_formset.forms %}
-            <h2 class="mt-5 border-bottom pb-2 mb-3">👍 One Match Found</h2>
-            <p class="text-muted">These items were matched to a single item. Mark any incorrect matches for deletion.</p>
-            <table class="table table-hover align-middle">
+    {# Terms matching exactly one gene #}
+    {% if matched %}
+        <h2 class="section-title">Matched</h2>
+        <p class="text-secondary">To drop a wrong match, tick Remove and press Update matches.</p>
+        <div class="table-responsive">
+            <table class="table align-middle bg-white border">
                 <thead>
                     <tr>
-                        <th scope="col">Search Term</th>
-                        <th scope="col">Matched Item</th>
-                        <th scope="col" class="text-center">Delete</th>
+                        <th scope="col">Search term</th>
+                        <th scope="col">Gene</th>
+                        <th scope="col" class="text-center col-remove">Remove</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for form in search_one_match_formset %}
-                        {{ form.id }}
-                        {{ form.item_id }} {# This is a hidden field and won't be visible #}
+                    {% for form in matched %}
                         <tr>
-                            <td>{{ form.search_term }}</td>
-                            <td>{{ form.item_string }}</td>
+                            <td>{{ form.search_term.value }}{{ form.search_term.as_hidden }}{{ form.item_id }}</td>
+                            <td>{{ form.item_string.value }}{{ form.item_string.as_hidden }}</td>
                             <td class="text-center">{{ form.delete }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
-        {% endif %}
-
-    </form>
+        </div>
+    {% endif %}
+</form>
+{% endwith %}
 {% endblock %}

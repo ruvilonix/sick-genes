@@ -107,6 +107,11 @@ footer a:hover {
     margin-bottom: 1rem;
 }
 
+/* Narrow "Remove" checkbox column on the Gene Search page */
+.col-remove {
+    width: 5rem;
+}
+
 /* Space between stacked cards */
 .card + .card {
     margin-top: 1rem;

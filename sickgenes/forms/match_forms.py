@@ -51,7 +51,7 @@ class SearchMultipleMatchesForm(forms.Form):
         widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': True})
     )
     item_id = forms.ChoiceField(
-        choices=[('', 'Please select one')], required=False,
+        choices=[('', 'Choose…')], required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     delete = forms.BooleanField(
@@ -79,6 +79,14 @@ class SearchOneMatchForm(forms.Form):
     )
 
 SearchOneMatchFormSet = formset_factory(SearchOneMatchForm, extra=0)
+
+def item_label(item):
+    """Label for a matched item, e.g. "TRH – thyrotropin releasing hormone"."""
+    name = getattr(item, 'name', None)
+    if name and name != str(item):
+        return f'{item} – {name}'
+    return str(item)
+
 
 def prepare_identifiers(request, model):
     """Prepare forms/formsets for retrieving IDs for items (genes) from a list of search terms
@@ -132,7 +140,7 @@ def process_search_forms(
             search_results = model.objects.find_matching_items({search_term})
             if search_results['multiple_matches'] and search_results['multiple_matches'][0]['search_string'] == search_term:
                 result_items = search_results['multiple_matches'][0]['items']
-                item_choices = [(item.id, str(item)) for item in result_items]
+                item_choices = [(item.id, item_label(item)) for item in result_items]
                 form.fields['item_id'].choices = form.fields['item_id'].choices + item_choices
 
     if all([
@@ -196,7 +204,7 @@ def process_search_forms(
         # Populate choices for the new multiple matches formset
         for i, form in enumerate(search_multiple_matches_formset):
             result_items = multiple_matches_data[i]['items']
-            item_choices = [(item.id, str(item)) for item in result_items]
+            item_choices = [(item.id, item_label(item)) for item in result_items]
             form.fields['item_id'].choices += item_choices
 
 
@@ -216,7 +224,7 @@ def process_search_forms(
             item_data = {
                 'search_term': result['search_string'],
                 'item_id': result['item'].id,
-                'item_string': str(result['item']),
+                'item_string': item_label(result['item']),
             }
             final_one_match_data[item_data['item_id']] = item_data
 
