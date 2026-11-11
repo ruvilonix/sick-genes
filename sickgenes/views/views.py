@@ -312,6 +312,8 @@ def insert_findings(request, study_cohort_id, model_type):
     if not config:
         raise Http404(f"Model type '{model_type}' is not supported.")
 
+    study_cohort = get_object_or_404(StudyCohort, pk=study_cohort_id)
+
     source_model = config['source_model']
     finding_model = config['finding_model']
     fk_name = config['fk_name']
@@ -332,8 +334,7 @@ def insert_findings(request, study_cohort_id, model_type):
             findings_to_insert.append(finding_model(**instance_data))
 
         finding_model.objects.bulk_create(findings_to_insert, ignore_conflicts=True)
-        study = Study.objects.get(study_cohorts__id=study_cohort_id)
-        return redirect(study)
+        return redirect(study_cohort.study)
 
     return render(request, 'sickgenes/molecule_match.html', context)
 

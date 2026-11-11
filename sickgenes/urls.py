@@ -30,8 +30,6 @@ urlpatterns = [
 
     path('manage/<int:study_cohort_id>/<str:model_type>/insert/', views.insert_findings, name='insert_findings'),
 
-    path('graph/retrieve-network/', views.gene_network_data, name="gene_network_data"),
-    path('graph/display/', views.graph_display, name='graph_display'),
 
     path('api/v1/dump/', views.database_dump_json_v1, name="database_dump_json_v1"),
     path('api/v2/sickgenes_database.json.gz', views.database_dump_json_v2, name="database_dump_json_v2"),
