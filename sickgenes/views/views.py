@@ -15,7 +15,6 @@ from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.utils.html import escape
 import markdown
-import os
 from urllib.parse import urlencode
 
 def home(request):
@@ -33,20 +32,6 @@ def about(request):
         'about_text': markdown.markdown(SiteConfiguration.get_solo().about)
     }
     return render(request, 'sickgenes/about.html', context)
-
-def criteria(request): # TODO criteria page not needed anymore
-    criteria_file = os.path.join(settings.BASE_DIR, 'criteria.md')
-
-    try:
-        with open(criteria_file, 'r') as f:
-            content = f.read()
-
-        criteria_html = markdown.markdown(content)
-
-    except FileNotFoundError:
-        criteria_html = "<p>Criteria file not found</p>"
-    
-    return render(request, 'sickgenes/criteria.html', {'criteria_html': criteria_html})
 
 def study(request, study_id, slug=None):
     study = get_object_or_404(
