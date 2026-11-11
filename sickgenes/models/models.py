@@ -20,7 +20,7 @@ class SiteConfiguration(SingletonModel):
         max_length=100,
         blank=True,
         default='',
-        help_text='Shown in the gene page search links, e.g. "Search for IL6 and ME/CFS". Used only when search terms are set.',
+        help_text='Shown in the gene page search links, e.g. "IL6 and ME/CFS". Used only when search terms are set.',
     )
     literature_search_terms = models.CharField(
         max_length=500,
