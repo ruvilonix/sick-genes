@@ -153,7 +153,8 @@ if DEBUG_TOOLBAR:
     ]
 
 # django-tables2
-DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap5.html"
+DJANGO_TABLES2_TEMPLATE = "sickgenes/table.html"
+DJANGO_TABLES2_TABLE_ATTRS = {"class": "table table-hover align-middle"}
 
 # For about page
 CONTACT_EMAIL_ADDRESS = os.getenv('CONTACT_EMAIL_ADDRESS', '<Email not set>')

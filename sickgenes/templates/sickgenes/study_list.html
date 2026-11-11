@@ -8,12 +8,16 @@
 
 <h1 class="page-title">Studies</h1>
 
-<form method="get" class="form-inline mb-4">
-    <div class="form-group mr-2">
-        <label for="{{ form.phenotype.id_for_label }}" class="mr-2">Filter by phenotype:</label>
+<form method="get" class="row g-2 align-items-center mb-3">
+    <div class="col-12 col-sm-auto">
+        <label for="{{ form.phenotype.id_for_label }}" class="col-form-label">Phenotype</label>
+    </div>
+    <div class="col col-sm-auto">
         {{ form.phenotype }}
     </div>
-    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </div>
 </form>
 
 {% if phenotype %}
