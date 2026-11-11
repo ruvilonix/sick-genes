@@ -1265,6 +1265,11 @@ class StudyView(TestCase):
         cohort = response.context['study'].study_cohorts.first()
         self.assertContains(response, f"{reverse('sickgenes:gene_list')}?cohort={cohort.id}")
 
+    def test_study_page_shows_study_counts_and_copy_button(self):
+        response = self.client.get(reverse('sickgenes:study', args=(self.study_id,)))
+        self.assertContains(response, 'title="Found in 1 study">1</sup>', count=2)
+        self.assertContains(response, 'data-genes="ABC1&#10;ABC2"')
+
     def test_study_view_shows_markdown_note(self):
         response = self.client.get(reverse('sickgenes:study', args=(self.study_id,)))
         self.assertContains(response, "Note with <em>markdown</em>")

@@ -18,6 +18,18 @@ import markdown
 import re
 from urllib.parse import urlencode
 
+def gene_study_count(extra_filter=Q()):
+    """
+    Annotation counting a gene's published, current studies (not unfinished,
+    not an older version), optionally narrowed by extra_filter.
+    """
+    published = Q(
+        genefinding__study_cohort__study__not_finished=False,
+        genefinding__study_cohort__study__newest_version__isnull=True,
+    )
+    return Count('genefinding__study_cohort__study', filter=published & extra_filter, distinct=True)
+
+
 def home(request):
     study_count = Study.objects.filter(not_finished=False, newest_version__isnull=True).count()
 
@@ -60,6 +72,15 @@ def study(request, study_id, slug=None):
     set_newest_version_form = SetNewestStudyVersionForm(study=study)
 
     study_note = markdown.markdown(study.note)
+
+    # How many studies found each gene, to show next to it
+    gene_findings = [finding for cohort in study.study_cohorts.all() for finding in cohort.gene_findings.all()]
+    study_counts = dict(
+        HgncGene.objects.filter(id__in={finding.hgnc_gene_id for finding in gene_findings})
+        .annotate(study_count=gene_study_count()).values_list('id', 'study_count')
+    )
+    for finding in gene_findings:
+        finding.study_count = study_counts.get(finding.hgnc_gene_id, 0)
 
     context = {
         'opts': Study._meta,
@@ -125,16 +146,11 @@ def gene_list(request):
     filters = form.cleaned_data if form.is_valid() else {}
 
     # Count published, current studies (for the selected phenotype, if any)
-    count_filter = Q(
-        genefinding__study_cohort__study__not_finished=False,
-        genefinding__study_cohort__study__newest_version__isnull=True,
-    )
+    phenotype_filter = Q()
     if filters.get('phenotype'):
-        count_filter &= Q(genefinding__study_cohort__disease_tags=filters['phenotype'])
+        phenotype_filter = Q(genefinding__study_cohort__disease_tags=filters['phenotype'])
 
-    genes = base_queryset.annotate(
-        study_count=Count('genefinding__study_cohort__study', filter=count_filter, distinct=True)
-    )
+    genes = base_queryset.annotate(study_count=gene_study_count(phenotype_filter))
 
     # Browsing all genes shows only genes with studies, unless asked otherwise.
     # A list of specific genes (Gene Search, a cohort) always shows all of them.
