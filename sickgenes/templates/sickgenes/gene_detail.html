@@ -3,19 +3,15 @@
 {% block title %}{{ gene.symbol }}{% endblock %}
 
 {% block content %}
-<section class="card p-3">
-    <header>
-        <h1>{{ gene.symbol }}</h1>
-        <p class="text-muted">{{ gene.name }}</p>
-    </header>
-</section>
+<h1 class="page-title">{{ gene.symbol }}</h1>
+<p class="page-subtitle">{{ gene.name }}</p>
 
 <section class="card p-3">
-    <h2>Associated Studies</h2>
+    <h2 class="section-title mt-0">Associated Studies</h2>
 
     {% if studies_data %}
         {% for study, cohorts in studies_data %}
-            <div style="border: 1px solid #ccc; margin: 4px 0; padding: 1em;">
+            <div class="border rounded p-3 mb-2">
                 <header>
                     <h5>
                         <a href="{{ study.get_absolute_url }}">{{ study.title }}</a>
@@ -24,7 +20,7 @@
                 </header>
                 <div>
                     {% for cohort in cohorts %}
-                        <div style="padding-left: 1em; margin-bottom: 0.5em;">
+                        <div class="ps-3 mb-2">
                             <strong>Phenotype:</strong>
                             {% for disease in cohort.disease_tags.all %}
                                 <span>{{ disease.name }}</span>{% if not forloop.last %}, {% endif %}
@@ -45,8 +41,8 @@
 </section>
 
 
-<section class="card p-3" style="line-height: 2">
-    <h3>Details</h3>
+<section class="card p-3 details-list">
+    <h2 class="section-title mt-0">Details</h2>
     
     {# --- Primary & External Identifiers --- #}
     <div>
@@ -123,7 +119,7 @@
         {% endfor %}
     </div>
 
-    <hr style="margin: 1rem 0;">
+    <hr class="my-3">
 
     {# --- Aliases and Previous Names --- #}
     <div>

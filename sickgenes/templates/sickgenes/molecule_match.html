@@ -3,8 +3,7 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <h1 class="mb-4">{{ title }}</h1>
+<h1 class="page-title">{{ title }}</h1>
 
     <form action="" method="POST" novalidate>
         {% csrf_token %}
@@ -45,7 +44,7 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th scope="col" style="width: 90%;">Search Term (Editable)</th>
+                        <th scope="col" class="w-100">Search Term (Editable)</th>
                         <th scope="col" class="text-center">Delete</th>
                     </tr>
                 </thead>
@@ -116,5 +115,4 @@
         {% endif %}
 
     </form>
-</div>
 {% endblock %}

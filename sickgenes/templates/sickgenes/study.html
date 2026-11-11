@@ -5,22 +5,18 @@
 
 {% block content %}
 
-{% if messages %}
-<ul class="messages">
-    {% for message in messages %}
-    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-    {% endfor %}
-</ul>
-{% endif %}
+{% for message in messages %}
+    <div class="alert alert-info">{{ message }}</div>
+{% endfor %}
 
 {% if study.newest_version %}
-    <div>
+    <div class="alert alert-warning">
         A newer version of this study exists: <a href="{{ study.newest_version.get_absolute_url }}">{{ study.newest_version.title }}</a>
     </div>
 {% endif %}
 
 {# Study Metadata Section #}
-<h3>{{ study.title }}</h3>
+<h1 class="page-title">{{ study.title }}</h1>
 {% if study.authors %}
     <p><strong>Authors:</strong> {{ study.authors }}</p>
 {% endif %}
@@ -56,7 +52,7 @@
 <hr>
 
 {# Cohorts and Findings Section #}
-<h3>Cohorts in this study</h3>
+<h2 class="section-title">Cohorts in this study</h2>
 
 {% if request.user.is_staff %}
 <p><a href="{% url 'sickgenes:add_study_cohort' study.id %}">Add new cohort</a></p>
@@ -64,7 +60,7 @@
 
 <div>
     {% for study_cohort in study.study_cohorts.all %}
-        <div style="margin-bottom: 2em;">
+        <div class="mb-4">
             <h5>
             Phenotype: 
                 {% for disease_tag in study_cohort.disease_tags.all %}
@@ -88,7 +84,7 @@
             {% endif %}
 
         </div>
-        {% if not forloop.last %}<hr style="border-style: dotted;">{% endif %}
+        {% if not forloop.last %}<hr class="dotted-divider">{% endif %}
     {% empty %}
         <p><em>No cohorts have been added to this study yet.</em></p>
     {% endfor %}
@@ -96,7 +92,7 @@
 
 <hr>
 
-<h3>Notes</h3>
+<h2 class="section-title">Notes</h2>
 {% if study.note %}
 {{ study_note|safe }}
 {% else %}
