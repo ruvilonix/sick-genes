@@ -3,13 +3,16 @@
 {% block title %}Add study{% endblock %}
 
 {% block content %}
+
+<h1 class="page-title">Add study</h1>
+
 <form action="" method="POST">
     {% csrf_token %}
     
     <p>
         {{ form.doi.label_tag }}
         {{ form.doi }}
-        <button type="button" id="fetch-doi-btn" style="margin-left: 5px;">Fetch Metadata</button>
+        <button type="button" id="fetch-doi-btn" class="ms-1">Fetch Metadata</button>
         {% if form.doi.errors %}
             <ul class="errorlist">
                 {% for error in form.doi.errors %}

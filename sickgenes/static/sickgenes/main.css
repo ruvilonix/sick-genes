@@ -1,97 +1,86 @@
-body {
-    margin:0;
-    padding:0;
-    font-family:helvetica, sans-serif;
+/* Site-wide styles. Bootstrap 5 provides the base; this file only adds what
+   it doesn't, so pages share the same colours and spacing. */
+
+:root {
+    --sg-brand: #2c6d9b;
+    --sg-link: #2b78bd;
+    --sg-link-hover: #1f5a8f;
 }
 
-p {
-    line-height: 1.8;
+/* Links (not navbar links, buttons or pagination) */
+main a:not(.btn):not(.page-link),
+footer a {
+    color: var(--sg-link);
+    text-decoration: none;
 }
 
-a {
-    color:#749BC2;
-    text-decoration:none;
+main a:not(.btn):not(.page-link):hover,
+footer a:hover {
+    color: var(--sg-link-hover);
+    text-decoration: underline;
 }
 
-a:hover {
-    color:#4682A9;
+/* Navbar */
+.navbar-brand-bg {
+    background-color: var(--sg-brand);
 }
 
-h1, h2, h3, h4, h5 , h6 { font-family: sans-serif; font-weight:normal; }
-
-h1 {
-    border-bottom:1px solid #bbb;
-    padding:0 0 10px 0;
-    margin:10px 0 20px 0;
+.navbar .nav-link {
+    color: rgba(255, 255, 255, 0.8);
 }
 
-h2 {
-    margin:30px 0 20px;
+.navbar .nav-link:hover,
+.navbar .nav-link:focus,
+.navbar .nav-link.active {
+    color: #fff;
 }
 
-ol {
-    line-height:1.5;
+/* Page headings: the same size and spacing on every page */
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
 }
 
-#header {
-    padding:10px 100px;
-    font-size:14px;
-    background:#749BC2;
-    color:#fff;
-    border-bottom:4px solid #4682A9;
-    overflow:auto;
+.page-subtitle {
+    color: var(--bs-secondary-color);
+    margin-bottom: 1.5rem;
 }
 
-#header .logo {
-    font-family: sans-serif;
-    float:left;
-    color:#f3f7cc;
-    font-size:20px;
-    margin-right:10%;
+.page-title + :not(.page-subtitle) {
+    margin-top: 1rem;
 }
 
-#header ul.menu {
-    list-style:none;
-    float:left;
-    margin:0;
-    padding:0;
-}
-#header ul.menu li {
-    float:left;
-    padding:4px 10px;
+/* Home page intro, kept to a readable width */
+.home-intro {
+    max-width: 48rem;
 }
 
-#header ul.menu li.selected a, #header ul.menu li.selected a:hover {
-    color:#4682A9;
-    font-weight:bold;
+/* Section headings within a page */
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
 }
 
-#header a {
-    color:#f3f7cc;
-}
-#header a:hover {
-    color:#fff;
+/* Space between stacked cards */
+.card + .card {
+    margin-top: 1rem;
 }
 
-#header .user {
-    float:right;
-    padding-top:4px;
+/* Label/value lists, e.g. gene identifiers */
+.details-list > div {
+    padding: 0.2rem 0;
 }
 
-#header .user form {
-    display:inline;
-    float:right;
+.dotted-divider {
+    border-top-style: dotted;
 }
 
-#header .user button {
-    background:none;
-    color:#f3f7cc;
-    border:none;
-    cursor:pointer;
-    float:left;
-    display:inline;
-}
-
-#content {
-    padding:30px 100px;
+/* Footer */
+.site-footer {
+    border-top: 1px solid var(--bs-border-color);
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
 }
