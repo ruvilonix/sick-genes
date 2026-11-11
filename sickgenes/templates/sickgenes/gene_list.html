@@ -6,6 +6,7 @@
 {% block content %}
 
 <h1 class="page-title">Genes</h1>
+<p class="page-subtitle">{{ genes_table.paginator.count|floatformat:"g" }} gene{{ genes_table.paginator.count|pluralize }}</p>
 
 <form method="get" class="row g-2 align-items-center mb-3">
     {% if filtered_genes %}
@@ -21,6 +22,14 @@
     <div class="col col-sm-auto">
         {{ form.phenotype }}
     </div>
+    {% if not searching_specific_genes %}
+    <div class="col-12 col-sm-auto">
+        <div class="form-check ms-sm-2">
+            {{ form.include_unstudied }}
+            <label class="form-check-label" for="{{ form.include_unstudied.id_for_label }}">{{ form.include_unstudied.label }}</label>
+        </div>
+    </div>
+    {% endif %}
     <div class="col-auto">
         <button type="submit" class="btn btn-primary">Filter</button>
     </div>

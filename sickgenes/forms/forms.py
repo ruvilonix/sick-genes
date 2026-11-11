@@ -71,6 +71,11 @@ class GeneFilterForm(forms.Form):
         empty_label="All Phenotypes",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+    include_unstudied = forms.BooleanField(
+        required=False,
+        label="Include genes with no studies",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
 
 class SetNewestStudyVersionForm(forms.Form):
     newest_version = forms.ModelChoiceField(

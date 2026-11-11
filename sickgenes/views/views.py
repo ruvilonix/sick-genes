@@ -121,33 +121,25 @@ def gene_list(request):
         cohort_id = ''
     
     form = GeneFilterForm(request.GET)
-    
-    if form.is_valid() and form.cleaned_data.get('phenotype'):
-        disease = form.cleaned_data['phenotype']
-        
-        genes = base_queryset.annotate(
-            study_count=Count(
-                'genefinding__study_cohort__study',
-                filter=Q(
-                    genefinding__study_cohort__study__not_finished=False,
-                    genefinding__study_cohort__study__newest_version__isnull=True,
-                    genefinding__study_cohort__disease_tags=disease
-                ),
-                distinct=True,
-            )
-        ).distinct()
+    filters = form.cleaned_data if form.is_valid() else {}
 
-    else:
-        genes = base_queryset.annotate(
-            study_count=Count(
-                'genefinding__study_cohort__study',
-                filter=Q(
-                    genefinding__study_cohort__study__not_finished=False,
-                    genefinding__study_cohort__study__newest_version__isnull=True,
-                    ),
-                distinct=True,
-            )
-        )
+    # Count published, current studies (for the selected phenotype, if any)
+    count_filter = Q(
+        genefinding__study_cohort__study__not_finished=False,
+        genefinding__study_cohort__study__newest_version__isnull=True,
+    )
+    if filters.get('phenotype'):
+        count_filter &= Q(genefinding__study_cohort__disease_tags=filters['phenotype'])
+
+    genes = base_queryset.annotate(
+        study_count=Count('genefinding__study_cohort__study', filter=count_filter, distinct=True)
+    )
+
+    # Browsing all genes shows only genes with studies, unless asked otherwise.
+    # A list of specific genes (Gene Search, a cohort) always shows all of them.
+    searching_specific_genes = bool(gene_symbols_to_filter or cohort_id)
+    if not searching_specific_genes and not filters.get('include_unstudied'):
+        genes = genes.filter(study_count__gt=0)
 
     genes_table = GeneTable(genes)
     RequestConfig(request, paginate={"per_page": 25}).configure(genes_table)
@@ -157,6 +149,7 @@ def gene_list(request):
         'genes_table': genes_table,
         'filtered_genes': ','.join(gene_symbols_to_filter),
         'cohort_id': cohort_id,
+        'searching_specific_genes': searching_specific_genes,
         'title': 'Gene List',
     }
     
