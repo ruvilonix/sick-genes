@@ -1556,3 +1556,17 @@ class RemovedGraphPagesTest(TestCase):
     def test_graph_urls_are_gone(self):
         self.assertEqual(self.client.get('/graph/display/').status_code, 404)
         self.assertEqual(self.client.get('/graph/retrieve-network/?disease_ids=1').status_code, 404)
+
+
+class HomeRecentStudiesTest(TestCase):
+    def test_home_lists_recent_published_studies_with_genes(self):
+        gene = HgncGene.objects.create(hgnc_id=1, symbol='TTN')
+        for title, not_finished in [('Published study', False), ('Unfinished study', True)]:
+            study = Study.objects.create(title=title, not_finished=not_finished)
+            cohort = StudyCohort.objects.create(study=study)
+            GeneFinding.objects.create(study_cohort=cohort, hgnc_gene=gene)
+        Study.objects.create(title='Study without genes')
+
+        response = self.client.get(reverse('sickgenes:home'))
+        self.assertEqual([study.title for study in response.context['recent_studies']], ['Published study'])
+        self.assertContains(response, 'Recently added')

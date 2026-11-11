@@ -31,11 +31,16 @@ def gene_study_count(extra_filter=Q()):
 
 
 def home(request):
-    study_count = Study.objects.filter(not_finished=False, newest_version__isnull=True).count()
+    published_studies = Study.objects.filter(not_finished=False, newest_version__isnull=True)
+    recent_studies = (
+        published_studies.filter(study_cohorts__gene_findings__isnull=False)
+        .distinct().order_by('-created_at')[:5]
+    )
 
     context = {
         'home_page_description': markdown.markdown(SiteConfiguration.get_solo().home_page_description),
-        'study_count': study_count,
+        'study_count': published_studies.count(),
+        'recent_studies': recent_studies,
     }
     return render(request, 'sickgenes/home.html', context)
 

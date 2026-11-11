@@ -13,4 +13,20 @@
     <p class="mt-5 mb-0">{{ study_count }} <a href="{% url 'sickgenes:study_list' %}">studies</a> saved and counting…</p>
 </div>
 
+{% if recent_studies %}
+    <section class="recent-studies mx-auto">
+        <h2 class="section-title mt-0">Recently added</h2>
+        <ul class="list-group">
+            {% for study in recent_studies %}
+                <li class="list-group-item">
+                    <a href="{{ study.get_absolute_url }}">{{ study.title }}</a>
+                    <div class="small text-secondary">
+                        {{ study.short_authors }}{% if study.short_authors and study.publication_year %} · {% endif %}{{ study.publication_year|default:"" }}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+{% endif %}
+
 {% endblock %}
