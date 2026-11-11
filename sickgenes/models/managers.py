@@ -1,6 +1,6 @@
 from collections import defaultdict
-from django.db import models
-from django.db.models import Q
+from django.db import connection, models
+from django.db.models.functions import Upper
 from django.apps import apps
 
 class BaseMoleculeManager(models.Manager):
@@ -12,6 +12,19 @@ class BaseMoleculeManager(models.Manager):
     int_fields = []
     related_models_to_search = {}
     related_fk_name = None
+
+    @staticmethod
+    def _upper_in_database(strings):
+        """
+        Upper-cases strings with Postgres rather than Python, so they compare
+        exactly like UPPER() on the database side. The two differ for a few
+        characters, e.g. the "ﬁ" ligature.
+        """
+        if not strings:
+            return []
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT s, UPPER(s) FROM unnest(%s::text[]) AS s", [strings])
+            return cursor.fetchall()
 
     def find_matching_items(self, search_strings):
         """
@@ -27,8 +40,9 @@ class BaseMoleculeManager(models.Manager):
         # upper-cased for case-insensitive text fields, as numbers for integer fields
         strings_by_upper = defaultdict(list)
         strings_by_int = defaultdict(list)
+        for search_string, upper_string in self._upper_in_database(search_strings):
+            strings_by_upper[upper_string].append(search_string)
         for search_string in search_strings:
-            strings_by_upper[search_string.upper()].append(search_string)
             try:
                 strings_by_int[int(search_string)].append(search_string)
             except ValueError:
@@ -36,15 +50,16 @@ class BaseMoleculeManager(models.Manager):
 
         matching_ids = {search_string: set() for search_string in search_strings}
 
-        def any_iexact(field):
-            query = Q()
-            for search_string in search_strings:
-                query |= Q(**{f"{field}__iexact": search_string})
-            return query
+        def upper_matches(queryset, field, pk_field):
+            # Case-insensitive match as UPPER(field) IN (...), which uses the
+            # UPPER indexes and stays fast for long lists
+            return queryset.annotate(upper_value=Upper(field)).filter(
+                upper_value__in=strings_by_upper
+            ).values_list('upper_value', pk_field)
 
         def add_text_matches(rows):
-            for value, pk in rows:
-                for search_string in strings_by_upper.get(str(value).upper(), []):
+            for upper_value, pk in rows:
+                for search_string in strings_by_upper.get(upper_value, []):
                     matching_ids[search_string].add(pk)
 
         def add_int_matches(rows):
@@ -54,13 +69,11 @@ class BaseMoleculeManager(models.Manager):
 
         if search_strings:
             for field in self.str_fields:
-                add_text_matches(self.filter(any_iexact(field)).values_list(field, 'pk'))
+                add_text_matches(upper_matches(self, field, 'pk'))
 
             for related_field, model_name in self.related_models_to_search.get('str_fields', {}).items():
                 model = apps.get_model(app_label=app_label, model_name=model_name)
-                add_text_matches(
-                    model.objects.filter(any_iexact('value')).values_list('value', self.related_fk_name)
-                )
+                add_text_matches(upper_matches(model.objects, 'value', self.related_fk_name))
 
         if strings_by_int:
             for field in self.int_fields:
@@ -84,9 +97,13 @@ class BaseMoleculeManager(models.Manager):
             'multiple_matches': [],
         }
 
+        # Position of each item in the model's default ordering
+        item_order = {pk: position for position, pk in enumerate(items_by_id)}
+
         for search_string in search_strings:
             # Keep the model's default ordering, as a filter() query would
-            items = [items_by_id[pk] for pk in items_by_id if pk in matching_ids[search_string]]
+            pks = sorted(matching_ids[search_string], key=item_order.get)
+            items = [items_by_id[pk] for pk in pks]
 
             if not items:
                 search_results['no_matches'].append(search_string)

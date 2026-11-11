@@ -1,4 +1,7 @@
 from django import forms
+
+# Longer searches make very large result pages, so they're refused
+MAX_SEARCH_LINES = 5000
 from django.forms import formset_factory
 
 class SearchInitialForm(forms.Form):
@@ -21,6 +24,12 @@ class SearchInitialForm(forms.Form):
             search_string = search_string.strip()
             if search_string:
                 search_terms.add(search_string)
+
+        if len(search_terms) > MAX_SEARCH_LINES:
+            raise forms.ValidationError(
+                f'Please search at most {MAX_SEARCH_LINES:,} lines at a time '
+                f'(you entered {len(search_terms):,}).'
+            )
 
         return search_terms
     
@@ -243,3 +252,7 @@ def process_search_forms(
         }
 
         return new_form_data
+
+    # Invalid submission (e.g. too many lines, or missing formset fields):
+    # show the submitted forms again with their errors
+    return form_data

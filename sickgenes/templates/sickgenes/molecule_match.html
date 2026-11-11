@@ -24,6 +24,9 @@
                         <small>Search by HGNC Symbol, HGNC name, HGNC ID, Ensembl ID, NCBI ID, or UniProt ID</small>
                     </div>
                     {{ search_initial_form.search_terms }}
+                    {% for error in search_initial_form.search_terms.errors %}
+                        <div class="text-danger mt-1">{{ error }}</div>
+                    {% endfor %}
                 </div>
                 <div class="d-flex justify-content-between align-items-center">
                     {% if items_only_exist_in_one_match and view_type == 'insert' %}

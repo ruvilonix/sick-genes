@@ -1,3 +1,4 @@
+import time
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
 from django.test import TestCase
@@ -672,6 +673,13 @@ class FindMatchingHgncGenesTests(TestCase):
             self.search_genes(['G1', '2'] + [f'NOTHING{i}' for i in range(10)] + [str(i) for i in range(500, 510)])
         self.assertEqual(len(few), len(many))
 
+    def test_long_search_list_is_fast(self):
+        search_strings = [f'NOTHING{i}' for i in range(20000)] + ['G1']
+        start = time.time()
+        results = self.search_genes(search_strings)
+        self.assertLess(time.time() - start, 5)
+        self.assertEqual(results['one_match'][0]['item'], self.gene1)
+
     def test_search_is_case_insensitive_and_keeps_original_string(self):
         results = self.search_genes(['g3'])
         self.assertEqual(results['one_match'], [{'search_string': 'g3', 'item': self.gene3}])
@@ -952,13 +960,18 @@ class AddGenesView(TestCase):
 
     def test_url_valid_response(self):
         self.client.login(username=self.my_admin.username, password='testpassword')
-        response = self.client.get(f'/manage/{self.study.id}/gene/insert/')
+        response = self.client.get(f'/manage/{self.study_cohort.id}/gene/insert/')
 
         self.assertEqual(response.status_code, 200)
 
+    def test_unknown_cohort_returns_404(self):
+        self.client.login(username=self.my_admin.username, password='testpassword')
+        response = self.client.get(reverse('sickgenes:insert_findings', args=(999999, "gene")))
+        self.assertEqual(response.status_code, 404)
+
     def test_view_returns_correct_data(self):
         self.client.login(username=self.my_admin.username, password='testpassword')
-        response = self.client.get(reverse('sickgenes:insert_findings', args=(self.study.id,"gene")))
+        response = self.client.get(reverse('sickgenes:insert_findings', args=(self.study_cohort.id,"gene")))
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'sickgenes/molecule_match.html')
@@ -1074,6 +1087,15 @@ class StudyFormTest(TestCase):
         self.assertIsNone(form.cleaned_data['publication_day'])
 
 class FetchPaperInfoViewTest(TestCase):
+    def setUp(self):
+        staff = User.objects.create_user('staffuser', password='testpassword', is_staff=True)
+        self.client.force_login(staff)
+
+    def test_fetch_paper_info_requires_staff(self):
+        self.client.logout()
+        response = self.client.get(reverse('sickgenes:fetch_paper_info'), {'doi': '10.1000/xyz'})
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/admin/login/', response['Location'])
 
     @patch('sickgenes.views.doi_lookup.requests.get')
     def test_fetch_paper_info_success(self, mock_requests_get):
@@ -1418,3 +1440,29 @@ class RobotsTxtTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'text/plain')
         self.assertContains(response, 'Disallow: /genes/?')
+
+
+class GeneSearchFormTest(TestCase):
+    url = '/search/identify/gene/'
+    management_data = {
+        f'{prefix}-{key}': '0'
+        for prefix in ('no_matches', 'multiple_matches', 'one_match')
+        for key in ('TOTAL_FORMS', 'INITIAL_FORMS')
+    }
+
+    def test_too_many_lines_shows_error(self):
+        from sickgenes.forms.match_forms import MAX_SEARCH_LINES
+        lines = '\n'.join(f'GENE{i}' for i in range(MAX_SEARCH_LINES + 1))
+        response = self.client.post(self.url, {'search_terms': lines, **self.management_data})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Please search at most')
+
+    def test_submission_missing_formset_fields_does_not_error(self):
+        response = self.client.post(self.url, {'search_terms': 'TTN'})
+        self.assertEqual(response.status_code, 200)
+
+
+class RemovedGraphPagesTest(TestCase):
+    def test_graph_urls_are_gone(self):
+        self.assertEqual(self.client.get('/graph/display/').status_code, 404)
+        self.assertEqual(self.client.get('/graph/retrieve-network/?disease_ids=1').status_code, 404)
