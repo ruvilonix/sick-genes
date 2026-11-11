@@ -309,7 +309,7 @@ class GeneDetailTests(TestCase):
         response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': 'TTN'}))
         self.assertEqual(response.context['pubmed_url'], 'https://pubmed.ncbi.nlm.nih.gov/?term=%22TTN%22')
         self.assertEqual(response.context['scholar_url'], 'https://scholar.google.com/scholar?q=%22TTN%22')
-        self.assertContains(response, 'Search for TTN</a>')
+        self.assertContains(response, '>TTN</a>')
 
     def test_literature_links_add_disease_from_site_configuration(self):
         config = SiteConfiguration.get_solo()
@@ -318,7 +318,7 @@ class GeneDetailTests(TestCase):
         config.save()
         response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': 'TTN'}))
         self.assertEqual(response.context['literature_query'], '"TTN" AND ("ME/CFS" OR "myalgic encephalomyelitis")')
-        self.assertContains(response, 'Search for TTN and ME/CFS')
+        self.assertContains(response, '>TTN and ME/CFS</a>')
 
     def test_literature_label_ignored_without_terms(self):
         config = SiteConfiguration.get_solo()

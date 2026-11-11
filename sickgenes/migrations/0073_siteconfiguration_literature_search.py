@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='siteconfiguration',
             name='literature_search_label',
-            field=models.CharField(blank=True, default='', help_text='Shown in the gene page search links, e.g. "Search for IL6 and ME/CFS". Used only when search terms are set.', max_length=100),
+            field=models.CharField(blank=True, default='', help_text='Shown in the gene page search links, e.g. "IL6 and ME/CFS". Used only when search terms are set.', max_length=100),
         ),
         migrations.AddField(
             model_name='siteconfiguration',
