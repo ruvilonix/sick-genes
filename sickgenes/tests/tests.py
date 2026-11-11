@@ -1419,3 +1419,11 @@ class OldVersionQuerysetExclusionTest(TestCase):
     def test_home_count_excludes_old_versions(self):
         count = Study.objects.filter(not_finished=False, newest_version__isnull=True).count()
         self.assertEqual(count, 1)
+
+
+class RobotsTxtTest(TestCase):
+    def test_robots_txt_blocks_paged_gene_list(self):
+        response = self.client.get('/robots.txt')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/plain')
+        self.assertContains(response, 'Disallow: /genes/?')

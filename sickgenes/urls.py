@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from django.views.generic import TemplateView
 
 app_name = 'sickgenes'
 urlpatterns = [
@@ -32,5 +33,7 @@ urlpatterns = [
 
     path('api/v1/dump/', views.database_dump_json_v1, name="database_dump_json_v1"),
     path('api/v2/sickgenes_database.json.gz', views.database_dump_json_v2, name="database_dump_json_v2"),
+
+    path('robots.txt', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
 
 ]

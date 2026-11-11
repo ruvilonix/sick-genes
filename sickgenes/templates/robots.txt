@@ -1,0 +1,8 @@
+User-agent: *
+# Paged and sorted copies of the gene list. The gene pages themselves stay
+# crawlable through the study pages.
+Disallow: /genes/?
+Disallow: /api/
+Disallow: /graph/
+Disallow: /admin/
+Disallow: /manage/
