@@ -325,6 +325,30 @@ def add_study_cohort(request, study_id):
 
     return render(request, 'sickgenes/add_study_cohort.html', context={'form': form})
 
+@staff_member_required
+def remove_findings(request, study_cohort_id):
+    """
+    Lets staff tick genes in a study cohort and remove them.
+    The page asks for confirmation before the form is sent.
+    """
+    study_cohort = get_object_or_404(StudyCohort.objects.select_related('study'), pk=study_cohort_id)
+    gene_findings = study_cohort.gene_findings.select_related('hgnc_gene').order_by('hgnc_gene__symbol')
+
+    if request.method == 'POST':
+        selected = gene_findings.filter(pk__in=request.POST.getlist('finding'))
+        removed_symbols = [finding.hgnc_gene.symbol for finding in selected]
+        selected.delete()
+        if removed_symbols:
+            genes = 'gene' if len(removed_symbols) == 1 else 'genes'
+            messages.success(request, f'Removed {len(removed_symbols)} {genes}: {", ".join(removed_symbols)}')
+        return redirect(study_cohort.study)
+
+    context = {
+        'study_cohort': study_cohort,
+        'gene_findings': gene_findings,
+    }
+    return render(request, 'sickgenes/remove_findings.html', context)
+
 MODEL_CONFIG = {
     'gene': {
         'source_model': HgncGene,

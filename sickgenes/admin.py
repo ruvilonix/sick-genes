@@ -24,6 +24,13 @@ class ReadOnlyAdminMixin:
 @admin.register(GeneFinding)
 class GeneFindingAdmin(admin.ModelAdmin):
     readonly_fields = ['study_cohort', 'hgnc_gene']
+    list_display = ['hgnc_gene', 'study_cohort']
+    list_select_related = ['hgnc_gene', 'study_cohort__study']
+    search_fields = ['hgnc_gene__symbol', 'study_cohort__study__title']
+
+    def get_queryset(self, request):
+        # The cohort column lists the cohort's phenotype tags
+        return super().get_queryset(request).prefetch_related('study_cohort__disease_tags')
     
 class StudyCohortInline(admin.TabularInline):
     model = StudyCohort
