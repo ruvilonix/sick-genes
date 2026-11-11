@@ -251,6 +251,35 @@ class GeneDetailTests(TestCase):
         response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': 'NOTREAL'}))
         self.assertEqual(response.status_code, 404)
 
+    def gene_url(self, symbol):
+        return reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': symbol})
+
+    def test_lowercase_symbol_redirects_to_current_symbol(self):
+        response = self.client.get(self.gene_url('ttn'))
+        self.assertRedirects(response, self.gene_url('TTN'), status_code=302)
+
+    def test_previous_symbol_redirects_to_renamed_gene(self):
+        PrevSymbol.objects.create(gene=self.gene, value='OLDTTN')
+        response = self.client.get(self.gene_url('oldttn'))
+        self.assertRedirects(response, self.gene_url('TTN'), status_code=302)
+
+    def test_previous_symbol_of_several_genes_lists_them(self):
+        other = HgncGene.objects.get(symbol='OTHER')
+        PrevSymbol.objects.create(gene=self.gene, value='SHARED')
+        PrevSymbol.objects.create(gene=other, value='SHARED')
+        response = self.client.get(self.gene_url('SHARED'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'sickgenes/gene_previous_symbol.html')
+        self.assertContains(response, self.gene_url('TTN'))
+        self.assertContains(response, self.gene_url('OTHER'))
+
+    def test_current_symbol_wins_over_previous_symbol(self):
+        # OTHER is also a previous symbol of TTN, but OTHER is a current gene
+        PrevSymbol.objects.create(gene=self.gene, value='OTHER')
+        response = self.client.get(self.gene_url('OTHER'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['gene'].symbol, 'OTHER')
+
     def test_studies_data_context_is_correctly_structured_and_sorted(self):
         """
         Tests that 'studies_data' is correctly aggregated, grouped, and sorted.

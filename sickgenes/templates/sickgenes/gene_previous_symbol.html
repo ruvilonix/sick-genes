@@ -1,0 +1,15 @@
+{% extends "sickgenes/base.html" %}
+
+{% block title %}{{ symbol }}{% endblock %}
+
+{% block content %}
+<section class="card p-3">
+    <h1>{{ symbol }}</h1>
+    <p>{{ symbol }} is not a current gene symbol. It is a previous symbol of these genes:</p>
+    <ul>
+        {% for gene in genes %}
+            <li><a href="{{ gene.get_absolute_url }}">{{ gene.symbol }}</a> <span class="text-muted">{{ gene.name }}</span></li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}
