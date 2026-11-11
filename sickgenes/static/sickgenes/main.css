@@ -64,6 +64,43 @@ footer a:hover {
     margin-bottom: 0.75rem;
 }
 
+/* Tables: white panel with a border, slightly smaller text on phones */
+.table-container .table-responsive {
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+}
+
+.table-container .table {
+    margin-bottom: 0;
+}
+
+.table-container th a {
+    color: inherit;
+}
+
+/* Arrow on the column the table is sorted by */
+.table-container th.asc a::after {
+    content: " ▲";
+    font-size: 0.7em;
+}
+
+.table-container th.desc a::after {
+    content: " ▼";
+    font-size: 0.7em;
+}
+
+@media (max-width: 575.98px) {
+    .table-container .table {
+        font-size: 0.875rem;
+    }
+}
+
+/* Search box above the AJAX study table */
+.input-group-navbar {
+    margin-bottom: 1rem;
+}
+
 /* Space between stacked cards */
 .card + .card {
     margin-top: 1rem;
