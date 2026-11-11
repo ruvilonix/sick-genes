@@ -165,3 +165,8 @@ footer a:hover {
 .study-note > :last-child {
     margin-bottom: 0;
 }
+
+/* Home page: recently added studies */
+.recent-studies {
+    max-width: 48rem;
+}
