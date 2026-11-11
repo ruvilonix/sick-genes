@@ -301,6 +301,10 @@ class GeneDetailTests(TestCase):
         self.assertEqual(len(cohorts2), 1)
         self.assertIn(self.cohort_c_2020, cohorts2)
 
+    def test_study_count_heading(self):
+        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': 'TTN'}))
+        self.assertContains(response, 'Found in 2 studies')
+
     def test_database_query_efficiency(self):
         """
         Verifies that prefetching prevents N+1 query problems.

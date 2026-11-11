@@ -117,11 +117,6 @@ footer a:hover {
     margin-top: 1rem;
 }
 
-/* Label/value lists, e.g. gene identifiers */
-.details-list > div {
-    padding: 0.2rem 0;
-}
-
 .dotted-divider {
     border-top-style: dotted;
 }
@@ -131,4 +126,21 @@ footer a:hover {
     border-top: 1px solid var(--bs-border-color);
     color: var(--bs-secondary-color);
     font-size: 0.875rem;
+}
+
+/* Gene page details: labels and values in two columns */
+.gene-details {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    column-gap: 1rem;
+    row-gap: 0.35rem;
+}
+
+.gene-details dt {
+    font-weight: 600;
+}
+
+.gene-details dd {
+    margin: 0;
+    overflow-wrap: anywhere;
 }
