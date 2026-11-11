@@ -20,12 +20,13 @@ def build_filter(search, *args, **kwargs):
         search_filter.children.append(current_filter)
     return search_filter
 
-def table_study(request):
+def table_study(request, phenotype_id=None):
     """
-    AJAX handler for study table data
+    AJAX handler for study table data. The phenotype filter is part of the
+    URL path, since the AJAX table script only passes search, sort and page.
     """
     search = request.GET.get("search")
-    disease = request.session.get('study_disease_filter')    
+    disease = phenotype_id
 
     
     base_queryset = Study.objects.exclude(not_finished=True).exclude(newest_version__isnull=False)

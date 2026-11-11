@@ -99,15 +99,11 @@ def set_newest_study_version(request, study_id):
 
 def study_list(request):
     form = GeneFilterForm(request.GET)
-    
-    # Store disease filter in session
-    if 'phenotype' in request.GET and request.GET.get('phenotype'):
-        request.session['study_disease_filter'] = request.GET.get('phenotype')
-    else:
-        request.session.pop('study_disease_filter', None)
-        
+    phenotype = form.cleaned_data.get('phenotype') if form.is_valid() else None
+
     context = {
         'form': form,
+        'phenotype': phenotype,
     }
     
     return render(request, 'sickgenes/study_list.html', context)

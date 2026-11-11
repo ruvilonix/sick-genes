@@ -14,7 +14,11 @@
     <button type="submit" class="btn btn-primary btn-sm">Filter</button>
 </form>
 
-{% responsive_table "studyTable" 'sickgenes:TableStudy' %}
+{% if phenotype %}
+    {% responsive_table "studyTable" 'sickgenes:TableStudy' phenotype.id %}
+{% else %}
+    {% responsive_table "studyTable" 'sickgenes:TableStudy' %}
+{% endif %}
 
 <script src="{% static 'django_tables2_ajax/tables.js' %}" type="application/javascript"></script>
 <script>

@@ -380,13 +380,8 @@ class StudyListViewTest(TestCase):
         self.assertNotIn('Study 5 With No Genes', content)
 
     def test_filtered_study_list_by_disease(self):
-        """Tests filtering by a disease using session storage."""
-        # Set up session
-        session = self.client.session
-        session['study_disease_filter'] = str(self.disease_x.id)
-        session.save()
-
-        response = self.client.get(self.table_url)
+        """Tests filtering by a disease given in the table URL."""
+        response = self.client.get(reverse('sickgenes:TableStudy', args=[self.disease_x.id]))
         self.assertEqual(response.status_code, 200)
 
         content = response.content.decode('utf-8')
@@ -436,12 +431,7 @@ class StudyListViewTest(TestCase):
         self.study2.not_finished = True
         self.study2.save()
 
-        # Set up session
-        session = self.client.session
-        session['study_disease_filter'] = str(self.disease_y.id)
-        session.save()
-
-        response = self.client.get(self.table_url)
+        response = self.client.get(reverse('sickgenes:TableStudy', args=[self.disease_y.id]))
         self.assertEqual(response.status_code, 200)
         
         content = response.content.decode('utf-8')
@@ -457,16 +447,15 @@ class StudyListViewTest(TestCase):
         response = self.client.get(self.table_url)
         self.assertContains(response, 'Smith et al.')
 
-    def test_session_filter_persists(self):
-        """Test that the disease filter is stored in session."""
+    def test_study_list_page_points_table_at_phenotype_url(self):
         response = self.client.get(self.url, {'phenotype': self.disease_x.id})
-        self.assertEqual(response.status_code, 200)
-        
-        # Check that the session was set
-        self.assertEqual(
-            self.client.session.get('study_disease_filter'), 
-            str(self.disease_x.id)
-        )
+        self.assertContains(response, reverse('sickgenes:TableStudy', args=[self.disease_x.id]))
+        # Nothing is stored in the session, so other tabs aren't affected
+        self.assertNotIn('study_disease_filter', self.client.session)
+
+    def test_study_list_page_without_phenotype_uses_unfiltered_table(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, f'"{self.table_url}"')
 
     def test_search_functionality(self):
         """Test that search works on the AJAX endpoint."""
