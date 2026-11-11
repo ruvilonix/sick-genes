@@ -1,4 +1,6 @@
+from collections import defaultdict
 from django.db import models
+from django.db.models import Q
 from django.apps import apps
 
 class BaseMoleculeManager(models.Manager):
@@ -14,62 +16,81 @@ class BaseMoleculeManager(models.Manager):
     def find_matching_items(self, search_strings):
         """
         Takes a list of strings and returns a dictionary with search results.
+
+        Runs one query per searchable field for all strings together, so the
+        number of queries doesn't grow with the number of search strings.
         """
+        search_strings = list(search_strings)
+        app_label = self.model._meta.app_label
+
+        # Search strings keyed the way database values are compared to them:
+        # upper-cased for case-insensitive text fields, as numbers for integer fields
+        strings_by_upper = defaultdict(list)
+        strings_by_int = defaultdict(list)
+        for search_string in search_strings:
+            strings_by_upper[search_string.upper()].append(search_string)
+            try:
+                strings_by_int[int(search_string)].append(search_string)
+            except ValueError:
+                pass
+
+        matching_ids = {search_string: set() for search_string in search_strings}
+
+        def any_iexact(field):
+            query = Q()
+            for search_string in search_strings:
+                query |= Q(**{f"{field}__iexact": search_string})
+            return query
+
+        def add_text_matches(rows):
+            for value, pk in rows:
+                for search_string in strings_by_upper.get(str(value).upper(), []):
+                    matching_ids[search_string].add(pk)
+
+        def add_int_matches(rows):
+            for value, pk in rows:
+                for search_string in strings_by_int.get(value, []):
+                    matching_ids[search_string].add(pk)
+
+        if search_strings:
+            for field in self.str_fields:
+                add_text_matches(self.filter(any_iexact(field)).values_list(field, 'pk'))
+
+            for related_field, model_name in self.related_models_to_search.get('str_fields', {}).items():
+                model = apps.get_model(app_label=app_label, model_name=model_name)
+                add_text_matches(
+                    model.objects.filter(any_iexact('value')).values_list('value', self.related_fk_name)
+                )
+
+        if strings_by_int:
+            for field in self.int_fields:
+                add_int_matches(
+                    self.filter(**{f"{field}__in": strings_by_int}).values_list(field, 'pk')
+                )
+
+            for related_field, model_name in self.related_models_to_search.get('int_fields', {}).items():
+                model = apps.get_model(app_label=app_label, model_name=model_name)
+                add_int_matches(
+                    model.objects.filter(value__in=strings_by_int).values_list('value', self.related_fk_name)
+                )
+
+        # Load all matched items in one query
+        all_ids = set().union(*matching_ids.values())
+        items_by_id = {item.pk: item for item in self.filter(pk__in=all_ids)} if all_ids else {}
+
         search_results = {
             'no_matches': [],
             'one_match': [],
             'multiple_matches': [],
         }
 
-        app_label = self.model._meta.app_label
-
         for search_string in search_strings:
-            matching_ids = set()
+            # Keep the model's default ordering, as a filter() query would
+            items = [items_by_id[pk] for pk in items_by_id if pk in matching_ids[search_string]]
 
-            for field in self.str_fields:
-                qs = self.filter(**{f"{field}__iexact": search_string}).values_list('pk', flat=True)
-                if qs.exists():
-                    matching_ids.update(qs)
-
-            try:
-                search_int = int(search_string)
-                for field in self.int_fields:
-                    qs = self.filter(**{f"{field}": search_int}).values_list('pk', flat=True)
-                    if qs.exists():
-                        matching_ids.update(qs)
-            except ValueError:
-                pass
-            
-            # String searches on related models
-            for related_field, model_name in self.related_models_to_search.get('str_fields', {}).items():
-                # Resolve the model class at runtime instead of import time
-                model = apps.get_model(app_label=app_label, model_name=model_name)
-                related_ids = model.objects.filter(
-                    value__iexact=search_string
-                ).values_list(self.related_fk_name, flat=True)
-                matching_ids.update(related_ids)
-
-            # Integer searches on related models
-            try:
-                search_int = int(search_string)
-                for related_field, model_name in self.related_models_to_search.get('int_fields', {}).items():
-                    # Resolve the model class at runtime
-                    model = apps.get_model(app_label=app_label, model_name=model_name)
-                    related_ids = model.objects.filter(
-                        value=search_int
-                    ).values_list(self.related_fk_name, flat=True)
-                    matching_ids.update(related_ids)
-            except ValueError:
-                pass
-
-            if not matching_ids:
+            if not items:
                 search_results['no_matches'].append(search_string)
-                continue
-            
-            items = list(self.filter(pk__in=matching_ids))
-            count = len(items)
-
-            if count == 1:
+            elif len(items) == 1:
                 search_results['one_match'].append({'search_string': search_string, 'item': items[0]})
             else:
                 search_results['multiple_matches'].append({'search_string': search_string, 'items': items})
@@ -80,7 +101,11 @@ class BaseMoleculeManager(models.Manager):
 class HgncGeneManager(BaseMoleculeManager):
     """ Manager for HgncGene, defines searchable fields and models. """
     str_fields = [
-        'hgnc_id', 'symbol', 'name', 'entrez_id', 'ensembl_gene_id', 'vega_id', 'ucsc_id',
+        'symbol', 'name', 'ensembl_gene_id', 'vega_id', 'ucsc_id',
+    ]
+    # Numeric columns are matched as numbers so their indexes can be used
+    int_fields = [
+        'hgnc_id', 'entrez_id',
     ]
 
     related_fk_name = 'gene_id'

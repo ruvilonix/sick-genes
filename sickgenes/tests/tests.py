@@ -1,3 +1,5 @@
+from django.test.utils import CaptureQueriesContext
+from django.db import connection
 from django.test import TestCase
 from django.core.management import call_command
 from sickgenes.models import HgncGene, Study, Disease, StudyCohort, HmdbMetabolite
@@ -646,6 +648,17 @@ class FindMatchingHgncGenesTests(TestCase):
 
     def search_genes(self, search_strings):
         return HgncGene.objects.find_matching_items(search_strings)
+
+    def test_query_count_does_not_grow_with_number_of_search_strings(self):
+        with CaptureQueriesContext(connection) as few:
+            self.search_genes(['G1', '2'])
+        with CaptureQueriesContext(connection) as many:
+            self.search_genes(['G1', '2'] + [f'NOTHING{i}' for i in range(10)] + [str(i) for i in range(500, 510)])
+        self.assertEqual(len(few), len(many))
+
+    def test_search_is_case_insensitive_and_keeps_original_string(self):
+        results = self.search_genes(['g3'])
+        self.assertEqual(results['one_match'], [{'search_string': 'g3', 'item': self.gene3}])
 
     def test_search_no_matches(self):
         results = self.search_genes(['NOTHING'])
