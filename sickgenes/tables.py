@@ -5,11 +5,9 @@ from .models import HgncGene, Study
 # important columns on narrow screens
 NO_WRAP = {"th": {"class": "text-nowrap"}, "td": {"class": "text-nowrap"}}
 NUMBER = {"th": {"class": "text-end text-nowrap"}, "td": {"class": "text-end"}}
+# Keep titles readable on phones: the table scrolls sideways instead of squeezing them
+TITLE = {"th": {"class": "title-col"}, "td": {"class": "title-col"}}
 HIDE_BELOW_MD = {"th": {"class": "d-none d-md-table-cell"}, "td": {"class": "d-none d-md-table-cell"}}
-HIDE_BELOW_LG = {
-    "th": {"class": "d-none d-lg-table-cell text-nowrap"},
-    "td": {"class": "d-none d-lg-table-cell text-nowrap"},
-}
 
 
 class GeneTable(tables.Table):
@@ -23,7 +21,7 @@ class GeneTable(tables.Table):
 
 class StudyTable(tables.Table):
     gene_count = tables.Column(verbose_name="Genes", attrs=NUMBER)
-    title = tables.Column(linkify=True)
+    title = tables.Column(linkify=True, attrs=TITLE)
     short_authors = tables.Column(
         verbose_name='Authors',
         order_by='authors',
@@ -36,7 +34,7 @@ class StudyTable(tables.Table):
         attrs=NO_WRAP,
     )
 
-    created_at = tables.DateColumn(format="d M Y", verbose_name="Added", attrs=HIDE_BELOW_LG)
+    created_at = tables.DateColumn(format="d M Y", verbose_name="Added", attrs=NO_WRAP)
 
     class Meta:
         model = Study

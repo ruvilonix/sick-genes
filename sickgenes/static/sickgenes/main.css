@@ -102,6 +102,10 @@ footer a:hover {
     }
 }
 
+.table-container .title-col {
+    min-width: 15rem;
+}
+
 /* Search box above the AJAX study table */
 .input-group-navbar {
     margin-bottom: 1rem;
