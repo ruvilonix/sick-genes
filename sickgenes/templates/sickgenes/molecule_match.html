@@ -54,7 +54,9 @@
                 <thead>
                     <tr>
                         <th scope="col">Search term</th>
-                        <th scope="col" class="text-center col-remove">Remove</th>
+                        <th scope="col" class="text-center col-remove">
+                            <label class="d-block">Remove<br><input type="checkbox" class="form-check-input select-all-remove" title="Select all"></label>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -79,7 +81,9 @@
                     <tr>
                         <th scope="col">Search term</th>
                         <th scope="col">Gene</th>
-                        <th scope="col" class="text-center col-remove">Remove</th>
+                        <th scope="col" class="text-center col-remove">
+                            <label class="d-block">Remove<br><input type="checkbox" class="form-check-input select-all-remove" title="Select all"></label>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -117,7 +121,9 @@
                     <tr>
                         <th scope="col">Search term</th>
                         <th scope="col">Gene</th>
-                        <th scope="col" class="text-center col-remove">Remove</th>
+                        <th scope="col" class="text-center col-remove">
+                            <label class="d-block">Remove<br><input type="checkbox" class="form-check-input select-all-remove" title="Select all"></label>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -134,4 +140,43 @@
     {% endif %}
 </form>
 {% endwith %}
+
+<script>
+    // Remove columns: a "select all" box in each header, and shift-click to tick a range
+    (function () {
+        document.querySelectorAll('table').forEach(function (table) {
+            const selectAll = table.querySelector('.select-all-remove');
+            if (!selectAll) return;
+            const boxes = Array.from(table.querySelectorAll('tbody input[type="checkbox"]'));
+            let last = null;
+
+            function update() {
+                const count = boxes.filter(function (box) { return box.checked; }).length;
+                selectAll.checked = count > 0 && count === boxes.length;
+                selectAll.indeterminate = count > 0 && count < boxes.length;
+            }
+
+            selectAll.addEventListener('change', function () {
+                boxes.forEach(function (box) { box.checked = selectAll.checked; });
+                update();
+            });
+
+            boxes.forEach(function (box) {
+                box.addEventListener('click', function (event) {
+                    // Shift-click sets every box between the last clicked one and this one
+                    if (event.shiftKey && last !== null) {
+                        const a = boxes.indexOf(last), b = boxes.indexOf(box);
+                        boxes.slice(Math.min(a, b), Math.max(a, b) + 1).forEach(function (other) {
+                            other.checked = box.checked;
+                        });
+                    }
+                    last = box;
+                    update();
+                });
+            });
+
+            update();
+        });
+    })();
+</script>
 {% endblock %}
