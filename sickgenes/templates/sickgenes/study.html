@@ -51,16 +51,6 @@
     </div>
 {% endif %}
 
-{# Rationale for the recorded genes #}
-{% if study.note %}
-    <h2 class="section-title">Notes</h2>
-    <div class="card">
-        <div class="card-body study-note">
-            {{ study_note|safe }}
-        </div>
-    </div>
-{% endif %}
-
 {# Cohorts and their genes #}
 <h2 class="section-title mb-1">{% if study.study_cohorts.all|length > 1 %}Cohorts{% else %}Genes{% endif %}</h2>
 <p class="small text-secondary mb-3">The small number after each gene is how many studies on this site found it.</p>
@@ -109,6 +99,16 @@
 {% empty %}
     <p class="text-secondary">No cohorts have been added to this study yet.</p>
 {% endfor %}
+
+{# Rationale for the recorded genes #}
+{% if study.note %}
+    <h2 class="section-title">Notes</h2>
+    <div class="card">
+        <div class="card-body study-note">
+            {{ study_note|safe }}
+        </div>
+    </div>
+{% endif %}
 
 {# Staff tools #}
 {% if request.user.is_staff %}
