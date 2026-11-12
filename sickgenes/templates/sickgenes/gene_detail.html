@@ -77,6 +77,11 @@
                     <dt>ENA</dt>
                     <dd>{% for item in gene.ena_set.all %}<a href="https://www.ebi.ac.uk/ena/browser/view/{{ item.value }}" target="_blank" rel="noopener noreferrer">{{ item.value }}</a>{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd>
 
+                </dl>
+
+                <hr>
+
+                <dl class="gene-details mb-0">
                     <dt>PubMed</dt>
                     <dd><a href="{{ pubmed_url }}" title="{{ literature_query }}" target="_blank" rel="noopener noreferrer">{{ gene.symbol }}{% if literature_label %} and {{ literature_label }}{% endif %}</a></dd>
 
