@@ -135,7 +135,16 @@ class GeneListTests(TestCase):
         self.assertEqual(genes_in_context['TTN'].study_count, 2)    # Associated with study1 and study3
         self.assertEqual(genes_in_context['SCN1A'].study_count, 2) # Associated with study2 and study3
         self.assertEqual(genes_in_context['BRCA1'].study_count, 1) # Associated with study3 only
-        
+
+    def test_gene_list_leaves_out_genes_only_in_older_study_versions(self):
+        old_version = Study.objects.create(title='Old version', newest_version=self.study1)
+        old_cohort = StudyCohort.objects.create(study=old_version)
+        old_gene = HgncGene.objects.create(symbol='OLDONLY')
+        GeneFinding.objects.create(hgnc_gene=old_gene, study_cohort=old_cohort)
+
+        response = self.client.get(reverse('sickgenes:gene_list'))
+        self.assertNotIn('OLDONLY', self._symbols_in_table(response))
+
     def test_gene_list_filters_by_disease(self):
         """
         Tests that the list is correctly filtered when a disease is selected.

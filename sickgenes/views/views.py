@@ -162,7 +162,13 @@ def gene_list(request):
     # A list of specific genes (Gene Search, a cohort) always shows all of them.
     searching_specific_genes = bool(gene_symbols_to_filter or cohort_id)
     if not searching_specific_genes and not filters.get('include_unstudied'):
-        genes = genes.filter(study_count__gt=0)
+        # Narrowing to genes with published findings first means the database
+        # counts studies for those genes only, not for all ~45,000 genes
+        published_findings = GeneFinding.objects.filter(
+            study_cohort__study__not_finished=False,
+            study_cohort__study__newest_version__isnull=True,
+        )
+        genes = genes.filter(id__in=published_findings.values('hgnc_gene_id'), study_count__gt=0)
 
     genes_table = GeneTable(genes)
     RequestConfig(request, paginate={"per_page": 25}).configure(genes_table)
