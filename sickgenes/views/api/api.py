@@ -3,93 +3,83 @@ from sickgenes.models import Study
 import json
 import gzip
 
+
+def without_empty(data):
+    """Return a copy of the dict without values that are None, empty or False."""
+    return {key: value for key, value in data.items() if value}
+
+
 def database_dump_json_v2(request):
     """
     A view that returns the Study database as a nested JSON object,
     omitting any fields that are None or empty.
     Genes are deduplicated into a separate list with full metadata.
     """
-    
-    studies_query = Study.objects.prefetch_related(
+    studies = Study.objects.prefetch_related(
         'study_cohorts__disease_tags',
         'study_cohorts__gene_findings__hgnc_gene',
-        'study_cohorts__metabolite_findings__hmdb_metabolite',
     ).exclude(not_finished=True).exclude(newest_version__isnull=False)
-    
+
     studies_list = []
     unique_genes = {}
-    
-    for study in studies_query:
-        study_data = {}
-        if study.title:
-            study_data["title"] = study.title
-        if study.doi:
-            study_data["doi"] = study.doi
-        if study.get_absolute_url():
-            study_data["sickgenes_url"] = request.build_absolute_uri(study.get_absolute_url())
-        if study.pmid:
-            study_data["pmid"] = study.pmid
-        if study.authors:
-            study_data["authors"] = study.authors
-        if study.journal_titles:
-            study_data["journal_titles"] = study.journal_titles
-        if study.note:
-            study_data["note"] = study.note
-        if study.preprint:
-            study_data["preprint"] = study.preprint
-        if study.publisher_url:
-            study_data["publisher_url"] = study.publisher_url
-        if study.s4me_url:
-            study_data["s4me_url"] = study.s4me_url
+
+    for study in studies:
+        publication_date = None
         if study.publication_year:
-            study_data["publication_date"] = {'year': study.publication_year}
-            if study.publication_month:
-                study_data["publication_date"]['month'] = study.publication_month
-            if study.publication_day:
-                study_data["publication_date"]['day'] = study.publication_day
-        
+            publication_date = without_empty({
+                'year': study.publication_year,
+                'month': study.publication_month,
+                'day': study.publication_day,
+            })
+
         cohorts_list = []
         for cohort in study.study_cohorts.all():
-            cohort_data = {}
-            if cohort.note:
-                cohort_data["note"] = cohort.note
-            
-            phenotypes = [{"code": disease.code, "description": disease.name} for disease in cohort.disease_tags.all()]
-            
             gene_findings_list = []
-            for f in cohort.gene_findings.all():
-                if f.hgnc_gene:
-                    if f.hgnc_gene.hgnc_id not in unique_genes:
-                        unique_genes[f.hgnc_gene.hgnc_id] = {
-                            "hgnc_id": f.hgnc_gene.hgnc_id,
-                            "hgnc_symbol": f.hgnc_gene.symbol,
-                            "hgnc_name": f.hgnc_gene.name,
-                            "entrez_id": f.hgnc_gene.entrez_id,
-                            "ensembl_gene_id": f.hgnc_gene.ensembl_gene_id,
-                        }
-                    
-                    gene_findings_list.append({
-                        "hgnc_id": f.hgnc_gene.hgnc_id,
-                        "hgnc_symbol": f.hgnc_gene.symbol,
-                    })
-            
-            if phenotypes:
-                cohort_data["phenotypes"] = phenotypes
-            if gene_findings_list:
-                cohort_data["gene_findings"] = gene_findings_list
+            for finding in cohort.gene_findings.all():
+                gene = finding.hgnc_gene
+                if not gene:
+                    continue
+                # Gene metadata keeps empty values, unlike studies and cohorts
+                unique_genes.setdefault(gene.hgnc_id, {
+                    "hgnc_id": gene.hgnc_id,
+                    "hgnc_symbol": gene.symbol,
+                    "hgnc_name": gene.name,
+                    "entrez_id": gene.entrez_id,
+                    "ensembl_gene_id": gene.ensembl_gene_id,
+                })
+                gene_findings_list.append({"hgnc_id": gene.hgnc_id, "hgnc_symbol": gene.symbol})
+
+            cohort_data = without_empty({
+                "note": cohort.note,
+                "phenotypes": [
+                    {"code": disease.code, "description": disease.name}
+                    for disease in cohort.disease_tags.all()
+                ],
+                "gene_findings": gene_findings_list,
+            })
             if cohort_data:
                 cohorts_list.append(cohort_data)
-        
-        if cohorts_list:
-            study_data["study_cohorts"] = cohorts_list
-        studies_list.append(study_data)
-    
+
+        studies_list.append(without_empty({
+            "title": study.title,
+            "doi": study.doi,
+            "sickgenes_url": request.build_absolute_uri(study.get_absolute_url()),
+            "pmid": study.pmid,
+            "authors": study.authors,
+            "journal_titles": study.journal_titles,
+            "note": study.note,
+            "preprint": study.preprint,
+            "publisher_url": study.publisher_url,
+            "s4me_url": study.s4me_url,
+            "publication_date": publication_date,
+            "study_cohorts": cohorts_list,
+        }))
+
     response_data = {
         "genes": list(unique_genes.values()),
         "studies": studies_list
     }
-    
+
     json_content = json.dumps(response_data, indent=2)
     gzipped_content = gzip.compress(json_content.encode(encoding='utf-8'))
-    response = HttpResponse(gzipped_content, content_type="application/gzip")
-    return response
+    return HttpResponse(gzipped_content, content_type="application/gzip")
