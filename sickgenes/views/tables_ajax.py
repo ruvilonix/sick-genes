@@ -18,7 +18,7 @@ def table_study(request, phenotype_id=None):
     AJAX handler for study table data. The phenotype filter is part of the
     URL path, since the AJAX table script only passes search, sort and page.
     """
-    queryset = Study.objects.exclude(not_finished=True).exclude(newest_version__isnull=False)
+    queryset = Study.objects.published()
 
     if phenotype_id:
         # The gene count below reuses this filter's join on cohorts, so with a

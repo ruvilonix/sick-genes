@@ -46,7 +46,15 @@ class SiteConfiguration(SingletonModel):
     class Meta:
         verbose_name = "Site Configuration"
 
+class StudyQuerySet(models.QuerySet):
+    def published(self):
+        """Studies the public can see: not hidden, and not replaced by a newer version."""
+        return self.filter(not_finished=False, newest_version__isnull=True)
+
+
 class Study(models.Model):
+    objects = StudyQuerySet.as_manager()
+
     title = models.CharField(max_length=500, verbose_name="Title")
     doi = models.CharField(max_length=255, verbose_name="DOI URL", unique=True, null=True, blank=True)
     pmid = models.IntegerField(null=True, blank=True, default=None, verbose_name="PubMed ID")

@@ -23,15 +23,12 @@ def gene_study_count(extra_filter=Q()):
     Annotation counting a gene's published, current studies (not unfinished,
     not an older version), optionally narrowed by extra_filter.
     """
-    published = Q(
-        genefinding__study_cohort__study__not_finished=False,
-        genefinding__study_cohort__study__newest_version__isnull=True,
-    )
+    published = Q(genefinding__study_cohort__study__in=Study.objects.published())
     return Count('genefinding__study_cohort__study', filter=published & extra_filter, distinct=True)
 
 
 def home(request):
-    published_studies = Study.objects.filter(not_finished=False, newest_version__isnull=True)
+    published_studies = Study.objects.published()
     recent_studies = (
         published_studies.filter(study_cohorts__gene_findings__isnull=False)
         .distinct().order_by('-created_at')[:5]
@@ -163,10 +160,7 @@ def gene_list(request):
     if not searching_specific_genes and not filters.get('include_unstudied'):
         # Narrowing to genes with published findings first means the database
         # counts studies for those genes only, not for all ~45,000 genes
-        published_findings = GeneFinding.objects.filter(
-            study_cohort__study__not_finished=False,
-            study_cohort__study__newest_version__isnull=True,
-        )
+        published_findings = GeneFinding.objects.filter(study_cohort__study__in=Study.objects.published())
         genes = genes.filter(id__in=published_findings.values('hgnc_gene_id'), study_count__gt=0)
 
     genes_table = GeneTable(genes)
@@ -200,10 +194,8 @@ def gene_detail(request, hgnc_symbol):
     if gene is None:
         return redirect_unknown_gene_symbol(request, hgnc_symbol)
 
-    gene_findings = GeneFinding.objects.filter(hgnc_gene=gene).exclude(
-        study_cohort__study__not_finished=True
-    ).exclude(
-        study_cohort__study__newest_version__isnull=False
+    gene_findings = GeneFinding.objects.filter(
+        hgnc_gene=gene, study_cohort__study__in=Study.objects.published()
     ).select_related(
         'study_cohort__study'
     ).prefetch_related(

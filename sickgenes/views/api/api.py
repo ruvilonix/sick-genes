@@ -15,10 +15,10 @@ def database_dump_json_v2(request):
     omitting any fields that are None or empty.
     Genes are deduplicated into a separate list with full metadata.
     """
-    studies = Study.objects.prefetch_related(
+    studies = Study.objects.published().prefetch_related(
         'study_cohorts__disease_tags',
         'study_cohorts__gene_findings__hgnc_gene',
-    ).exclude(not_finished=True).exclude(newest_version__isnull=False)
+    )
 
     studies_list = []
     unique_genes = {}
