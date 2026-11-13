@@ -496,6 +496,24 @@ class StudyListViewTest(TestCase):
         # Study 2 should not appear
         self.assertNotIn('Study 2 About Disease Y', content)
 
+    def search_results(self, search, url=None):
+        """Return the studies the study table lists for a search."""
+        response = self.client.get(url or self.table_url, {'search': search})
+        return set(response.context['table'].data)
+
+    def test_search_matches_title_or_authors(self):
+        self.assertEqual(self.search_results('both'), {self.study3})
+        self.assertEqual(self.search_results('lewis'), {self.study2})
+
+    def test_search_needs_every_word_to_match(self):
+        # Each word can match either field: "Disease" is in the title, "Lewis" in the authors
+        self.assertEqual(self.search_results('Disease Lewis'), {self.study2})
+        self.assertEqual(self.search_results('Disease nomatch'), set())
+
+    def test_search_combines_with_disease_filter(self):
+        url = reverse('sickgenes:TableStudy', args=[self.disease_x.id])
+        self.assertEqual(self.search_results('Disease', url), {self.study1, self.study3})
+
     def test_shortened_author_list_shown(self):
         """Test that view returns shortened author list in et al. format."""
         response = self.client.get(self.table_url)
