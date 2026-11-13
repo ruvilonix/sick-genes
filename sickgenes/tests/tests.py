@@ -3,7 +3,7 @@ from django.test.utils import CaptureQueriesContext
 from django.db import connection
 from django.test import TestCase
 from django.core.management import call_command
-from sickgenes.models import HgncGene, Study, Disease, StudyCohort, HmdbMetabolite
+from sickgenes.models import Study, Disease, StudyCohort
 from io import StringIO
 from django.utils import timezone
 from django.urls import reverse
@@ -16,8 +16,6 @@ from unittest.mock import patch, Mock
 import requests
 from django.contrib.messages import get_messages
 from django.contrib.auth.models import User
-from django.template import Context, Template
-from django.utils.safestring import SafeString
 from django.contrib.auth import get_user_model
 
 class GeneListTests(TestCase):
@@ -477,7 +475,6 @@ class StudyListViewTest(TestCase):
         # We need to test the queryset logic directly since we can't easily parse gene counts from HTML
         from django.db.models import Q, Count
         
-        disease_id = str(self.disease_x.id)
         base_queryset = Study.objects.exclude(not_finished=True)
         
         count_filter = Q(study_cohorts__disease_tags=self.disease_x)
@@ -1586,7 +1583,6 @@ class OldVersionQuerysetExclusionTest(TestCase):
         self.v1.save()
 
     def test_study_table_excludes_old_versions(self):
-        from sickgenes.views.tables_ajax import table_study
         # Old version should not appear in filtered queryset
         qs = Study.objects.exclude(not_finished=True).exclude(newest_version__isnull=False)
         self.assertNotIn(self.v1, qs)
