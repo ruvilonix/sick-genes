@@ -471,34 +471,13 @@ class StudyListViewTest(TestCase):
         self.assertNotIn('Study 4 Unfinished', content)  # Excluded because not_finished=True
 
     def test_filtered_gene_count_is_correct(self):
-        """Tests that gene_count is correctly calculated based on the disease filter."""
-        # We need to test the queryset logic directly since we can't easily parse gene counts from HTML
-        from django.db.models import Q, Count
-        
-        base_queryset = Study.objects.exclude(not_finished=True)
-        
-        count_filter = Q(study_cohorts__disease_tags=self.disease_x)
-        queryset = base_queryset.filter(
-            study_cohorts__disease_tags=self.disease_x
-        ).distinct()
-        
-        queryset = queryset.annotate(
-            gene_count=Count(
-                'study_cohorts__gene_findings__hgnc_gene',
-                filter=count_filter,
-                distinct=True
-            )
-        ).filter(gene_count__gt=0)
+        """With a disease filter, each study's gene count only includes that disease's cohorts."""
+        response = self.client.get(reverse('sickgenes:TableStudy', args=[self.disease_x.id]))
+        gene_counts = {study.pk: study.gene_count for study in response.context['table'].data}
 
-        # Get the studies
-        study1_result = queryset.get(pk=self.study1.pk)
-        study3_result = queryset.get(pk=self.study3.pk)
-
-        # Study 1 has 1 gene related to Disease X
-        self.assertEqual(study1_result.gene_count, 1)
-        
-        # Study 3 has 2 total genes, but only 1 is related to Disease X
-        self.assertEqual(study3_result.gene_count, 1)
+        self.assertEqual(gene_counts[self.study1.pk], 1)
+        # Study 3 has 2 genes in total, but only 1 in its Disease X cohort
+        self.assertEqual(gene_counts[self.study3.pk], 1)
 
     def test_filter_with_no_results(self):
         """Tests that filtering for a disease with no associated 'finished' studies yields an empty list."""
@@ -1574,23 +1553,29 @@ class SetNewestVersionViewTest(TestCase):
         self.assertRedirects(response, self.v1.get_absolute_url(), fetch_redirect_response=False)
 
 
-class OldVersionQuerysetExclusionTest(TestCase):
+class OldVersionExclusionTest(TestCase):
+    """Studies replaced by a newer version are hidden from public lists and counts."""
 
     def setUp(self):
+        gene = HgncGene.objects.create(symbol='TTN')
         self.v1 = Study.objects.create(title="Old Study", publication_year=2020)
         self.v2 = Study.objects.create(title="New Study", publication_year=2021)
         self.v1.newest_version = self.v2
         self.v1.save()
+        for study in (self.v1, self.v2):
+            cohort = StudyCohort.objects.create(study=study)
+            GeneFinding.objects.create(study_cohort=cohort, hgnc_gene=gene)
 
     def test_study_table_excludes_old_versions(self):
-        # Old version should not appear in filtered queryset
-        qs = Study.objects.exclude(not_finished=True).exclude(newest_version__isnull=False)
-        self.assertNotIn(self.v1, qs)
-        self.assertIn(self.v2, qs)
+        response = self.client.get(reverse('sickgenes:TableStudy'))
+        studies = list(response.context['table'].data)
+        self.assertNotIn(self.v1, studies)
+        self.assertIn(self.v2, studies)
 
-    def test_home_count_excludes_old_versions(self):
-        count = Study.objects.filter(not_finished=False, newest_version__isnull=True).count()
-        self.assertEqual(count, 1)
+    def test_home_excludes_old_versions(self):
+        response = self.client.get(reverse('sickgenes:home'))
+        self.assertEqual(response.context['study_count'], 1)
+        self.assertEqual(list(response.context['recent_studies']), [self.v2])
 
 
 class RobotsTxtTest(TestCase):
