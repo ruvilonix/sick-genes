@@ -6,11 +6,11 @@ def database_dump_json_v1(request):
     A view that returns the Study database as a nested JSON object,
     omitting any fields that are None or empty.
     """
-    studies_query = Study.objects.prefetch_related(
+    studies_query = Study.objects.published().prefetch_related(
         'study_cohorts__disease_tags',
         'study_cohorts__gene_findings__hgnc_gene',
         'study_cohorts__metabolite_findings__hmdb_metabolite',
-    ).exclude(not_finished=True).exclude(newest_version__isnull=False)
+    )
 
     studies_list = []
     for study in studies_query:

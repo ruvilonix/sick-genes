@@ -312,6 +312,15 @@ class GeneDetailTests(TestCase):
         response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': 'TTN'}))
         self.assertContains(response, 'Found in 2 studies')
 
+    def test_older_study_versions_left_out(self):
+        old_version = Study.objects.create(title='Old version', newest_version=self.study_2022)
+        GeneFinding.objects.create(
+            hgnc_gene=self.gene, study_cohort=StudyCohort.objects.create(study=old_version)
+        )
+        response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': 'TTN'}))
+        studies = [study for study, cohorts in response.context['studies_data']]
+        self.assertNotIn(old_version, studies)
+
     def test_literature_links_search_gene_only_by_default(self):
         response = self.client.get(reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': 'TTN'}))
         self.assertEqual(response.context['pubmed_url'], 'https://pubmed.ncbi.nlm.nih.gov/?term=%22TTN%22')
@@ -1569,6 +1578,14 @@ class SetNewestVersionViewTest(TestCase):
         url = reverse('sickgenes:set_newest_study_version', kwargs={'study_id': self.v1.pk})
         response = self.client.get(url)
         self.assertRedirects(response, self.v1.get_absolute_url(), fetch_redirect_response=False)
+
+
+class PublishedQuerySetTest(TestCase):
+    def test_published_leaves_out_hidden_studies_and_older_versions(self):
+        current = Study.objects.create(title="Current")
+        Study.objects.create(title="Hidden", not_finished=True)
+        Study.objects.create(title="Old", newest_version=current)
+        self.assertEqual(list(Study.objects.published()), [current])
 
 
 class OldVersionExclusionTest(TestCase):
