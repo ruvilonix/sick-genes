@@ -1,15 +1,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
-from django.http import JsonResponse, Http404
+from django.http import Http404
 from sickgenes.forms import prepare_identifiers
 from sickgenes.models import HgncGene, GeneFinding, PrevSymbol, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding, SiteConfiguration
 from sickgenes.forms import StudyForm, StudyCohortForm, GeneFilterForm, SetNewestStudyVersionForm
-from django.db import transaction
-from django.db.models import Prefetch, Count, Q
+from django.db.models import Count, Q
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
-from sickgenes.tables import GeneTable, StudyTable
+from sickgenes.tables import GeneTable
 from collections import defaultdict
 from django_tables2.config import RequestConfig
 from django.conf import settings

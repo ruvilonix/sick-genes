@@ -1,6 +1,5 @@
 import gzip
 import io
-from unittest.mock import patch
 from django.test import TestCase
 from django.core.management.base import CommandError
 from sickgenes.models import HgncGene, StringProtein, StringInteraction
