@@ -50,7 +50,7 @@ def about(request):
 
 def study(request, study_id, slug=None):
     study = get_object_or_404(
-        Study.objects.prefetch_related(
+        Study.objects.visible_to(request.user).prefetch_related(
             'study_cohorts',
             'study_cohorts__disease_tags',
             'study_cohorts__metabolite_findings',
@@ -59,9 +59,6 @@ def study(request, study_id, slug=None):
         ),
         pk=study_id
     )
-
-    if study.not_finished and not request.user.is_staff:
-        raise Http404
 
     if study.newest_version and not request.GET.get('no_redirect'):
         messages.info(
@@ -137,9 +134,10 @@ def gene_list(request):
     # ?cohort=<id> shows the genes found in that study cohort
     cohort_id = request.GET.get('cohort', '')
     if cohort_id.isdigit():
-        cohort_findings = GeneFinding.objects.filter(study_cohort_id=cohort_id)
-        if not request.user.is_staff:
-            cohort_findings = cohort_findings.filter(study_cohort__study__not_finished=False)
+        cohort_findings = GeneFinding.objects.filter(
+            study_cohort_id=cohort_id,
+            study_cohort__study__in=Study.objects.visible_to(request.user),
+        )
         base_queryset = base_queryset.filter(id__in=cohort_findings.values('hgnc_gene_id'))
     else:
         cohort_id = ''

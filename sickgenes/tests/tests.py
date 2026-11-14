@@ -15,7 +15,7 @@ from sickgenes.models import (
 from unittest.mock import patch, Mock
 import requests
 from django.contrib.messages import get_messages
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AnonymousUser, User
 from django.contrib.auth import get_user_model
 
 class GeneListTests(TestCase):
@@ -112,6 +112,12 @@ class GeneListTests(TestCase):
     def test_gene_list_cohort_of_unfinished_study_hidden_from_public(self):
         response = self.client.get(reverse('sickgenes:gene_list') + f'?cohort={self.cohort4.id}')
         self.assertEqual(self._symbols_in_table(response), set())
+
+    def test_gene_list_cohort_of_unfinished_study_shown_to_staff(self):
+        staff = User.objects.create_user('staff', password='pw', is_staff=True)
+        self.client.force_login(staff)
+        response = self.client.get(reverse('sickgenes:gene_list') + f'?cohort={self.cohort4.id}')
+        self.assertEqual(self._symbols_in_table(response), {'ABC'})
 
     def test_gene_list_invalid_cohort_ignored(self):
         response = self.client.get(reverse('sickgenes:gene_list') + '?cohort=abc')
@@ -1586,6 +1592,25 @@ class PublishedQuerySetTest(TestCase):
         Study.objects.create(title="Hidden", not_finished=True)
         Study.objects.create(title="Old", newest_version=current)
         self.assertEqual(list(Study.objects.published()), [current])
+
+
+class VisibleToQuerySetTest(TestCase):
+    """Hidden studies are for staff only; older versions stay reachable by everyone."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.current = Study.objects.create(title="Current")
+        cls.hidden = Study.objects.create(title="Hidden", not_finished=True)
+        cls.old = Study.objects.create(title="Old", newest_version=cls.current)
+
+    def test_public_sees_current_and_old_versions_but_not_hidden(self):
+        visible = set(Study.objects.visible_to(AnonymousUser()))
+        self.assertEqual(visible, {self.current, self.old})
+
+    def test_staff_see_hidden_studies_too(self):
+        staff = User(is_staff=True)
+        visible = set(Study.objects.visible_to(staff))
+        self.assertEqual(visible, {self.current, self.old, self.hidden})
 
 
 class OldVersionExclusionTest(TestCase):
