@@ -22,7 +22,7 @@ urlpatterns = [
 
     path('genes/', views.gene_list, name='gene_list'),
     path('gene/<str:hgnc_symbol>/', views.gene_detail, name='gene_detail'),
-    path('search/identify/<str:model_type>/', views.identify_molecules, name='identify_molecules'),
+    path('search/identify/gene/', views.identify_molecules, name='identify_molecules'),
 
     path('manage/add_study/', views.add_study, name="add_study"),
     path('manage/hidden-studies/', views.hidden_studies, name='hidden_studies'),
@@ -30,7 +30,7 @@ urlpatterns = [
 
     path('manage/add_study_cohort/<int:study_id>/', views.add_study_cohort, name="add_study_cohort"),
 
-    path('manage/<int:study_cohort_id>/<str:model_type>/insert/', views.insert_findings, name='insert_findings'),
+    path('manage/<int:study_cohort_id>/gene/insert/', views.insert_findings, name='insert_findings'),
     path('manage/<int:study_cohort_id>/gene/remove/', views.remove_findings, name='remove_findings'),
 
 

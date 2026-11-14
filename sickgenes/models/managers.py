@@ -140,23 +140,3 @@ class HgncGeneManager(BaseMoleculeManager):
             'omimid__value': 'OmimId',
         }
     }
-
-
-class HmdbMetaboliteManager(BaseMoleculeManager):
-    """ Manager for HmdbMetabolite, defines searchable fields. """
-    str_fields = [
-        'accession', 'name', 'cas_registry_number', 'drugbank_id', 'foodb_id',
-        'knapsack_id', 'biocyc_id', 'wikipedia_id', 'iupac_name', 'traditional_iupac'
-    ]
-    int_fields = [
-        'bigg_id', 'pubchem_compound_id', 'chemspider_id', 'chebi_id'
-    ]
-
-    related_fk_name = 'metabolite_id'
-
-    related_models_to_search = {
-        'str_fields': {
-            'metabolitesynonym__value': 'MetaboliteSynonym',
-            'secondaryaccession__value': 'SecondaryAccession',
-        }
-    }

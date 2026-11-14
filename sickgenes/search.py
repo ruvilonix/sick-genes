@@ -18,11 +18,13 @@ three tables: matched, several matches and not found. Searching is one batch
 of queries however many terms there are, so repeating it is cheap.
 """
 
+from sickgenes.models import HgncGene
+
 # Longer lists make very large pages, so they're refused
 MAX_SEARCH_TERMS = 5000
 
 
-def search_context(post, model):
+def search_context(post):
     """
     Template context for the search page, built from the submitted form.
 
@@ -43,7 +45,7 @@ def search_context(post, model):
         terms += new_terms
 
     # dict.fromkeys drops repeated terms and keeps the order
-    context.update(sort_into_tables(model, list(dict.fromkeys(terms)), post))
+    context.update(sort_into_tables(list(dict.fromkeys(terms)), post))
     return context
 
 
@@ -59,9 +61,9 @@ def clean(strings):
     return [string.strip() for string in strings if string.strip()]
 
 
-def sort_into_tables(model, terms, post):
+def sort_into_tables(terms, post):
     """Search for every term and sort the results into the page's three tables."""
-    results = model.objects.find_matching_items(terms)
+    results = HgncGene.objects.find_matching_items(terms)
 
     # Keyed by item ID, so an item found by two terms is listed once
     matched = {

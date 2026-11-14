@@ -8,7 +8,7 @@
     <h1 class="home-title">{{ site_config.site_name }}</h1>
     <div class="home-description">{{ home_page_description|safe }}</div>
 
-    <a class="btn btn-primary mt-3" href="{% url 'sickgenes:identify_molecules' 'gene' %}">Search for genes</a>
+    <a class="btn btn-primary mt-3" href="{% url 'sickgenes:identify_molecules' %}">Search for genes</a>
 
     <p class="text-secondary mt-4 mb-0">{{ study_count }} <a href="{% url 'sickgenes:study_list' %}">studies</a> saved and counting…</p>
 </div>
