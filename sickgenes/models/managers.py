@@ -16,14 +16,20 @@ class BaseMoleculeManager(models.Manager):
     @staticmethod
     def _upper_in_database(strings):
         """
-        Upper-cases strings with Postgres rather than Python, so they compare
-        exactly like UPPER() on the database side. The two differ for a few
-        characters, e.g. the "ﬁ" ligature.
+        Upper-cases strings with the database rather than Python, so they
+        compare exactly like UPPER() on the database side. Python differs for
+        some characters: Postgres leaves the "ﬁ" ligature alone, and SQLite only
+        upper-cases A-Z.
+
+        Returns (string, upper-cased string) pairs.
         """
         if not strings:
             return []
+        # A VALUES list works on both Postgres and SQLite, and both name its
+        # column "column1"
+        rows = ', '.join(['(%s)'] * len(strings))
         with connection.cursor() as cursor:
-            cursor.execute("SELECT s, UPPER(s) FROM unnest(%s::text[]) AS s", [strings])
+            cursor.execute(f'SELECT column1, UPPER(column1) FROM (VALUES {rows}) AS v', strings)
             return cursor.fetchall()
 
     def find_matching_items(self, search_strings):

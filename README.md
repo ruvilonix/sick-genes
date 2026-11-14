@@ -4,11 +4,11 @@ The source code for [sickgenes.xyz](https://sickgenes.xyz), a site that collects
 
 The code is not tied to ME/CFS. The site name, home page text, about page and literature search terms are all set in the admin, so it can be used for any disease.
 
-It is a Django app that needs PostgreSQL (SQLite will not work).
+It is a Django app. It runs on SQLite, which needs no setup, or on PostgreSQL.
 
 ## Quick start
 
-You need Python 3.13 or newer and a PostgreSQL database.
+You need Python 3.13 or newer.
 
 Clone the repository and install the dependencies:
 
@@ -17,10 +17,8 @@ git clone https://github.com/ruvilonix/sick-genes.git
 cd sick-genes
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-base.txt
 ```
-
-`psycopg2` builds from source and needs the PostgreSQL client headers (`libpq-dev` on Debian/Ubuntu, `libpq-devel` on Fedora). If you would rather not install them, use `pip install psycopg2-binary` instead for local development.
 
 Create a file called `.env` in the project root:
 
@@ -28,7 +26,6 @@ Create a file called `.env` in the project root:
 SECRET_KEY="change-me"
 DEBUG="True"
 ALLOWED_HOSTS="localhost 127.0.0.1 [::1]"
-DATABASE_URL="postgres://USER:PASSWORD@localhost:5432/DATABASE"
 CONTACT_EMAIL_ADDRESS="you@example.com"
 ```
 
@@ -37,6 +34,8 @@ You can generate a secret key with:
 ```
 python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 ```
+
+The data is kept in `db.sqlite3` in the project folder.
 
 Set up the database, import the gene list from HGNC (this downloads about 35 MB and can take a few minutes), and create an admin account:
 
@@ -53,6 +52,22 @@ python manage.py runserver
 ```
 
 It is now running at http://127.0.0.1:8000.
+
+## Using PostgreSQL
+
+For a public site, PostgreSQL is the better choice. Install the full requirements, which add the PostgreSQL driver, and add the database to `.env`:
+
+```
+pip install -r requirements.txt
+```
+
+```
+DATABASE_URL="postgres://USER:PASSWORD@localhost:5432/DATABASE"
+```
+
+`psycopg2` builds from source and needs the PostgreSQL client headers (`libpq-dev` on Debian/Ubuntu, `libpq-devel` on Fedora). If you would rather not install them, use `pip install psycopg2-binary` instead for local development.
+
+One difference on SQLite: gene search ignores case only for the letters A to Z. A few HGNC aliases contain lowercase Greek letters, such as `FRγ` (an alias of FOLR3). Searching `frγ` finds it, but `FRΓ`, with a capital gamma, does not. PostgreSQL finds both.
 
 ## Adding data
 
@@ -71,9 +86,9 @@ Hidden studies are listed under **Hidden Studies** in the menu.
 python manage.py test sickgenes
 ```
 
-The tests need a PostgreSQL user that is allowed to create databases.
+The tests use whichever database is configured. With PostgreSQL, the database user must be allowed to create databases.
 
-Pull requests also run the linter [ruff](https://docs.astral.sh/ruff/) (configured in `pyproject.toml`) and check that every model change has a migration:
+Pull requests run the tests on both SQLite and PostgreSQL, and also run the linter [ruff](https://docs.astral.sh/ruff/) (configured in `pyproject.toml`) and check that every model change has a migration:
 
 ```
 pip install -r requirements-dev.txt
@@ -83,7 +98,7 @@ python manage.py makemigrations --check
 
 ## Deployment
 
-The `Procfile` runs the site with gunicorn and applies migrations and collects static files on each release. It works as-is on Dokku or Heroku-style hosts. In production, set `DEBUG="False"` and set `ALLOWED_HOSTS` to your domain.
+The `Procfile` runs the site with gunicorn and applies migrations and collects static files on each release. It works as-is on Dokku or Heroku-style hosts, which install `requirements.txt` and provide `DATABASE_URL`. In production, set `DEBUG="False"` and set `ALLOWED_HOSTS` to your domain.
 
 ## Data sources
 
