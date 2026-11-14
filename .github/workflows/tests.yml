@@ -39,6 +39,12 @@ jobs:
           python-version: "3.14"
           cache: pip
 
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt ruff==0.17.4
+
+      # Catch mistakes such as unused or undefined names (rules in pyproject.toml)
+      - run: ruff check .
+
+      # Fail if a model was changed without making a migration for it
+      - run: python manage.py makemigrations --check --dry-run
 
       - run: python manage.py test sickgenes

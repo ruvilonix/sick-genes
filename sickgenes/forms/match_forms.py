@@ -1,8 +1,8 @@
 from django import forms
+from django.forms import formset_factory
 
 # Longer searches make very large result pages, so they're refused
 MAX_SEARCH_LINES = 5000
-from django.forms import formset_factory
 
 class SearchInitialForm(forms.Form):
     search_terms = forms.CharField(

@@ -73,6 +73,14 @@ python manage.py test sickgenes
 
 The tests need a PostgreSQL user that is allowed to create databases.
 
+Pull requests also run the linter [ruff](https://docs.astral.sh/ruff/) (configured in `pyproject.toml`) and check that every model change has a migration:
+
+```
+pip install ruff
+ruff check .
+python manage.py makemigrations --check --dry-run
+```
+
 ## Deployment
 
 The `Procfile` runs the site with gunicorn and applies migrations and collects static files on each release. It works as-is on Dokku or Heroku-style hosts. In production, set `DEBUG="False"` and set `ALLOWED_HOSTS` to your domain.
