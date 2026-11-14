@@ -1,4 +1,7 @@
+from dataclasses import dataclass, field
+
 from django.db import transaction
+from django.db.models import Count
 from django.core.management.base import CommandError
 from sickgenes.models import HgncGene, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName
 from .helper_functions import get_json_from_source, output_progress
@@ -13,12 +16,53 @@ RELATED_MODELS = {
     'prev_name': PrevName,
 }
 
+
+@dataclass
+class HgncImportResult:
+    """What an HGNC import did, including changes to genes that have findings."""
+    processed_count: int = 0
+    # (old symbol, new symbol, number of findings)
+    renamed: list = field(default_factory=list)
+    # (symbol, HGNC ID number, number of findings) for genes not in any file
+    missing: list = field(default_factory=list)
+
+    def report_lines(self):
+        if not self.renamed and not self.missing:
+            return ['No genes with findings were renamed or removed.']
+        lines = []
+        if self.renamed:
+            lines.append('Genes with findings that HGNC renamed:')
+            lines += [f'  {old} -> {new} ({findings_text(n)})' for old, new, n in self.renamed]
+        if self.missing:
+            lines.append(
+                "Genes with findings that are no longer in HGNC's files (withdrawn or merged; "
+                'look them up on genenames.org):'
+            )
+            lines += [f'  {symbol}, HGNC:{hgnc_id} ({findings_text(n)})' for symbol, hgnc_id, n in self.missing]
+        return lines
+
+
+def findings_text(number):
+    return f'{number} finding' if number == 1 else f'{number} findings'
+
+
 @transaction.atomic
 def update_hgnc_data(hgnc_data_paths, stdout=None):
     """
-    Updates HgncGene records and their related tables from a JSON data source.
+    Updates HgncGene records and their related tables from HGNC's JSON files.
+    Genes missing from the files are kept, since findings may point to them.
+    Returns an HgncImportResult.
     """
-    processed_count = 0
+    result = HgncImportResult()
+    # Only genes with findings are reported, so only these are remembered
+    genes_with_findings = {
+        hgnc_id: (symbol, findings)
+        for hgnc_id, symbol, findings in HgncGene.objects
+            .annotate(findings=Count('genefinding'))
+            .filter(findings__gt=0)
+            .values_list('hgnc_id', 'symbol', 'findings')
+    }
+    seen_ids = set()
 
     for hgnc_data_path in hgnc_data_paths:
         try:
@@ -33,6 +77,11 @@ def update_hgnc_data(hgnc_data_paths, stdout=None):
             # rather than failing the whole import
             if hgnc_id is None or not gene_data.get('symbol'):
                 continue
+            seen_ids.add(hgnc_id)
+            if hgnc_id in genes_with_findings:
+                old_symbol, findings = genes_with_findings[hgnc_id]
+                if old_symbol != gene_data['symbol']:
+                    result.renamed.append((old_symbol, gene_data['symbol'], findings))
 
             main_fields = {
                 'symbol': gene_data.get('symbol'),
@@ -47,26 +96,30 @@ def update_hgnc_data(hgnc_data_paths, stdout=None):
                 defaults=main_fields
             )
 
+            # HGNC leaves a list out of the record when it's empty, so a missing
+            # list means its old values were removed and must be cleared too
             for field_name, model_class in RELATED_MODELS.items():
-                if field_name in gene_data:
-                    model_class.objects.filter(gene=gene_obj).delete()
+                model_class.objects.filter(gene=gene_obj).delete()
+                items_to_create = [
+                    model_class(gene=gene_obj, value=item)
+                    for item in gene_data.get(field_name, []) if item is not None
+                ]
+                if items_to_create:
+                    # ignore_conflicts skips a value repeated within one list
+                    model_class.objects.bulk_create(items_to_create, ignore_conflicts=True)
 
-                    # Bulk create new entries for efficiency
-                    items_to_create = [
-                        model_class(gene=gene_obj, value=item)
-                        for item in gene_data[field_name] if item is not None
-                    ]
-                    if items_to_create:
-                        model_class.objects.bulk_create(items_to_create, ignore_conflicts=True)
-            
-            processed_count += 1
-
-            output_progress(processed_count, stdout)
+            result.processed_count += 1
+            output_progress(result.processed_count, stdout)
 
         if stdout:
             stdout.write()
 
-    return processed_count
+    result.missing = [
+        (symbol, hgnc_id, findings)
+        for hgnc_id, (symbol, findings) in sorted(genes_with_findings.items())
+        if hgnc_id not in seen_ids
+    ]
+    return result
 
 
 def parse_hgnc_id(value):
