@@ -16,6 +16,17 @@ import dj_database_url
 import os
 import sys
 
+from django.core.exceptions import ImproperlyConfigured
+
+
+def required_env(name):
+    """Read a required setting from the environment, failing clearly if it's missing."""
+    value = os.getenv(name, '').strip()
+    if not value:
+        raise ImproperlyConfigured(f'The {name} setting is missing. Set it in .env or the environment (see README).')
+    return value
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,12 +36,12 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = required_env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', '0').lower() in ['true', 't', '1']
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(' ')
+ALLOWED_HOSTS = required_env('ALLOWED_HOSTS').split()
 
 
 # Application definition
@@ -85,7 +96,7 @@ WSGI_APPLICATION = 'projectfinding.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.parse(os.environ.get('DATABASE_URL'), conn_max_age=600),
+    'default': dj_database_url.parse(required_env('DATABASE_URL'), conn_max_age=600),
 }
 
 
@@ -125,7 +136,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "static"
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    # WhiteNoise saves compressed copies of static files when collectstatic runs
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
+}
 
 
 # Default primary key field type

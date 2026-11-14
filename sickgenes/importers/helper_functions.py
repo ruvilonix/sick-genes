@@ -17,7 +17,7 @@ def get_json_from_source(source_path):
         try:
             result = urlparse(path)
             return all([result.scheme, result.netloc])
-        except:
+        except ValueError:
             return False
     
     if is_url(source_path):

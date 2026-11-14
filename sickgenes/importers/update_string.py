@@ -88,7 +88,7 @@ def process_string_aliases(file_path, stdout):
     except Exception as e:
         raise CommandError(f'Failed to process STRING alias file: {e}')
     
-    stdout.write(f"\nString alias import completed:")
+    stdout.write("\nString alias import completed:")
     stdout.write(f"  Total lines processed: {processed_count}")
     stdout.write(f"  Records created: {created_count}")
     stdout.write(f"  Errors: {error_count}")
@@ -219,16 +219,14 @@ def update_string_data(stdout, use_test_data):
         stdout: Output stream for progress messages
         use_test_data: If True, use sample data files; if False, use full data files
     """
-    results = {}
-    
     # Choose the appropriate file paths
     alias_file_path = SAMPLE_STRING_ALIAS_PATH if use_test_data else STRING_ALIAS_PATH
     interaction_file_path = SAMPLE_STRING_INTERACTION_PATH if use_test_data else STRING_INTERACTION_PATH
     
     stdout.write("Starting STRING alias import...")
-    alias_results = process_string_aliases(alias_file_path, stdout)
+    process_string_aliases(alias_file_path, stdout)
 
     stdout.write("Starting STRING interaction import...")
-    interaction_results = process_string_interactions(interaction_file_path, stdout)
+    process_string_interactions(interaction_file_path, stdout)
     
     return True

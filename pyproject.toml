@@ -1,0 +1,13 @@
+# Settings for ruff, the linter run by CI (pip install ruff, then: ruff check .)
+
+[tool.ruff]
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+# Only rules that point to real mistakes (undefined or unused names, syntax
+# errors, bare except), not style preferences
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# Package __init__ files re-export their modules' contents on purpose
+"__init__.py" = ["F401", "F403"]
