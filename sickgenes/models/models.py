@@ -1,3 +1,4 @@
+import hashlib
 from django.db import models
 from django.urls import reverse
 from django.core.exceptions import ValidationError
@@ -227,3 +228,35 @@ class MetaboliteFinding(models.Model):
 
     def __str__(self):
         return f"[{self.study_cohort.study.title[:20]}]... - {self.hmdb_metabolite}"
+
+class SavedSearch(models.Model):
+    """
+    The genes matched by a Gene Search, so the results page has a short URL
+    (/genes/?search=<key>) however many genes there are. A list of symbols in
+    the URL fails at about 500 genes (gunicorn's request line limit).
+
+    The key is a hash of the gene IDs, so the same genes always give the same
+    key: repeating a search reuses its row, and links keep working.
+    """
+    key = models.CharField(max_length=16, unique=True)
+    gene_ids = models.JSONField()
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.key} ({len(self.gene_ids)} genes)'
+
+    @staticmethod
+    def key_for(gene_ids):
+        # 12 hex characters (48 bits): two different gene lists getting the
+        # same key would need millions of saved searches
+        ids = ','.join(str(gene_id) for gene_id in sorted(set(gene_ids)))
+        return hashlib.sha256(ids.encode()).hexdigest()[:12]
+
+    @classmethod
+    def for_genes(cls, gene_ids):
+        """The saved search for these genes, created if it doesn't exist yet."""
+        search, _ = cls.objects.get_or_create(
+            key=cls.key_for(gene_ids),
+            defaults={'gene_ids': sorted(set(gene_ids))},
+        )
+        return search
