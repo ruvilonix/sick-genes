@@ -10,7 +10,7 @@ from django.urls import reverse
 from sickgenes.forms import StudyForm, SetNewestStudyVersionForm
 from sickgenes.models import (
     HgncGene, Ena, UniprotId, OmimId, AliasSymbol, AliasName, PrevSymbol, PrevName,
-    HmdbMetabolite, MetaboliteSynonym, SecondaryAccession, GeneFinding, SiteConfiguration
+    HmdbMetabolite, MetaboliteSynonym, SecondaryAccession, GeneFinding, SiteConfiguration, SavedSearch
 )
 from unittest.mock import patch, Mock
 import requests
@@ -172,6 +172,19 @@ class GeneListTests(TestCase):
         response = self.client.get(reverse('sickgenes:gene_list'), {'symbol': 'ABC,TTN'})
         self.assertEqual(self._symbols_in_table(response), {'ABC', 'TTN'})
         self.assertNotContains(response, 'include_unstudied')
+
+    def test_gene_list_shows_saved_search(self):
+        search = SavedSearch.for_genes([self.gene_abc.id, self.gene_ttn.id])
+        response = self.client.get(reverse('sickgenes:gene_list'), {'search': search.key})
+        # Like any gene list search, genes without studies are included
+        self.assertEqual(self._symbols_in_table(response), {'ABC', 'TTN'})
+        self.assertNotContains(response, 'include_unstudied')
+        # The Filter form passes the search on
+        self.assertContains(response, f'<input type="hidden" name="search" value="{search.key}">')
+
+    def test_gene_list_unknown_saved_search_returns_404(self):
+        response = self.client.get(reverse('sickgenes:gene_list'), {'search': 'nosuchsearch'})
+        self.assertEqual(response.status_code, 404)
 
     def test_gene_list_disease_filter_annotated_counts(self):
         """
@@ -1748,7 +1761,9 @@ class GeneSearchTest(TestCase):
         PrevSymbol.objects.create(gene=cls.qars1, value='QARS')
 
     def results_url(self, symbols):
-        return reverse('sickgenes:gene_list') + '?symbol=' + symbols
+        """The results page Gene Search redirects to for these genes."""
+        gene_ids = HgncGene.objects.filter(symbol__in=symbols.split(',')).values_list('id', flat=True)
+        return reverse('sickgenes:gene_list') + '?search=' + SavedSearch.key_for(gene_ids)
 
     def matched_terms(self, response):
         return [row['term'] for row in response.context['matched']]
@@ -1859,6 +1874,16 @@ class GeneSearchTest(TestCase):
         response = self.client.post(self.url, {'search_terms': '"><script>alert(1)</script>'})
         self.assertNotContains(response, '<script>alert(1)</script>')
 
+    def test_long_gene_list_gets_a_short_results_url(self):
+        HgncGene.objects.bulk_create(
+            HgncGene(hgnc_id=100000 + i, symbol=f'LONG{i}') for i in range(3000)
+        )
+        response = self.client.post(self.url, {'search_terms': '\n'.join(f'LONG{i}' for i in range(3000))})
+        self.assertEqual(response.status_code, 302)
+        self.assertLess(len(response.url), 100)
+        results = self.client.get(response.url)
+        self.assertEqual(results.context['genes_table'].paginator.count, 3000)
+
     def test_query_count_does_not_grow_with_number_of_rows(self):
         def count_queries(terms):
             with CaptureQueriesContext(connection) as queries:
@@ -1870,6 +1895,18 @@ class GeneSearchTest(TestCase):
             count_queries(['QARS', 'NOTAGENE']),
             count_queries(['QARS', 'NOTAGENE', 'TTN', 'QARS1', 'A', 'B', 'C', 'D']),
         )
+
+
+class SavedSearchTest(TestCase):
+    def test_same_genes_give_the_same_search(self):
+        first = SavedSearch.for_genes([3, 1, 2])
+        again = SavedSearch.for_genes([2, 3, 1, 1])
+        self.assertEqual(first.pk, again.pk)
+        self.assertEqual(first.gene_ids, [1, 2, 3])
+        self.assertEqual(SavedSearch.objects.count(), 1)
+
+    def test_different_genes_give_different_searches(self):
+        self.assertNotEqual(SavedSearch.for_genes([1, 2]).key, SavedSearch.for_genes([1, 3]).key)
 
 
 class RemovedGraphPagesTest(TestCase):

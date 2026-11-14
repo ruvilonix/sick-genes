@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.http import Http404
 from sickgenes.search import matched_item_ids, search_context
-from sickgenes.models import HgncGene, GeneFinding, PrevSymbol, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding, SiteConfiguration
+from sickgenes.models import HgncGene, GeneFinding, PrevSymbol, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding, SiteConfiguration, SavedSearch
 from sickgenes.forms import StudyForm, StudyCohortForm, GeneFilterForm, SetNewestStudyVersionForm
 from django.db.models import Count, Q
 from django.contrib.admin.views.decorators import staff_member_required
@@ -131,6 +131,12 @@ def gene_list(request):
     if gene_symbols_to_filter:
         base_queryset = base_queryset.filter(symbol__in=gene_symbols_to_filter)
 
+    # ?search=<key> shows the genes matched by a Gene Search
+    search_key = request.GET.get('search', '')
+    if search_key:
+        saved_search = get_object_or_404(SavedSearch, key=search_key)
+        base_queryset = base_queryset.filter(id__in=saved_search.gene_ids)
+
     # ?cohort=<id> shows the genes found in that study cohort
     cohort_id = request.GET.get('cohort', '')
     if cohort_id.isdigit():
@@ -154,7 +160,7 @@ def gene_list(request):
 
     # Browsing all genes shows only genes with studies, unless asked otherwise.
     # A list of specific genes (Gene Search, a cohort) always shows all of them.
-    searching_specific_genes = bool(gene_symbols_to_filter or cohort_id)
+    searching_specific_genes = bool(gene_symbols_to_filter or search_key or cohort_id)
     if not searching_specific_genes and not filters.get('include_unstudied'):
         # Narrowing to genes with published findings first means the database
         # counts studies for those genes only, not for all ~45,000 genes
@@ -168,6 +174,7 @@ def gene_list(request):
         'form': form,
         'genes_table': genes_table,
         'filtered_genes': ','.join(gene_symbols_to_filter),
+        'search_key': search_key,
         'cohort_id': cohort_id,
         'searching_specific_genes': searching_specific_genes,
         'title': 'Gene List',
@@ -394,10 +401,8 @@ def identify_molecules(request, model_type):
     context['title'] = 'Gene Search'
 
     if context['all_matched']:
-        symbols = HgncGene.objects.filter(id__in=matched_item_ids(context)).values_list('symbol', flat=True)
-        # One comma-separated parameter keeps the URL short
-        query_string = urlencode({'symbol': ','.join(symbols)}, safe=',')
-        return redirect(f"{reverse('sickgenes:gene_list')}?{query_string}")
+        search = SavedSearch.for_genes(matched_item_ids(context))
+        return redirect(f"{reverse('sickgenes:gene_list')}?{urlencode({'search': search.key})}")
 
     return render(request, 'sickgenes/molecule_match.html', context)
 
