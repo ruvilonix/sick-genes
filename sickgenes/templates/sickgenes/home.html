@@ -4,17 +4,17 @@
 
 {% block content %}
 
-<div class="home-intro text-center py-5 mx-auto">
-    <h1 class="display-5 fw-bold">{{ site_config.site_name }}</h1>
-    <div class="fs-5 mt-4">{{ home_page_description|safe }}</div>
+<div class="home-intro">
+    <h1 class="home-title">{{ site_config.site_name }}</h1>
+    <div class="home-description">{{ home_page_description|safe }}</div>
 
-    <a class="btn btn-primary btn-lg mt-4" href="{% url 'sickgenes:identify_molecules' 'gene' %}">Search for genes</a>
+    <a class="btn btn-primary mt-3" href="{% url 'sickgenes:identify_molecules' 'gene' %}">Search for genes</a>
 
-    <p class="mt-5 mb-0">{{ study_count }} <a href="{% url 'sickgenes:study_list' %}">studies</a> saved and counting…</p>
+    <p class="text-secondary mt-4 mb-0">{{ study_count }} <a href="{% url 'sickgenes:study_list' %}">studies</a> saved and counting…</p>
 </div>
 
 {% if recent_studies %}
-    <section class="recent-studies mx-auto">
+    <section class="recent-studies">
         <h2 class="section-title mt-0">Recently added</h2>
         <ul class="list-group">
             {% for study in recent_studies %}
