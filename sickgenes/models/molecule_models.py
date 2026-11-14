@@ -5,8 +5,8 @@ from django.urls import reverse
 
 
 class HgncGene(models.Model):
-    hgnc_id = models.IntegerField(unique=True, null=True, default=None)
-    symbol = models.CharField(max_length=30, null=True)
+    hgnc_id = models.IntegerField(unique=True)
+    symbol = models.CharField(max_length=30)
     name = models.CharField(max_length=255, default=None, null=True)
     entrez_id = models.BigIntegerField(null=True)
     ensembl_gene_id = models.CharField(max_length=20, null=True)
@@ -30,7 +30,7 @@ class HgncGene(models.Model):
         ]
     
     def __str__(self):
-        return self.symbol or self.hgnc_id
+        return self.symbol
     
     def get_absolute_url(self):
         return reverse('sickgenes:gene_detail', kwargs={'hgnc_symbol': self.symbol})
