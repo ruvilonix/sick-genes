@@ -51,6 +51,13 @@ class StudyQuerySet(models.QuerySet):
         """Studies the public can see: not hidden, and not replaced by a newer version."""
         return self.filter(not_finished=False, newest_version__isnull=True)
 
+    def visible_to(self, user):
+        """
+        Studies the user may open. Hidden (not finished) studies are for staff
+        only. Older versions stay reachable, since their pages link to the newest.
+        """
+        return self if user.is_staff else self.filter(not_finished=False)
+
 
 class Study(models.Model):
     objects = StudyQuerySet.as_manager()
