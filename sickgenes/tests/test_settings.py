@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase
 
-from projectfinding.settings import required_env
+from projectfinding.settings import BASE_DIR, database_url, required_env
 
 
 class StaticFilesStorageTest(SimpleTestCase):
@@ -36,3 +36,17 @@ class RequiredEnvTest(SimpleTestCase):
         with mock.patch.dict(os.environ, {'SICKGENES_TEST_SETTING': '  '}):
             with self.assertRaises(ImproperlyConfigured):
                 required_env('SICKGENES_TEST_SETTING')
+
+
+class DatabaseUrlTest(SimpleTestCase):
+    def test_uses_database_url_when_set(self):
+        with mock.patch.dict(os.environ, {'DATABASE_URL': 'postgres://u:p@host/db'}):
+            self.assertEqual(database_url(), 'postgres://u:p@host/db')
+
+    def test_falls_back_to_sqlite_file_when_unset(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(database_url(), f'sqlite:///{BASE_DIR / "db.sqlite3"}')
+
+    def test_empty_database_url_counts_as_unset(self):
+        with mock.patch.dict(os.environ, {'DATABASE_URL': ' '}):
+            self.assertEqual(database_url(), f'sqlite:///{BASE_DIR / "db.sqlite3"}')

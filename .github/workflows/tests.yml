@@ -48,3 +48,25 @@ jobs:
       - run: python manage.py makemigrations --check
 
       - run: python manage.py test sickgenes
+
+  # The same tests on SQLite, installed without the Postgres driver, as a
+  # newcomer following the README's quick start would
+  test-sqlite:
+    runs-on: ubuntu-latest
+
+    env:
+      SECRET_KEY: ci-only-not-secret
+      DEBUG: "False"
+      ALLOWED_HOSTS: localhost 127.0.0.1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - run: pip install -r requirements-base.txt
+
+      - run: python manage.py test sickgenes

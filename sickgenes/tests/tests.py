@@ -688,6 +688,18 @@ class FindMatchingHgncGenesTests(TestCase):
         results = self.search_genes(['g3'])
         self.assertEqual(results['one_match'], [{'search_string': 'g3', 'item': self.gene3}])
 
+    def test_search_matches_value_with_non_ascii_letter(self):
+        AliasSymbol.objects.create(gene=self.gene3, value='PKBβ')
+        results = self.search_genes(['pkbβ'])
+        self.assertEqual(results['one_match'], [{'search_string': 'pkbβ', 'item': self.gene3}])
+
+    def test_search_matches_value_that_python_upper_cases_differently(self):
+        # Python turns "ﬁ" into "FI", but the databases leave it alone, so the
+        # search string must be upper-cased by the database to match
+        AliasName.objects.create(gene=self.gene3, value='ﬁbrous gene')
+        results = self.search_genes(['ﬁbrous gene'])
+        self.assertEqual(results['one_match'], [{'search_string': 'ﬁbrous gene', 'item': self.gene3}])
+
     def test_search_no_matches(self):
         results = self.search_genes(['NOTHING'])
         self.assertIn('NOTHING', results['no_matches'])
