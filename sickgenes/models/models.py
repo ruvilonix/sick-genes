@@ -93,7 +93,7 @@ class Study(models.Model):
 
     def save(self, *args, **kwargs):
         self.slug = slugify(f'{self.title[:80]}-{self.publication_year}')
-        super(Study, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def clean(self):
         super().clean()

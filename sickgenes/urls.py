@@ -26,7 +26,7 @@ urlpatterns = [
 
     path('manage/add_study/', views.add_study, name="add_study"),
     path('manage/hidden-studies/', views.hidden_studies, name='hidden_studies'),
-    path('fetch_paper_info/', views.fetch_paper_info, name='fetch_paper_info'),
+    path('manage/fetch_paper_info/', views.fetch_paper_info, name='fetch_paper_info'),
 
     path('manage/add_study_cohort/<int:study_id>/', views.add_study_cohort, name="add_study_cohort"),
 

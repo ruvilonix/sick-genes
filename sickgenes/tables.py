@@ -39,4 +39,4 @@ class StudyTable(tables.Table):
     class Meta:
         model = Study
         fields = ("title", "publication_date", "short_authors", "gene_count", "created_at")
-        order_by = ("-created_at")
+        order_by = ("-created_at",)
