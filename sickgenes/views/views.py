@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.http import Http404
 from sickgenes.search import matched_item_ids, search_context
-from sickgenes.models import HgncGene, GeneFinding, PrevSymbol, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding, SiteConfiguration, SavedSearch
+from sickgenes.models import HgncGene, GeneFinding, PrevSymbol, Study, StudyCohort, SiteConfiguration, SavedSearch
 from sickgenes.forms import StudyForm, StudyCohortForm, GeneFilterForm, SetNewestStudyVersionForm
 from django.db.models import Count, Q
 from django.contrib.admin.views.decorators import staff_member_required
@@ -53,7 +53,6 @@ def study(request, study_id, slug=None):
         Study.objects.visible_to(request.user).prefetch_related(
             'study_cohorts',
             'study_cohorts__disease_tags',
-            'study_cohorts__metabolite_findings',
             'study_cohorts__gene_findings',
             'study_cohorts__gene_findings__hgnc_gene'
         ),
@@ -378,25 +377,8 @@ def remove_findings(request, study_cohort_id):
     }
     return render(request, 'sickgenes/remove_findings.html', context)
 
-MODEL_CONFIG = {
-    'gene': {
-        'source_model': HgncGene,
-        'finding_model': GeneFinding,
-        'fk_name': 'hgnc_gene_id' # The foreign key field name on the finding model
-    },
-    'metabolite': {
-        'source_model': HmdbMetabolite,
-        'finding_model': MetaboliteFinding, # Assumed model
-        'fk_name': 'hmdb_metabolite_id'
-    },
-}
-
-def identify_molecules(request, model_type):
-    config = MODEL_CONFIG.get(model_type)
-    if not config:
-        raise Http404(f"Model type '{model_type}' is not supported.")
-
-    context = search_context(request.POST, config['source_model'])
+def identify_molecules(request):
+    context = search_context(request.POST)
     context['view_type'] = 'search'
     context['title'] = 'Gene Search'
 
@@ -407,31 +389,19 @@ def identify_molecules(request, model_type):
     return render(request, 'sickgenes/molecule_match.html', context)
 
 @staff_member_required
-def insert_findings(request, study_cohort_id, model_type):
-    """
-    Handles finding matches for a list of identifiers and inserting them
-    into a specific study_cohort.
-    """
-
-    config = MODEL_CONFIG.get(model_type)
-    if not config:
-        raise Http404(f"Model type '{model_type}' is not supported.")
-
+def insert_findings(request, study_cohort_id):
+    """Gene Search for staff, adding the matched genes to a study cohort."""
     study_cohort = get_object_or_404(StudyCohort, pk=study_cohort_id)
 
-    source_model = config['source_model']
-    finding_model = config['finding_model']
-    fk_name = config['fk_name']
-
-    context = search_context(request.POST, source_model)
+    context = search_context(request.POST)
     context['view_type'] = 'insert'
-    context['title'] = f'Add {model_type}s'
+    context['title'] = 'Add genes'
     context['study_cohort'] = study_cohort
 
     if 'confirm_insert' in request.POST and context['all_matched']:
-        finding_model.objects.bulk_create(
-            [finding_model(study_cohort_id=study_cohort_id, **{fk_name: item_id})
-             for item_id in matched_item_ids(context)],
+        GeneFinding.objects.bulk_create(
+            [GeneFinding(study_cohort_id=study_cohort_id, hgnc_gene_id=gene_id)
+             for gene_id in matched_item_ids(context)],
             ignore_conflicts=True,
         )
         return redirect(study_cohort.study)

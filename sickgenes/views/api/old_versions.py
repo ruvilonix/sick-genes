@@ -9,7 +9,6 @@ def database_dump_json_v1(request):
     studies_query = Study.objects.published().prefetch_related(
         'study_cohorts__disease_tags',
         'study_cohorts__gene_findings__hgnc_gene',
-        'study_cohorts__metabolite_findings__hmdb_metabolite',
     )
 
     studies_list = []

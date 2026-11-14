@@ -19,7 +19,7 @@
                 <div class="collapse navbar-collapse" id="main-nav">
                     <div class="navbar-nav">
                         <a class="nav-link{% if url_name == 'study_list' or url_name == 'study' %} active{% endif %}" href="{% url 'sickgenes:study_list' %}">Studies</a>
-                        <a class="nav-link{% if url_name == 'identify_molecules' %} active{% endif %}" href="{% url 'sickgenes:identify_molecules' 'gene' %}">Gene Search</a>
+                        <a class="nav-link{% if url_name == 'identify_molecules' %} active{% endif %}" href="{% url 'sickgenes:identify_molecules' %}">Gene Search</a>
                         <a class="nav-link{% if url_name == 'gene_list' or url_name == 'gene_detail' %} active{% endif %}" href="{% url 'sickgenes:gene_list' %}">All Genes</a>
                         <a class="nav-link{% if url_name == 'about' %} active{% endif %}" href="{% url 'sickgenes:about' %}">About</a>
                         {% if request.user.is_staff %}

@@ -1,10 +1,9 @@
 from django.contrib import admin
 
 from .models import (
-    Study, GeneFinding, StudyCohort, Disease, HgncGene, 
-    HmdbMetabolite, Ena, UniprotId, OmimId, AliasSymbol, 
-    AliasName, PrevSymbol, PrevName, MetaboliteSynonym, SecondaryAccession,
-    MetaboliteFinding, StringProtein, StringInteraction, SiteConfiguration
+    Study, GeneFinding, StudyCohort, Disease, HgncGene,
+    Ena, UniprotId, OmimId, AliasSymbol,
+    AliasName, PrevSymbol, PrevName, SiteConfiguration
 )
 
 from solo.admin import SingletonModelAdmin
@@ -59,8 +58,6 @@ class StudyCohortAdmin(admin.ModelAdmin):
 
 admin.site.register(Disease)
 
-admin.site.register(MetaboliteFinding)
-
 ## HGNC
 
 class EnaInline(admin.TabularInline):
@@ -92,31 +89,3 @@ class HgncGeneAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
         PrevSymbolInline,
         PrevNameInline,
     ]
-
-## HMDB
-
-class MetaboliteSynonymInline(admin.TabularInline):
-    model = MetaboliteSynonym
-class SecondaryAccessionInline(admin.TabularInline):
-    model = SecondaryAccession
-
-@admin.register(HmdbMetabolite)
-class HmdbMetaboliteAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
-    search_fields = ['accession', 'name']
-    readonly_fields = ['created_at', 'updated_at']
-
-    inlines = [MetaboliteSynonymInline, SecondaryAccessionInline]
-
-
-## STRING
-
-@admin.register(StringProtein)
-class StringProteinAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
-    search_fields = ['protein_id']
-    pass
-
-@admin.register(StringInteraction)
-class StringInteractionAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
-    search_fields = ['protein1', 'protein2']
-    list_select_related = ['protein1', 'protein2']
-    pass
