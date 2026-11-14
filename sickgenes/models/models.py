@@ -238,6 +238,10 @@ class SavedSearch(models.Model):
     The key is a hash of the gene IDs, so the same genes always give the same
     key: repeating a search reuses its row, and links keep working.
     """
+    # Anyone can add rows by searching, so the table keeps only the newest
+    # ones; a row is at most about 80 KB (5,000 genes)
+    MAX_ROWS = 10_000
+
     key = models.CharField(max_length=16, unique=True)
     gene_ids = models.JSONField()
     created = models.DateTimeField(auto_now_add=True)
@@ -255,8 +259,17 @@ class SavedSearch(models.Model):
     @classmethod
     def for_genes(cls, gene_ids):
         """The saved search for these genes, created if it doesn't exist yet."""
-        search, _ = cls.objects.get_or_create(
+        search, created = cls.objects.get_or_create(
             key=cls.key_for(gene_ids),
             defaults={'gene_ids': sorted(set(gene_ids))},
         )
+        if created:
+            cls.delete_oldest()
         return search
+
+    @classmethod
+    def delete_oldest(cls):
+        """Delete all but the newest MAX_ROWS searches (IDs only go up, so lower is older)."""
+        oldest_kept = cls.objects.order_by('-id').values('id')[cls.MAX_ROWS - 1:cls.MAX_ROWS]
+        # With fewer rows the subquery is empty (NULL), and nothing is deleted
+        cls.objects.filter(id__lt=models.Subquery(oldest_kept)).delete()

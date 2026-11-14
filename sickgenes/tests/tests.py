@@ -1908,6 +1908,19 @@ class SavedSearchTest(TestCase):
     def test_different_genes_give_different_searches(self):
         self.assertNotEqual(SavedSearch.for_genes([1, 2]).key, SavedSearch.for_genes([1, 3]).key)
 
+    @patch.object(SavedSearch, 'MAX_ROWS', 3)
+    def test_oldest_searches_are_deleted_beyond_the_limit(self):
+        searches = [SavedSearch.for_genes([n]) for n in range(5)]
+        kept = SavedSearch.objects.values_list('key', flat=True)
+        self.assertCountEqual(kept, [search.key for search in searches[2:]])
+
+    @patch.object(SavedSearch, 'MAX_ROWS', 3)
+    def test_repeating_a_search_deletes_nothing(self):
+        for n in range(3):
+            SavedSearch.for_genes([n])
+        SavedSearch.for_genes([0])
+        self.assertEqual(SavedSearch.objects.count(), 3)
+
 
 class RemovedGraphPagesTest(TestCase):
     def test_graph_urls_are_gone(self):
