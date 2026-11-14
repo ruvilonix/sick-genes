@@ -51,13 +51,15 @@ class Command(BaseCommand):
 
             # Download and file errors already come back as CommandError; anything
             # else is a bug, so let it show its full traceback
-            processed_count = update_hgnc_data(data_paths, self.stdout)
+            result = update_hgnc_data(data_paths, self.stdout)
             self.stdout.write(
                 self.style.SUCCESS(
                     f'HGNC data successfully imported. '
-                    f'Processed {processed_count} records.'
+                    f'Processed {result.processed_count} records.'
                 )
             )
+            for line in result.report_lines():
+                self.stdout.write(line)
             
         elif database_type == 'hmdb':
             if use_test_data:

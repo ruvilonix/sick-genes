@@ -570,6 +570,9 @@ class ImportHgncTest(TestCase):
     def test_import_hgnc_success_message(self):
         self.assertIn('HGNC data successfully imported', self.out.getvalue())
 
+    def test_import_hgnc_prints_report_of_genes_with_findings(self):
+        self.assertIn('No genes with findings were renamed or removed.', self.out.getvalue())
+
     def test_hgnc_importer_imports_all_items_from_sample_data(self):
         genes = HgncGene.objects.all()
         self.assertEqual(genes.count(), 3)
