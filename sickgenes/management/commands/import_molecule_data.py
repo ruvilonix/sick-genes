@@ -49,19 +49,15 @@ class Command(BaseCommand):
             else:
                 data_paths = HGNC_DATA_PATHS
 
-            try:
-                processed_count = update_hgnc_data(data_paths, self.stdout)
-
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f'HGNC data successfully imported. '
-                        f'Processed {processed_count} records.'
-                    )
+            # Download and file errors already come back as CommandError; anything
+            # else is a bug, so let it show its full traceback
+            processed_count = update_hgnc_data(data_paths, self.stdout)
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f'HGNC data successfully imported. '
+                    f'Processed {processed_count} records.'
                 )
-            except CommandError:
-                raise
-            except Exception as e:
-                raise CommandError(f'Unexpected error during HGNC import: {e}')
+            )
             
         elif database_type == 'hmdb':
             if use_test_data:
