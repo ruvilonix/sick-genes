@@ -1,79 +1,61 @@
 import requests
+from django.contrib.admin.views.decorators import staff_member_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from django.contrib.admin.views.decorators import staff_member_required
+
 from sickgenes.models import Study
+
+CROSSREF_WORK_URL = 'https://api.crossref.org/works/{doi}'
+
 
 @staff_member_required
 @require_GET
 def fetch_paper_info(request):
-    doi = request.GET.get('doi')
+    """
+    Looks up a DOI on Crossref for the Add study form. Returns JSON: the
+    form's fields with "success": true, or "success": false and an "error".
+    """
+    entered_doi = request.GET.get('doi')
+    if not entered_doi:
+        return lookup_error('DOI is missing.')
+    doi = Study.normalize_doi(entered_doi)
     if not doi:
-        return JsonResponse({'success': False, 'error': 'DOI is missing.'})
-
-    normalized_doi = Study.normalize_doi(doi) # Use the local normalize_doi function
-    if not normalized_doi:
-        return JsonResponse({'success': False, 'error': 'Invalid DOI format.'})
-
-    crossref_api_url = f"https://api.crossref.org/works/{normalized_doi}"
+        return lookup_error('Invalid DOI format.')
 
     try:
-        response = requests.get(crossref_api_url, timeout=5)
+        response = requests.get(CROSSREF_WORK_URL.format(doi=doi), timeout=5)
         response.raise_for_status()
         data = response.json()
+    except requests.exceptions.RequestException as error:
+        # Also covers a reply that isn't valid JSON
+        return lookup_error(f'Failed to connect to API: {error}')
 
-        if data and data.get('status') == 'ok' and data.get('message'):
-            message = data['message']
-            title = message.get('title', [''])[0]
+    if not isinstance(data, dict) or data.get('status') != 'ok' or not data.get('message'):
+        return lookup_error('No data found for this DOI.')
 
-            authors_list = []
-            if message.get('author'):
-                for author in message['author']:
-                    given = author.get('given', '')
-                    family = author.get('family', '')
-                    if given and family:
-                        authors_list.append(f"{family}, {given}")
-                    elif family:
-                        authors_list.append(family)
-                    elif given:
-                        authors_list.append(given)
-            authors = "; ".join(authors_list)
-
-            journal_title_list = []
-            if message.get('container-title'):
-                for journal_title in message['container-title']:
-                    journal_title_list.append(journal_title)
-            journal_titles = "; ".join(journal_title_list)
-            
-            # Extract date parts
-            publication_year, publication_month, publication_day = None, None, None
-            date_info = message.get('issued')
-            if date_info and date_info.get('date-parts'):
-                date_parts = date_info['date-parts'][0]
-                if len(date_parts) >= 1:
-                    publication_year = date_parts[0]
-                if len(date_parts) >= 2:
-                    publication_month = date_parts[1]
-                if len(date_parts) >= 3:
-                    publication_day = date_parts[2]
-
-            publisher_url = message.get("resource", {}).get("primary", {}).get("URL", '')
+    return JsonResponse({'success': True, **parse_crossref_work(data['message'])})
 
 
-            return JsonResponse({
-                'success': True,
-                'title': title,
-                'authors': authors,
-                'publication_year': publication_year,
-                'publication_month': publication_month,
-                'publication_day': publication_day,
-                'journal_titles': journal_titles,
-                'publisher_url': publisher_url,
-            })
-        else:
-            return JsonResponse({'success': False, 'error': 'No data found for this DOI.'})
+def lookup_error(message):
+    return JsonResponse({'success': False, 'error': message})
 
-    except requests.exceptions.RequestException as e:
-        return JsonResponse({'success': False, 'error': f'Failed to connect to API: {str(e)}'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': f'An unexpected error occurred: {str(e)}'})
+
+def parse_crossref_work(work):
+    """The Add study form's fields from a Crossref work record (its "message")."""
+    date_parts = (work.get('issued', {}).get('date-parts') or [[]])[0]
+    year, month, day = (list(date_parts) + [None, None, None])[:3]
+
+    return {
+        'title': (work.get('title') or [''])[0],
+        'authors': '; '.join(filter(None, map(author_name, work.get('author', [])))),
+        'publication_year': year,
+        'publication_month': month,
+        'publication_day': day,
+        'journal_titles': '; '.join(work.get('container-title', [])),
+        'publisher_url': work.get('resource', {}).get('primary', {}).get('URL', ''),
+    }
+
+
+def author_name(author):
+    """"Family, Given", or whichever of the two Crossref has ('' if neither)."""
+    return ', '.join(part for part in (author.get('family'), author.get('given')) if part)

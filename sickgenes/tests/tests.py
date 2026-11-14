@@ -1,7 +1,7 @@
 import time
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.core.management import call_command
 from sickgenes.models import Study, Disease, StudyCohort
 from io import StringIO
@@ -17,6 +17,7 @@ import requests
 from django.contrib.messages import get_messages
 from django.contrib.auth.models import AnonymousUser, User
 from django.contrib.auth import get_user_model
+from sickgenes.views.doi_lookup import parse_crossref_work
 
 class GeneListTests(TestCase):
     """
@@ -1328,6 +1329,57 @@ class FetchPaperInfoViewTest(TestCase):
         json_response = response.json()
         self.assertFalse(json_response['success'])
         self.assertEqual(json_response['error'], 'DOI is missing.')
+
+    @patch('sickgenes.views.doi_lookup.requests.get')
+    def test_fetch_paper_info_record_not_ok(self, mock_requests_get):
+        mock_requests_get.return_value = Mock(**{'json.return_value': {'status': 'failed'}})
+        response = self.client.get(reverse('sickgenes:fetch_paper_info'), {'doi': '10.1000/xyz'})
+        self.assertEqual(response.json(), {'success': False, 'error': 'No data found for this DOI.'})
+
+
+class ParseCrossrefWorkTest(SimpleTestCase):
+    def test_full_record(self):
+        work = {
+            'title': ['A study'],
+            'author': [
+                {'given': 'John', 'family': 'Doe'},
+                {'family': 'Smith'},
+                {'given': 'Ana'},
+                {'name': 'A consortium'},  # no given or family name: left out
+            ],
+            'issued': {'date-parts': [[2023, 10, 26]]},
+            'container-title': ['Journal A', 'Journal B'],
+            'resource': {'primary': {'URL': 'https://example.com/paper'}},
+        }
+        self.assertEqual(parse_crossref_work(work), {
+            'title': 'A study',
+            'authors': 'Doe, John; Smith; Ana',
+            'publication_year': 2023,
+            'publication_month': 10,
+            'publication_day': 26,
+            'journal_titles': 'Journal A; Journal B',
+            'publisher_url': 'https://example.com/paper',
+        })
+
+    def test_year_only(self):
+        fields = parse_crossref_work({'issued': {'date-parts': [[2021]]}})
+        self.assertEqual(
+            (fields['publication_year'], fields['publication_month'], fields['publication_day']),
+            (2021, None, None),
+        )
+
+    def test_empty_record(self):
+        # Crossref sometimes sends an empty title list, or no date at all
+        self.assertEqual(parse_crossref_work({'title': [], 'issued': {'date-parts': [[None]]}}), {
+            'title': '',
+            'authors': '',
+            'publication_year': None,
+            'publication_month': None,
+            'publication_day': None,
+            'journal_titles': '',
+            'publisher_url': '',
+        })
+
 
 class StudyView(TestCase):
     @classmethod
