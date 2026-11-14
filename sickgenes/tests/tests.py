@@ -1,6 +1,6 @@
 import time
 from django.test.utils import CaptureQueriesContext
-from django.db import connection
+from django.db import IntegrityError, connection
 from django.test import SimpleTestCase, TestCase
 from django.core.management import call_command
 from sickgenes.models import Study, Disease, StudyCohort
@@ -31,11 +31,11 @@ class GeneListTests(TestCase):
         cls.disease2 = Disease.objects.create(name='Epilepsy')
 
         # Create Genes
-        cls.gene_brca1 = HgncGene.objects.create(symbol='BRCA1')
-        cls.gene_scn1a = HgncGene.objects.create(symbol='SCN1A')
-        cls.gene_ttn = HgncGene.objects.create(symbol='TTN')
-        cls.gene_abc = HgncGene.objects.create(symbol="ABC")
-        cls.gene_def = HgncGene.objects.create(symbol="DEF")
+        cls.gene_brca1 = HgncGene.objects.create(hgnc_id=1100, symbol='BRCA1')
+        cls.gene_scn1a = HgncGene.objects.create(hgnc_id=10585, symbol='SCN1A')
+        cls.gene_ttn = HgncGene.objects.create(hgnc_id=12403, symbol='TTN')
+        cls.gene_abc = HgncGene.objects.create(hgnc_id=1, symbol="ABC")
+        cls.gene_def = HgncGene.objects.create(hgnc_id=2, symbol="DEF")
 
         # Create Studies
         cls.study1 = Study.objects.create(title='Cardio Study A', publication_year=2020)
@@ -144,7 +144,7 @@ class GeneListTests(TestCase):
     def test_gene_list_leaves_out_genes_only_in_older_study_versions(self):
         old_version = Study.objects.create(title='Old version', newest_version=self.study1)
         old_cohort = StudyCohort.objects.create(study=old_version)
-        old_gene = HgncGene.objects.create(symbol='OLDONLY')
+        old_gene = HgncGene.objects.create(hgnc_id=3, symbol='OLDONLY')
         GeneFinding.objects.create(hgnc_gene=old_gene, study_cohort=old_cohort)
 
         response = self.client.get(reverse('sickgenes:gene_list'))
@@ -214,7 +214,7 @@ class GeneDetailTests(TestCase):
         SiteConfiguration.objects.create(id=1, site_name='Test Site', about='')
 
         # Create a single gene to test in detail
-        cls.gene = HgncGene.objects.create(pk=1, symbol='TTN')
+        cls.gene = HgncGene.objects.create(pk=1, hgnc_id=12403, symbol='TTN')
 
         # Create studies with different publication years for sorting test
         cls.study_2022 = Study.objects.create(title='Newer Study', publication_year=2022)
@@ -236,7 +236,7 @@ class GeneDetailTests(TestCase):
         GeneFinding.objects.create(hgnc_gene=cls.gene, study_cohort=cls.cohort_d_notfinihsed)
 
         # Create another gene and finding that should NOT appear on the detail page
-        other_gene = HgncGene.objects.create(pk=2, symbol='OTHER')
+        other_gene = HgncGene.objects.create(pk=2, hgnc_id=1, symbol='OTHER')
         other_cohort = StudyCohort.objects.create(study=cls.study_2022)
         GeneFinding.objects.create(hgnc_gene=other_gene, study_cohort=other_cohort)
 
@@ -1646,6 +1646,32 @@ class PublishedQuerySetTest(TestCase):
         self.assertEqual(list(Study.objects.published()), [current])
 
 
+class RequiredFieldsTest(TestCase):
+    """Rows the site can't display (a finding without a gene, a note set to None) can't be saved."""
+
+    def test_gene_finding_needs_a_gene(self):
+        study = Study.objects.create(title='Study')
+        cohort = StudyCohort.objects.create(study=study)
+        with self.assertRaises(IntegrityError):
+            GeneFinding.objects.create(study_cohort=cohort)
+
+    def test_gene_needs_an_hgnc_id(self):
+        with self.assertRaises(IntegrityError):
+            HgncGene.objects.create(symbol='TTN')
+
+    def test_notes_default_to_empty_text(self):
+        study = Study.objects.create(title='Study')
+        cohort = StudyCohort.objects.create(study=study)
+        self.assertEqual(study.note, '')
+        self.assertEqual(cohort.note, '')
+
+    def test_saving_a_note_as_none_is_refused(self):
+        study = Study.objects.create(title='Study')
+        study.note = None
+        with self.assertRaises(IntegrityError):
+            study.save()
+
+
 class VisibleToQuerySetTest(TestCase):
     """Hidden studies are for staff only; older versions stay reachable by everyone."""
 
@@ -1669,7 +1695,7 @@ class OldVersionExclusionTest(TestCase):
     """Studies replaced by a newer version are hidden from public lists and counts."""
 
     def setUp(self):
-        gene = HgncGene.objects.create(symbol='TTN')
+        gene = HgncGene.objects.create(hgnc_id=12403, symbol='TTN')
         self.v1 = Study.objects.create(title="Old Study", publication_year=2020)
         self.v2 = Study.objects.create(title="New Study", publication_year=2021)
         self.v1.newest_version = self.v2

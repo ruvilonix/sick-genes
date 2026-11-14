@@ -136,7 +136,7 @@ class DatabaseDumpJsonTestV1(TestCase):
         # Cohort 1: has data and should appear
         StudyCohort.objects.create(study=study, note="Cohort 1 has a note")
         # Cohort 2: has no data and should be omitted
-        StudyCohort.objects.create(study=study, note=None)
+        StudyCohort.objects.create(study=study, note='')
 
         response = self.client.get(self.url)
         data = response.json()
@@ -153,7 +153,7 @@ class DatabaseDumpJsonTestV1(TestCase):
         """
         study = Study.objects.create(title="Study with only empty cohorts")
         # Create a cohort that has no serializable data
-        StudyCohort.objects.create(study=study, note=None)
+        StudyCohort.objects.create(study=study, note='')
 
         response = self.client.get(self.url)
         data = response.json()
@@ -368,7 +368,7 @@ class DatabaseDumpJsonTestV2(TestCase):
         # Cohort 1: has data and should appear
         StudyCohort.objects.create(study=study, note="Cohort 1 has a note")
         # Cohort 2: has no data and should be omitted
-        StudyCohort.objects.create(study=study, note=None)
+        StudyCohort.objects.create(study=study, note='')
 
         response = self.client.get(self.url)
         data = self._get_json_from_response(response)
@@ -385,7 +385,7 @@ class DatabaseDumpJsonTestV2(TestCase):
         """
         study = Study.objects.create(title="Study with only empty cohorts")
         # Create a cohort that has no serializable data
-        StudyCohort.objects.create(study=study, note=None)
+        StudyCohort.objects.create(study=study, note='')
 
         response = self.client.get(self.url)
         data = self._get_json_from_response(response)

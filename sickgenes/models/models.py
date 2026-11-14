@@ -9,8 +9,8 @@ import re
 
 class SiteConfiguration(SingletonModel):
     site_name = models.CharField(max_length=255, default='Site Name')
-    home_page_description = models.TextField(blank=True, null=True, default='')
-    about = models.TextField(blank=True, null=True, default='')
+    home_page_description = models.TextField(blank=True, default='')
+    about = models.TextField(blank=True, default='')
 
     # Optional disease for the PubMed and Google Scholar links on gene pages
     literature_search_label = models.CharField(
@@ -80,7 +80,7 @@ class Study(models.Model):
 
     not_finished = models.BooleanField(default=False)
 
-    note = models.TextField(null=True, blank=True, default='')
+    note = models.TextField(blank=True, default='')
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
@@ -189,7 +189,7 @@ class Disease(models.Model):
 class StudyCohort(models.Model):
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='study_cohorts')
     disease_tags = models.ManyToManyField(Disease, related_name="study_cohorts")
-    note = models.TextField(default=None, null=True, blank=True)
+    note = models.TextField(blank=True, default='')
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
@@ -200,7 +200,7 @@ class StudyCohort(models.Model):
     
 class GeneFinding(models.Model):
     study_cohort = models.ForeignKey(StudyCohort, on_delete=models.CASCADE, related_name="gene_findings")
-    hgnc_gene = models.ForeignKey('HgncGene', on_delete=models.PROTECT, null=True, default=None)
+    hgnc_gene = models.ForeignKey('HgncGene', on_delete=models.PROTECT)
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)

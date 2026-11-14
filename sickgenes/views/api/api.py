@@ -37,8 +37,6 @@ def database_dump_json_v2(request):
             gene_findings_list = []
             for finding in cohort.gene_findings.all():
                 gene = finding.hgnc_gene
-                if not gene:
-                    continue
                 # Gene metadata keeps empty values, unlike studies and cohorts
                 unique_genes.setdefault(gene.hgnc_id, {
                     "hgnc_id": gene.hgnc_id,
