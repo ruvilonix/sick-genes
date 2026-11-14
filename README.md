@@ -76,9 +76,9 @@ The tests need a PostgreSQL user that is allowed to create databases.
 Pull requests also run the linter [ruff](https://docs.astral.sh/ruff/) (configured in `pyproject.toml`) and check that every model change has a migration:
 
 ```
-pip install ruff
+pip install -r requirements-dev.txt
 ruff check .
-python manage.py makemigrations --check --dry-run
+python manage.py makemigrations --check
 ```
 
 ## Deployment

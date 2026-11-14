@@ -1,0 +1,2 @@
+# Tools for development and CI only; production installs requirements.txt alone
+ruff==0.17.4
