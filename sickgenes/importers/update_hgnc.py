@@ -18,19 +18,20 @@ def update_hgnc_data(hgnc_data_paths, stdout=None):
     """
     Updates HgncGene records and their related tables from a JSON data source.
     """
+    processed_count = 0
+
     for hgnc_data_path in hgnc_data_paths:
-        
         try:
             hgnc_data = get_json_from_source(hgnc_data_path)
             hgnc_genes = hgnc_data['response']['docs']
         except Exception as e:
             raise CommandError(f'Failed to retrieve or parse HGNC JSON data: {e}')
 
-        processed_count = 0
-
         for gene_data in hgnc_genes:
-            hgnc_id = int(gene_data.get('hgnc_id').split(':')[1])
-            if not hgnc_id:
+            hgnc_id = parse_hgnc_id(gene_data.get('hgnc_id'))
+            # Both are required in the database; skip a record that lacks one
+            # rather than failing the whole import
+            if hgnc_id is None or not gene_data.get('symbol'):
                 continue
 
             main_fields = {
@@ -62,6 +63,13 @@ def update_hgnc_data(hgnc_data_paths, stdout=None):
 
             output_progress(processed_count, stdout)
 
-        stdout.write() if stdout else None
+        if stdout:
+            stdout.write()
 
     return processed_count
+
+
+def parse_hgnc_id(value):
+    """The number in an HGNC ID such as "HGNC:5", or None if there isn't one."""
+    _, _, number = (value or '').partition(':')
+    return int(number) if number.isdigit() else None

@@ -1,11 +1,15 @@
 import gzip
 import io
+import json
+import os
+import tempfile
 from django.test import TestCase
 from django.core.management.base import CommandError
 from sickgenes.models import HgncGene, StringProtein, StringInteraction
 from django.core.management import call_command
 from unittest.mock import patch, ANY
 
+from sickgenes.importers.update_hgnc import update_hgnc_data
 from sickgenes.importers.update_string import (
     process_string_aliases,
     process_string_interactions,
@@ -209,3 +213,36 @@ class StringDataImportTests(TestCase):
         
         args, _ = mock_process_interactions.call_args
         self.assertIn('sample_data', args[0])
+
+
+class UpdateHgncDataTests(TestCase):
+    """update_hgnc_data with small JSON files shaped like HGNC's downloads."""
+
+    def import_files(self, *gene_lists):
+        """Writes each list of gene records to its own file and imports them all."""
+        with tempfile.TemporaryDirectory() as folder:
+            paths = []
+            for number, genes in enumerate(gene_lists):
+                path = os.path.join(folder, f'{number}.json')
+                with open(path, 'w') as file:
+                    json.dump({'response': {'docs': genes}}, file)
+                paths.append(path)
+            return update_hgnc_data(paths)
+
+    def test_count_includes_every_file(self):
+        count = self.import_files(
+            [{'hgnc_id': 'HGNC:5', 'symbol': 'A1BG'}],
+            [{'hgnc_id': 'HGNC:13', 'symbol': 'A2M'}, {'hgnc_id': 'HGNC:14', 'symbol': 'NAT1'}],
+        )
+        self.assertEqual(count, 3)
+        self.assertEqual(HgncGene.objects.count(), 3)
+
+    def test_records_without_id_or_symbol_are_skipped(self):
+        count = self.import_files([
+            {'symbol': 'NOID'},
+            {'hgnc_id': '', 'symbol': 'BLANKID'},
+            {'hgnc_id': 'HGNC:7'},
+            {'hgnc_id': 'HGNC:5', 'symbol': 'A1BG'},
+        ])
+        self.assertEqual(count, 1)
+        self.assertEqual(list(HgncGene.objects.values_list('hgnc_id', 'symbol')), [(5, 'A1BG')])
