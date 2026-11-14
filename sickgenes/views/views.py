@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.http import Http404
-from sickgenes.forms import prepare_identifiers
+from sickgenes.search import matched_item_ids, search_context
 from sickgenes.models import HgncGene, GeneFinding, PrevSymbol, Study, StudyCohort, HmdbMetabolite, MetaboliteFinding, SiteConfiguration
 from sickgenes.forms import StudyForm, StudyCohortForm, GeneFilterForm, SetNewestStudyVersionForm
 from django.db.models import Count, Q
@@ -389,24 +389,15 @@ def identify_molecules(request, model_type):
     if not config:
         raise Http404(f"Model type '{model_type}' is not supported.")
 
-    context = prepare_identifiers(request, config['source_model'])
+    context = search_context(request.POST, config['source_model'])
     context['view_type'] = 'search'
     context['title'] = 'Gene Search'
 
-    if context.get('items_only_exist_in_one_match'):
-        search_one_match_formset = context['search_one_match_formset']
-
-        item_ids_to_search = []
-        for form in search_one_match_formset:
-            item_ids_to_search.append(form['item_id'].value())
-
-        items_to_search = list(HgncGene.objects.filter(id__in=item_ids_to_search).values_list('symbol', flat=True))
-
-        if items_to_search:
-            # One comma-separated parameter keeps the URL short
-            query_string = urlencode({'symbol': ','.join(items_to_search)}, safe=',')
-            redirect_url = f"{reverse('sickgenes:gene_list')}?{query_string}"
-            return redirect(redirect_url)
+    if context['all_matched']:
+        symbols = HgncGene.objects.filter(id__in=matched_item_ids(context)).values_list('symbol', flat=True)
+        # One comma-separated parameter keeps the URL short
+        query_string = urlencode({'symbol': ','.join(symbols)}, safe=',')
+        return redirect(f"{reverse('sickgenes:gene_list')}?{query_string}")
 
     return render(request, 'sickgenes/molecule_match.html', context)
 
@@ -427,23 +418,17 @@ def insert_findings(request, study_cohort_id, model_type):
     finding_model = config['finding_model']
     fk_name = config['fk_name']
 
-    context = prepare_identifiers(request, source_model)
+    context = search_context(request.POST, source_model)
     context['view_type'] = 'insert'
     context['title'] = f'Add {model_type}s'
     context['study_cohort'] = study_cohort
 
-    if ('confirm_insert' in request.POST and context.get('items_only_exist_in_one_match')):
-        search_one_match_formset = context['search_one_match_formset']
-        findings_to_insert = []
-        for form in search_one_match_formset:
-            instance_data = {
-                'study_cohort_id': study_cohort_id,
-                fk_name: form['item_id'].value(),
-            }
-
-            findings_to_insert.append(finding_model(**instance_data))
-
-        finding_model.objects.bulk_create(findings_to_insert, ignore_conflicts=True)
+    if 'confirm_insert' in request.POST and context['all_matched']:
+        finding_model.objects.bulk_create(
+            [finding_model(study_cohort_id=study_cohort_id, **{fk_name: item_id})
+             for item_id in matched_item_ids(context)],
+            ignore_conflicts=True,
+        )
         return redirect(study_cohort.study)
 
     return render(request, 'sickgenes/molecule_match.html', context)

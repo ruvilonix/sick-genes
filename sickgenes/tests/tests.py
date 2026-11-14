@@ -1030,17 +1030,25 @@ class AddGenesView(TestCase):
     def test_confirm_adds_matched_genes_to_cohort(self):
         gene = HgncGene.objects.create(hgnc_id=1, symbol='IL6', name='interleukin 6')
         self.client.login(username=self.my_admin.username, password='testpassword')
-        data = {
-            'search_terms': '',
-            'confirm_insert': '1',
-            'no_matches-TOTAL_FORMS': '0', 'no_matches-INITIAL_FORMS': '0',
-            'multiple_matches-TOTAL_FORMS': '0', 'multiple_matches-INITIAL_FORMS': '0',
-            'one_match-TOTAL_FORMS': '1', 'one_match-INITIAL_FORMS': '0',
-            'one_match-0-search_term': 'IL6', 'one_match-0-item_id': str(gene.id), 'one_match-0-item_string': 'IL6',
-        }
-        response = self.client.post(reverse('sickgenes:insert_findings', args=(self.study_cohort.id, 'gene')), data)
+        url = reverse('sickgenes:insert_findings', args=(self.study_cohort.id, 'gene'))
+        response = self.client.post(url, {'term': 'IL6', 'confirm_insert': '1'})
         self.assertRedirects(response, self.study.get_absolute_url(), fetch_redirect_response=False)
         self.assertTrue(GeneFinding.objects.filter(study_cohort=self.study_cohort, hgnc_gene=gene).exists())
+
+    def test_confirm_does_nothing_while_terms_are_unresolved(self):
+        HgncGene.objects.create(hgnc_id=1, symbol='IL6', name='interleukin 6')
+        self.client.login(username=self.my_admin.username, password='testpassword')
+        url = reverse('sickgenes:insert_findings', args=(self.study_cohort.id, 'gene'))
+        response = self.client.post(url, {'term': ['IL6', 'NOTAGENE'], 'confirm_insert': '1'})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(GeneFinding.objects.exists())
+
+    def test_add_button_shown_only_when_everything_matched(self):
+        HgncGene.objects.create(hgnc_id=1, symbol='IL6', name='interleukin 6')
+        self.client.login(username=self.my_admin.username, password='testpassword')
+        url = reverse('sickgenes:insert_findings', args=(self.study_cohort.id, 'gene'))
+        self.assertContains(self.client.post(url, {'search_terms': 'IL6'}), 'Add 1 gene to this cohort')
+        self.assertNotContains(self.client.post(url, {'search_terms': 'IL6\nNOTAGENE'}), 'to this cohort</button>')
 
     def test_unknown_cohort_returns_404(self):
         self.client.login(username=self.my_admin.username, password='testpassword')
@@ -1727,53 +1735,141 @@ class RobotsTxtTest(TestCase):
         self.assertContains(response, 'Disallow: /genes/?')
 
 
-class GeneSearchFormTest(TestCase):
+class GeneSearchTest(TestCase):
+    """The Gene Search page. The form fields are described in sickgenes/search.py."""
     url = '/search/identify/gene/'
-    management_data = {
-        f'{prefix}-{key}': '0'
-        for prefix in ('no_matches', 'multiple_matches', 'one_match')
-        for key in ('TOTAL_FORMS', 'INITIAL_FORMS')
-    }
 
-    def test_too_many_lines_shows_error(self):
-        from sickgenes.forms.match_forms import MAX_SEARCH_LINES
-        lines = '\n'.join(f'GENE{i}' for i in range(MAX_SEARCH_LINES + 1))
-        response = self.client.post(self.url, {'search_terms': lines, **self.management_data})
+    @classmethod
+    def setUpTestData(cls):
+        # "QARS" matches two genes: the gene QARS, and QARS1 by its previous symbol
+        cls.ttn = HgncGene.objects.create(hgnc_id=1, symbol='TTN', name='titin')
+        cls.qars = HgncGene.objects.create(hgnc_id=2, symbol='QARS', name='glutaminyl-tRNA synthetase')
+        cls.qars1 = HgncGene.objects.create(hgnc_id=3, symbol='QARS1', name='glutaminyl-tRNA synthetase 1')
+        PrevSymbol.objects.create(gene=cls.qars1, value='QARS')
+
+    def results_url(self, symbols):
+        return reverse('sickgenes:gene_list') + '?symbol=' + symbols
+
+    def matched_terms(self, response):
+        return [row['term'] for row in response.context['matched']]
+
+    def test_first_visit_shows_empty_page(self):
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Please search at most')
+        self.assertEqual(response.context['matched'], [])
+        self.assertFalse(response.context['all_matched'])
 
-    def test_submission_missing_formset_fields_does_not_error(self):
-        response = self.client.post(self.url, {'search_terms': 'TTN'})
-        self.assertEqual(response.status_code, 200)
-
-    def formset_data(self, prefix, rows):
-        data = {f'{prefix}-TOTAL_FORMS': str(len(rows)), f'{prefix}-INITIAL_FORMS': '0'}
-        for i, row in enumerate(rows):
-            data.update({f'{prefix}-{i}-{key}': value for key, value in row.items()})
-        return data
-
-    def test_choosing_one_of_several_matches_shows_results(self):
-        ttn = HgncGene.objects.create(hgnc_id=1, symbol='TTN', name='titin')
-        qars1 = HgncGene.objects.create(hgnc_id=2, symbol='QARS1', name='glutaminyl-tRNA synthetase 1')
-        eprs1 = HgncGene.objects.create(hgnc_id=3, symbol='EPRS1', name='glutamyl-prolyl-tRNA synthetase 1')
-        PrevSymbol.objects.create(gene=qars1, value='QARS')
-        PrevSymbol.objects.create(gene=eprs1, value='QARS')
-
-        # First search: QARS matches two genes, shown with their names
-        response = self.client.post(self.url, {'search_terms': 'TTN\nQARS\nNOTAGENE', **self.management_data})
-        self.assertContains(response, 'QARS1 – glutaminyl-tRNA synthetase 1')
+    def test_search_sorts_terms_into_three_tables(self):
+        response = self.client.post(self.url, {'search_terms': 'TTN\nQARS\nNOTAGENE'})
+        self.assertEqual(self.matched_terms(response), ['TTN'])
+        self.assertEqual([row['term'] for row in response.context['several']], ['QARS'])
+        self.assertEqual(response.context['not_found'], ['NOTAGENE'])
+        self.assertFalse(response.context['all_matched'])
+        self.assertContains(response, 'TTN – titin')
         self.assertContains(response, 'Several matches')
         self.assertContains(response, 'Not found')
 
-        # Choose QARS1 and remove the unknown term: all resolved, so show results
-        data = {
-            'search_terms': '',
-            **self.formset_data('no_matches', [{'search_term': 'NOTAGENE', 'delete': 'on'}]),
-            **self.formset_data('multiple_matches', [{'search_term': 'QARS', 'item_id': str(qars1.id)}]),
-            **self.formset_data('one_match', [{'search_term': 'TTN', 'item_id': str(ttn.id), 'item_string': 'TTN – titin'}]),
-        }
+    def test_all_matched_redirects_to_results(self):
+        response = self.client.post(self.url, {'search_terms': 'ttn\n\n  QARS1  '})
+        self.assertRedirects(response, self.results_url('QARS1,TTN'), fetch_redirect_response=False)
+
+    def test_text_box_is_cleared_after_a_search(self):
+        response = self.client.post(self.url, {'search_terms': 'NOTAGENE'})
+        self.assertEqual(response.context['search_text'], '')
+
+    def test_too_many_terms_shows_error_and_keeps_the_page(self):
+        from sickgenes.search import MAX_SEARCH_TERMS
+        lines = '\n'.join(f'GENE{i}' for i in range(MAX_SEARCH_TERMS))
+        response = self.client.post(self.url, {'term': ['TTN', 'NOTAGENE'], 'search_terms': lines})
+        self.assertContains(response, 'Please search at most')
+        # The rows already on the page stay, and the text can be edited
+        self.assertEqual(self.matched_terms(response), ['TTN'])
+        self.assertEqual(response.context['not_found'], ['NOTAGENE'])
+        self.assertEqual(response.context['search_text'], lines)
+
+    def test_corrected_term_is_searched_again(self):
+        response = self.client.post(self.url, {'term': 'TTNN', 'fix:TTNN': 'TTN'})
+        self.assertRedirects(response, self.results_url('TTN'), fetch_redirect_response=False)
+
+    def test_removed_rows_are_dropped(self):
+        response = self.client.post(self.url, {
+            'term': ['NOTAGENE', 'QARS', 'QARS1', 'TTN'],
+            'remove': ['NOTAGENE', 'QARS', 'QARS1'],
+        })
+        self.assertRedirects(response, self.results_url('TTN'), fetch_redirect_response=False)
+
+    def test_remove_wins_over_a_correction(self):
+        response = self.client.post(self.url, {
+            'term': ['TTNN', 'NOTAGENE'], 'fix:TTNN': 'TTN', 'remove': 'TTNN',
+        })
+        self.assertEqual(response.context['matched'], [])
+        self.assertEqual(response.context['not_found'], ['NOTAGENE'])
+
+    def test_several_matches_lists_the_genes_and_preselects_exact_symbol(self):
+        response = self.client.post(self.url, {'search_terms': 'qars'})
+        self.assertEqual(response.context['several'], [{
+            'term': 'qars',
+            'options': [
+                (self.qars.id, 'QARS – glutaminyl-tRNA synthetase'),
+                (self.qars1.id, 'QARS1 – glutaminyl-tRNA synthetase 1'),
+            ],
+            'preselected': self.qars.id,
+        }])
+        self.assertContains(response, f'<option value="{self.qars.id}" selected>')
+
+    def test_choosing_one_of_several_matches_shows_results(self):
+        response = self.client.post(self.url, {
+            'term': ['QARS', 'TTN'], 'choice:QARS': str(self.qars1.id),
+        })
+        self.assertRedirects(response, self.results_url('QARS1,TTN'), fetch_redirect_response=False)
+
+    def test_term_with_no_choice_made_is_shown_again(self):
+        response = self.client.post(self.url, {'term': ['QARS', 'TTN'], 'choice:QARS': ''})
+        self.assertEqual([row['term'] for row in response.context['several']], ['QARS'])
+        self.assertEqual(self.matched_terms(response), ['TTN'])
+        self.assertFalse(response.context['all_matched'])
+
+    def test_choice_that_is_not_one_of_the_matches_is_ignored(self):
+        response = self.client.post(self.url, {'term': 'QARS', 'choice:QARS': str(self.ttn.id)})
+        self.assertEqual(response.context['matched'], [])
+        self.assertEqual(len(response.context['several']), 1)
+
+    def test_chosen_gene_is_remembered_on_later_searches(self):
+        # NOTAGENE keeps the page open, so the chosen row is shown rather than redirected
+        data = {'term': ['QARS', 'NOTAGENE'], 'choice:QARS': str(self.qars1.id)}
         response = self.client.post(self.url, data)
-        self.assertRedirects(response, reverse('sickgenes:gene_list') + '?symbol=QARS1,TTN', fetch_redirect_response=False)
+        self.assertEqual(response.context['matched'], [
+            {'term': 'QARS', 'item': self.qars1, 'label': 'QARS1 – glutaminyl-tRNA synthetase 1', 'chosen': True},
+        ])
+        # The page sends the choice back with the row
+        self.assertContains(response, f'<input type="hidden" name="choice:QARS" value="{self.qars1.id}">')
+
+    def test_gene_found_by_two_terms_is_listed_once(self):
+        response = self.client.post(self.url, {'search_terms': 'TTN\ntitin\nNOTAGENE'})
+        self.assertEqual([row['item'] for row in response.context['matched']], [self.ttn])
+
+    def test_rows_keep_their_order_and_new_terms_go_last(self):
+        response = self.client.post(self.url, {
+            'term': ['QARS1', 'NOTAGENE', 'TTN'], 'search_terms': 'ZZZ\nQARS1',
+        })
+        self.assertEqual(self.matched_terms(response), ['QARS1', 'TTN'])
+        self.assertEqual(response.context['not_found'], ['NOTAGENE', 'ZZZ'])
+
+    def test_terms_are_escaped_in_the_page(self):
+        response = self.client.post(self.url, {'search_terms': '"><script>alert(1)</script>'})
+        self.assertNotContains(response, '<script>alert(1)</script>')
+
+    def test_query_count_does_not_grow_with_number_of_rows(self):
+        def count_queries(terms):
+            with CaptureQueriesContext(connection) as queries:
+                self.client.post(self.url, {'term': terms})
+            return len(queries)
+
+        count_queries(['QARS'])  # warm-up: the first request also loads cached data
+        self.assertEqual(
+            count_queries(['QARS', 'NOTAGENE']),
+            count_queries(['QARS', 'NOTAGENE', 'TTN', 'QARS1', 'A', 'B', 'C', 'D']),
+        )
 
 
 class RemovedGraphPagesTest(TestCase):

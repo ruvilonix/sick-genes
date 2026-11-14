@@ -12,24 +12,19 @@
     <p class="page-subtitle">Paste a list of genes to see how many studies each one appears in.</p>
 {% endif %}
 
-{% with not_found=search_no_matches_formset.forms several=search_multiple_matches_formset.forms matched=search_one_match_formset.forms %}
 <form method="post" novalidate>
     {% csrf_token %}
-    {# Formset bookkeeping fields #}
-    {{ search_no_matches_formset.management_form }}
-    {{ search_multiple_matches_formset.management_form }}
-    {{ search_one_match_formset.management_form }}
 
     {# Search box #}
     <div class="card mb-4">
         <div class="card-body">
-            <label for="{{ search_initial_form.search_terms.id_for_label }}" class="form-label fw-semibold">
+            <label for="search-terms" class="form-label fw-semibold">
                 {% if not_found or several or matched %}Add more genes{% else %}Genes{% endif %}
             </label>
-            {{ search_initial_form.search_terms }}
-            {% for error in search_initial_form.search_terms.errors %}
+            <textarea name="search_terms" id="search-terms" class="form-control" rows="8" placeholder="TRH&#10;thyrotropin releasing hormone&#10;12298&#10;ENSG00000170893&#10;7200&#10;P20396">{{ search_text }}</textarea>
+            {% if error %}
                 <div class="text-danger mt-1">{{ error }}</div>
-            {% endfor %}
+            {% endif %}
             <div class="form-text">
                 One per line: symbols, names, previous symbols, aliases, or HGNC, NCBI, Ensembl, UniProt or OMIM IDs.
             </div>
@@ -44,6 +39,8 @@
             {% if not_found %}<span class="badge text-bg-danger">{{ not_found|length }} not found</span>{% endif %}
         </p>
     {% endif %}
+
+    {# How the rows below are sent back is described at the top of sickgenes/search.py #}
 
     {# Terms with no match: can be corrected or removed #}
     {% if not_found %}
@@ -60,10 +57,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for form in not_found %}
+                    {% for term in not_found %}
                         <tr>
-                            <td>{{ form.search_term }}</td>
-                            <td class="text-center">{{ form.delete }}</td>
+                            <td>
+                                <input type="hidden" name="term" value="{{ term }}">
+                                <input type="text" name="fix:{{ term }}" value="{{ term }}" class="form-control" aria-label="Search term">
+                            </td>
+                            <td class="text-center"><input type="checkbox" name="remove" value="{{ term }}" class="form-check-input" aria-label="Remove {{ term }}"></td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -87,11 +87,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for form in several %}
+                    {% for row in several %}
                         <tr>
-                            <td>{{ form.search_term.value }}{{ form.search_term.as_hidden }}</td>
-                            <td>{{ form.item_id }}</td>
-                            <td class="text-center">{{ form.delete }}</td>
+                            <td>{{ row.term }}<input type="hidden" name="term" value="{{ row.term }}"></td>
+                            <td>
+                                <select name="choice:{{ row.term }}" class="form-select" aria-label="Gene for {{ row.term }}">
+                                    <option value="">Choose…</option>
+                                    {% for id, label in row.options %}
+                                        <option value="{{ id }}"{% if id == row.preselected %} selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td class="text-center"><input type="checkbox" name="remove" value="{{ row.term }}" class="form-check-input" aria-label="Remove {{ row.term }}"></td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -102,12 +109,12 @@
     {# Actions #}
     {% if not_found or several or matched %}
         <div class="d-flex flex-wrap gap-2 my-4">
-            {% if view_type == 'insert' and items_only_exist_in_one_match %}
+            {% if view_type == 'insert' and all_matched %}
                 <button type="submit" name="confirm_insert" value="1" class="btn btn-success">
                     Add {{ matched|length }} gene{{ matched|length|pluralize }} to this cohort
                 </button>
             {% endif %}
-            <button type="submit" name="find_matches" class="btn {% if view_type == 'insert' and items_only_exist_in_one_match %}btn-outline-primary{% else %}btn-primary{% endif %}">Update matches</button>
+            <button type="submit" name="find_matches" class="btn {% if view_type == 'insert' and all_matched %}btn-outline-primary{% else %}btn-primary{% endif %}">Update matches</button>
         </div>
     {% endif %}
 
@@ -127,11 +134,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for form in matched %}
+                    {% for row in matched %}
                         <tr>
-                            <td>{{ form.search_term.value }}{{ form.search_term.as_hidden }}{{ form.item_id }}</td>
-                            <td>{{ form.item_string.value }}{{ form.item_string.as_hidden }}</td>
-                            <td class="text-center">{{ form.delete }}</td>
+                            <td>
+                                {{ row.term }}<input type="hidden" name="term" value="{{ row.term }}">
+                                {# A gene the user picked from several: send the choice back so it isn't asked again #}
+                                {% if row.chosen %}<input type="hidden" name="choice:{{ row.term }}" value="{{ row.item.id }}">{% endif %}
+                            </td>
+                            <td>{{ row.label }}</td>
+                            <td class="text-center"><input type="checkbox" name="remove" value="{{ row.term }}" class="form-check-input" aria-label="Remove {{ row.term }}"></td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -139,7 +150,6 @@
         </div>
     {% endif %}
 </form>
-{% endwith %}
 
 <script>
     // Remove columns: a "select all" box in each header, and shift-click to tick a range
