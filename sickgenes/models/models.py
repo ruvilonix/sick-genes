@@ -10,7 +10,11 @@ import re
 
 class SiteConfiguration(SingletonModel):
     site_name = models.CharField(max_length=255, default='Site Name')
-    home_page_description = models.TextField(blank=True, default='')
+    home_page_description = models.TextField(blank=True, default='''Welcome!
+
+Configure your new site by filling in the site name, description, and about page on the [administration panel](/admin/sickgenes/siteconfiguration/).
+
+After you've logged in to the admin panel, you'll see an Add Study button on the header of the main website, which will let you start adding studies and genes.''')
     about = models.TextField(blank=True, default='')
 
     # Optional disease for the PubMed and Google Scholar links on gene pages
